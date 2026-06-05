@@ -44,6 +44,19 @@ def event_exists(event_id: str) -> bool:
     return os.path.exists(os.path.join(EVENTS_DIR, f"{event_id}.json"))
 
 
+def event_status(event_id: str) -> str | None:
+    """저장된 이벤트의 status 반환(없으면 None).
+    원자적 저장(Codex 리뷰 최우선): 'failed'는 재시도 대상, 'complete'/'irrelevant'는 처리완료."""
+    path = os.path.join(EVENTS_DIR, f"{event_id}.json")
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f).get("status")
+    except Exception:
+        return None
+
+
 # ── 점수로그 (time series) ───────────────────────────────────────────
 def append_score(job_id: str, snapshot: dict, ts: str | None = None) -> None:
     """직무별 점수 스냅샷을 시계열로 append. ts 미지정 시 현재 UTC."""

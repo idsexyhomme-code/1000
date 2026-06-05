@@ -59,6 +59,7 @@ class Affected:
     direction: str         # automation | wage-pressure | tool-adoption | regulation | demand-growth
     reason_ko: str
     event_kind: str = "evidence"  # evidence | employment | regulation
+    dedup_key: str = ""    # 영향별 클러스터 키(technology+vendor). 비면 이벤트 키로 fallback
 
     def sign(self) -> int:
         # demand-growth만 압력을 낮춤(-), 나머지는 +
@@ -137,7 +138,7 @@ class ScoringEngine:
         chosen: dict[tuple, tuple] = {}
         for ev in events:
             for aff in ev.affected:
-                base_key = ev.dedup_key or ev.event_id
+                base_key = aff.dedup_key or ev.dedup_key or ev.event_id
                 key = (base_key, aff.job_id, aff.task_id, aff.direction)
                 age = max(0.0, (now - ev.published_dt()).total_seconds() / 86400)
                 d = raw_delta(aff, ev.source_tier) * decay_factor(aff.event_kind, age)

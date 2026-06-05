@@ -68,13 +68,10 @@
 - **R3a (구현+라이브검증) ✅:** `src/store.py`(이벤트 스토어 + 점수로그 time series, 직전대비 델타) · `src/gemini_scorer.py`(Gemini 2.5 Pro 5요인 점수화, 키는 env GEMINI_API_KEY, responseMimeType=json + 자체검증) · `src/crawler.py` RSSSource(stdlib urllib+xml, RSS/Atom). **라이브 테스트 통과:** store 시계열·델타 / TechCrunch 실수집 3건 / Gemini가 영향없는 업무 정확히 제외하고 5요인 JSON 반환. 런타임 생성물(data/events, data/scores)은 .gitignore.
   - **[자율결정]** R3 분량 커서 R3a(모듈+검증)/R3b(배선+통계)로 분할.
 - **R3b-1 (파이프라인 배선+라이브검증) ✅:** `src/pipeline.py` — fetch→관련성게이트→Gemini 점수화→Event저장→**전체 히스토리 감쇠 재점수(=mean-reversion ③)**→점수로그 append. 라이브 통과(OpenAI 블로그 'Endava' 기사 실채점, 멱등성 OK). **[자율결정+라이브 결함수정]** 벤더 자기홍보 블로그(openai/google/anthropic)를 tier1→**tier3(PR, max+2)** 강등 — 실데이터에서 벤더PR이 adoption/scale 펌핑하는 것 포착, 주니어지수 정정.
-- **R3b-2 (다음, Codex 리뷰 반영) — correctness 하드닝:**
-  - ★최우선 **원자적 Event 저장**: job 일부 Gemini 실패 시 partial로 굳어 영구 재시도 안됨(데이터손실). `status: pending/complete/failed` 도입, 전 job 완료 전엔 final 취급 금지.
-  - **구조화 dedup_key**: 현재 ""→event_id fallback이라 클러스터링 無(논문→데모→GA 중복가산). Gemini 응답에서 technology/vendor/claim_type 추출해 키 구성.
+- **R3b-2-a (수집/저장 정합성) ✅:** ①원자적 Event 저장(`status` complete/irrelevant/failed, 부분실패는 재시도, recompute는 complete만 반영) ②구조화 dedup_key(Gemini가 technology/vendor 반환→affected별 키, 논문→데모→GA 클러스터) ③_event_id 강건화(추적파라미터만 제거하는 canonical URL — Codex가 ?id 충돌 지적해 정밀화) ④조건부 스냅샷 append(index≥0.1·날씨 변화 시만). 라이브+Codex 교차검증 통과(Codex fix-first 2건 반영: URL충돌·affected별 키).
+- **R3b-2-b (다음) — 나머지 하드닝:**
   - **이벤트 만료/프루닝**: decayed_delta<ε 또는 보존기간 지난 non-regulation 이벤트 아카이브(무한 재읽기 방지).
-  - **스냅샷 append 조건화**: 변화 있을 때만(로그 bloat·delta 노이즈 방지).
   - **factor별 신뢰도 분리**: 벤더 발표는 maturity엔 신뢰, adoption/scale만 낮춤(블랭킷 tier3 too blunt).
-  - **_event_id 강건화**: canonical URL 정규화 + guid/published 보조키.
   - **비용/쿼터**: article 단위 batch scoring + (article,job,prompt_ver) 캐시 + 429/5xx backoff.
   - **남은 R2.5**: ① CI propagation(weighted) ② Tier3 누적 가중치 상한 ④ 응답계약 task-first ⑤ override 분리.
 - **R4 (이후):** 카카오 채널봇 카피·UI (Gemini 투입) + 미니웹 결과리포트(전략가타입 공유) + 유료트리거.

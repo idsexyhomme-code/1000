@@ -28,8 +28,10 @@ _PROMPT = """\
 [대상 업무 목록(task_id: 이름)]
 {task_lines}
 
-각 영향 업무를 아래 JSON 스키마로만 출력(설명 텍스트 금지):
+아래 JSON 스키마로만 출력(설명 텍스트 금지):
 {{
+  "technology": "<핵심 기술/제품명 1개, 예: Sora·Codex. 모르면 빈칸>",
+  "vendor": "<해당 기술 제공 기업명, 예: OpenAI. 모르면 빈칸>",
   "affected": [
     {{
       "task_id": "<목록의 task_id 중 하나>",
@@ -40,6 +42,7 @@ _PROMPT = """\
     }}
   ]
 }}
+※ technology/vendor는 같은 기술진척(논문→데모→GA)을 한 묶음으로 보기 위한 클러스터 키다. 일관된 표기를 써라.
 
 채점 기준(앵커):
 - proximity: 핵심업무 직접 타격 3 / 주변 1 / 무관 0
@@ -80,8 +83,9 @@ def _validate(data: dict, valid_task_ids: set[str]) -> list[dict]:
 
 
 def score_article(job_name: str, tasks: list[dict], title: str, body: str,
-                  timeout: int = 60) -> list[dict]:
-    """뉴스 1건을 Gemini로 5요인 점수화 → 검증된 Affected dict 리스트."""
+                  timeout: int = 60) -> dict:
+    """뉴스 1건을 Gemini로 5요인 점수화.
+    반환: {"technology", "vendor", "affected": [...]}  (meta는 dedup 클러스터 키용)."""
     valid_ids = {t["task_id"] for t in tasks}
     task_lines = "\n".join(f"- {t['task_id']}: {t['name_ko']}" for t in tasks)
     prompt = _PROMPT.format(job_name=job_name, title=title, body=body[:4000],
@@ -98,7 +102,12 @@ def score_article(job_name: str, tasks: list[dict], title: str, body: str,
     with urllib.request.urlopen(req, timeout=timeout) as r:
         resp = json.load(r)
     text = resp["candidates"][0]["content"]["parts"][0]["text"]
-    return _validate(json.loads(text), valid_ids)
+    data = json.loads(text)
+    return {
+        "technology": str(data.get("technology", "")).strip(),
+        "vendor": str(data.get("vendor", "")).strip(),
+        "affected": _validate(data, valid_ids),
+    }
 
 
 if __name__ == "__main__":

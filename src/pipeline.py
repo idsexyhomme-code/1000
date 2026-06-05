@@ -14,9 +14,11 @@ from __future__ import annotations
 
 import hashlib
 import os
+import re
 import sys
 from datetime import datetime, timezone
 from email.utils import parsedate_to_datetime
+from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
@@ -32,8 +34,32 @@ _AI_KEYWORDS = ("ai", "gpt", "llm", "model", "automat", "agent", "generative", "
                 "anthropic", "gemini", "인공지능", "자동화", "에이전트", "생성형", "모델")
 
 
+_TRACKING_RE = re.compile(r"^(utm_|fbclid$|gclid$|mc_|igshid$|ref$|ref_src$|_hsenc$|_hsmi$)", re.I)
+
+
+def _canonical_url(u: str) -> str:
+    """추적 파라미터만 제거 + 프래그먼트/trailing slash 제거 + 호스트 소문자.
+    ★식별 query(id, p, story 등)는 보존 — ?id=1과 ?id=2가 같은 ID로 충돌하지 않게(Codex)."""
+    if not u:
+        return ""
+    try:
+        s = urlsplit(u)
+        q = [(k, v) for k, v in parse_qsl(s.query, keep_blank_values=True)
+             if not _TRACKING_RE.match(k)]
+        return urlunsplit((s.scheme.lower(), s.netloc.lower(), s.path.rstrip("/"),
+                           urlencode(q), ""))
+    except Exception:
+        return u
+
+
+def _norm_title(t: str) -> str:
+    return re.sub(r"\s+", " ", (t or "").strip().lower())
+
+
 def _event_id(url: str, title: str) -> str:
-    return hashlib.sha1((url or title).encode("utf-8")).hexdigest()[:16]
+    """canonical URL 우선, 없으면 정규화된 제목으로 안정적 ID."""
+    basis = _canonical_url(url) or _norm_title(title)
+    return hashlib.sha1(basis.encode("utf-8")).hexdigest()[:16]
 
 
 def _norm_date(s: str, now: datetime) -> str:
@@ -59,7 +85,8 @@ def _is_relevant(title: str, body: str) -> bool:
 def _to_event(e: dict) -> Event:
     affs = [Affected(job_id=a["job_id"], task_id=a["task_id"], factors=a["factors"],
                      direction=a["direction"], reason_ko=a.get("reason_ko", ""),
-                     event_kind=a.get("event_kind", "evidence")) for a in e["affected"]]
+                     event_kind=a.get("event_kind", "evidence"),
+                     dedup_key=a.get("dedup_key", "")) for a in e["affected"]]
     return Event(event_id=e["event_id"], title=e["title"], url=e["url"],
                  source_tier=e["source_tier"], published_at=e["published_at"],
                  affected=affs, dedup_key=e.get("dedup_key", ""))
@@ -81,29 +108,38 @@ def ingest(sources=None, now=None, max_per_source: int | None = None) -> int:
             articles = articles[:max_per_source]
         for art in articles:
             eid = _event_id(art.url, art.title)
-            if store.event_exists(eid):
-                continue  # 멱등: 이미 처리한 기사
+            st = store.event_status(eid)
+            if st in ("complete", "irrelevant"):
+                continue  # 멱등: 처리완료. 'failed'/None은 재시도.
             published = _norm_date(art.published_at, now)
             tier = tier_of(art.url)
+            base = {"event_id": eid, "title": art.title, "url": art.url,
+                    "source_tier": tier, "published_at": published}
             if not _is_relevant(art.title, art.body):
-                store.save_event({"event_id": eid, "title": art.title, "url": art.url,
-                                  "source_tier": tier, "published_at": published,
-                                  "affected": [], "dedup_key": ""})
+                store.save_event({**base, "affected": [], "dedup_key": "",
+                                  "status": "irrelevant"})
                 continue
-            affected_all = []
+            # 전 job 점수화 — 하나라도 실패하면 'failed'로 저장해 다음 실행에 재시도(원자성)
+            affected_all, tech, vendor, any_failed = [], "", "", False
             for job_id, job in eng.jobs.items():
                 try:
-                    affs = gemini_scorer.score_article(
+                    res = gemini_scorer.score_article(
                         job["job_name_ko"], job["tasks"], art.title, art.body)
                 except Exception as e:
                     print(f"[점수화 실패] {art.title[:40]}: {type(e).__name__} {e}")
+                    any_failed = True
                     continue
-                for a in affs:
-                    affected_all.append({**a, "job_id": job_id})
-            store.save_event({"event_id": eid, "title": art.title, "url": art.url,
-                              "source_tier": tier, "published_at": published,
-                              "affected": affected_all, "dedup_key": ""})
-            if affected_all:
+                jkey = f"{res.get('technology', '')}+{res.get('vendor', '')}".strip("+").lower()
+                if res["affected"] and not tech:
+                    tech, vendor = res.get("technology", ""), res.get("vendor", "")
+                for a in res["affected"]:
+                    affected_all.append({**a, "job_id": job_id, "dedup_key": jkey})
+            # 구조화 dedup_key: technology+vendor → 같은 기술진척(논문→데모→GA) 클러스터
+            dedup_key = f"{tech}+{vendor}".strip("+").lower() if (tech or vendor) else ""
+            status = "failed" if any_failed else "complete"
+            store.save_event({**base, "affected": affected_all,
+                              "dedup_key": dedup_key, "status": status})
+            if affected_all and not any_failed:
                 scored += 1
     return scored
 
@@ -112,14 +148,22 @@ def recompute(now=None) -> dict:
     """전체 이벤트 히스토리(감쇠)로 현재 지수 재계산 + 점수로그 append (mean-reversion)."""
     now = now or datetime.now(timezone.utc)
     eng = ScoringEngine(JOBS_DIR)
-    events = [_to_event(e) for e in store.load_events() if e.get("affected")]
+    # status=='complete' 이벤트만 (부분실패는 재시도 전까지 점수에서 제외)
+    events = [_to_event(e) for e in store.load_events()
+              if e.get("affected") and e.get("status") == "complete"]
     result = eng.score(events, now=now)
     for job_id, r in result.items():
+        prev = store.latest_score(job_id)
         delta = store.delta_since_prev(job_id, r["index"])
-        store.append_score(job_id, {
-            "index": r["index"], "weather": r["weather"], "delta": delta,
-            "top_drivers": r["top_drivers"],
-        }, ts=now.isoformat())
+        # 조건부 append: 지수/날씨가 의미있게 바뀐 경우만 (로그 bloat·델타노이즈 방지)
+        changed = (prev is None
+                   or abs(r["index"] - prev.get("index", -999.0)) >= 0.1
+                   or r["weather"] != prev.get("weather"))
+        if changed:
+            store.append_score(job_id, {
+                "index": r["index"], "weather": r["weather"], "delta": delta,
+                "top_drivers": r["top_drivers"],
+            }, ts=now.isoformat())
     return result
 
 
