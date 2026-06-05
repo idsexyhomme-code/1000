@@ -1,0 +1,32 @@
+# === 시크릿 보호 (절대 커밋 금지) ===
+.env
+.env.*
+*.key
+*.pem
+secrets*
+*api*key*
+*token*
+.secrets/
+
+# === 빌드/캐시 ===
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+dist/
+build/
+
+# === OS / 에디터 ===
+.DS_Store
+*.log
+.idea/
+.vscode/
+
+# === 임시 ===
+tmp/
+*.tmp
+
+# === 하니스/무관 프로젝트 제외 ===
+.claude/
+upsight/
