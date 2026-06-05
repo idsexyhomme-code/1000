@@ -15,12 +15,16 @@ from dataclasses import dataclass
 
 # 소스 티어링 (§1.3) — 도메인 → tier 매핑 (확장 예정)
 SOURCE_TIER_MAP = {
-    # Tier1: 공식/공시/정부
-    "openai.com": 1, "blog.google": 1, "anthropic.com": 1, "kostat.go.kr": 1, "work.go.kr": 1,
-    # Tier2: 주요 언론
-    "techcrunch.com": 2, "theverge.com": 2, "yna.co.kr": 2, "zdnet.co.kr": 2,
-    # Tier3: 벤더 PR/블로그/커뮤니티 (단독 max +2)
-    "medium.com": 3, "reddit.com": 3, "news.ycombinator.com": 3,
+    # Tier1: 중립·공식 통계/공시 (정부·통계·검증된 고용지표). ★벤더 자기홍보는 제외.
+    "kostat.go.kr": 1, "work.go.kr": 1, "bls.gov": 1, "oecd.org": 1,
+    # Tier2: 주요 독립 언론
+    "techcrunch.com": 2, "theverge.com": 2, "arstechnica.com": 2,
+    "yna.co.kr": 2, "zdnet.co.kr": 2,
+    # Tier3: 벤더 자기홍보 블로그 + 커뮤니티 (단독 max +2).
+    #   벤더는 자사툴 '능력(maturity)'엔 권위 있으나 '도입/규모(adoption/scale)' 주장은 PR →
+    #   펌핑 방지 위해 보수 처리 (Codex 리뷰 #2 반영).
+    "openai.com": 3, "blog.google": 3, "anthropic.com": 3, "ai.meta.com": 3,
+    "deepmind.google": 3, "medium.com": 3, "reddit.com": 3, "news.ycombinator.com": 3,
 }
 
 
