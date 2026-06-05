@@ -15,13 +15,18 @@ import os
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
 
-# ── 출처 티어 → 신뢰도/델타캡 (§1.3 펌핑 방어) ──────────────────────────
-# Tier1 공시·정부통계·고객사 직접발표 / Tier2 주요 언론 / Tier3 벤더·블로그
-SOURCE_TIER = {
-    1: {"confidence": 1.0, "delta_cap": 8.0},
-    2: {"confidence": 0.7, "delta_cap": 5.0},
-    3: {"confidence": 0.4, "delta_cap": 2.0},  # 벤더 단독 출처 max +2
+# ── 출처 티어 → factor별 신뢰도 + 델타캡 (§1.3 펌핑 방어, Codex 리뷰 반영) ──
+# 핵심: 벤더(Tier3)는 자사툴 '능력(maturity)'엔 권위 있으나 '도입/규모(adoption/scale)' 주장은 PR.
+#       전역 신뢰도 1개가 아니라 factor별로 분리해, 능력 신호는 살리고 PR 펌핑만 눌러야 함.
+TIER_DELTA_CAP = {1: 8.0, 2: 5.0, 3: 2.0}  # 출처별 1건 델타 절대 상한
+FACTOR_CONF = {
+    1: {"proximity": 1.0, "maturity": 1.0, "adoption": 1.0, "irreversibility": 1.0, "scale": 1.0},
+    2: {"proximity": 0.8, "maturity": 0.8, "adoption": 0.7, "irreversibility": 0.8, "scale": 0.7},
+    3: {"proximity": 0.7, "maturity": 0.9, "adoption": 0.3, "irreversibility": 0.6, "scale": 0.3},
 }
+TIER3_JOB_CAP = 6.0   # Tier3(벤더/커뮤니티) 누적 기여 상한/직업 — 대량 PR 펌핑 방지
+EPSILON = 0.05        # 드라이버 표시 임계 (점수 누적엔 미적용 — 작은 신호 다수 보존)
+SOURCE_TIERS = set(FACTOR_CONF)  # 유효 출처 티어 집합
 
 # ── 델타 5요인 (§1.2). 각 요인의 최대값 → 합 14 → 0~8로 매핑 ──────────
 FACTOR_MAX = {"proximity": 3, "maturity": 3, "adoption": 3, "irreversibility": 3, "scale": 2}
@@ -91,13 +96,15 @@ def raw_delta(aff: Affected, source_tier: int) -> float:
     - 출처 불명/미지 티어 → delta=0 (§1.4 '근거 없으면 변동 금지').
     - 요인은 0..max로 강제 클램프 (음수 주입으로 부호 뒤집힘 방지).
     """
-    if source_tier not in SOURCE_TIER:
+    if source_tier not in SOURCE_TIERS:
         return 0.0  # no source → delta=0
-    s = sum(max(0, min(int(aff.factors.get(k, 0)), mx)) for k, mx in FACTOR_MAX.items())
-    base = (s / FACTOR_SUM_MAX) * DELTA_SPAN          # 0~8
-    tier = SOURCE_TIER[source_tier]
-    val = base * tier["confidence"] * aff.sign()
-    cap = tier["delta_cap"]                            # 벤더 단독 출처 max +2 등
+    conf = FACTOR_CONF[source_tier]
+    # factor별 신뢰도 가중합 → 벤더 maturity는 살고 adoption/scale은 눌림
+    adj = sum(max(0, min(int(aff.factors.get(k, 0)), mx)) * conf.get(k, 0.5)
+              for k, mx in FACTOR_MAX.items())
+    base = (adj / FACTOR_SUM_MAX) * DELTA_SPAN         # 0~8
+    val = base * aff.sign()
+    cap = TIER_DELTA_CAP[source_tier]                  # 벤더 단독 출처 max +2 등
     return max(-cap, min(cap, val))
 
 
@@ -149,13 +156,20 @@ class ScoringEngine:
         # ── 2) 결정적 순서: Tier 우선(1>2>3) → |delta| 큰 순 (cap 공정성) ──
         ordered = sorted(chosen.values(), key=lambda x: (x[0].source_tier, -abs(x[2])))
 
-        # ── 3) 날짜별·직업별 cap: 상승/하락 버킷 분리 + 잔여분 부분 클램프 ──
+        # ── 3) 프루닝 + Tier3 누적캡 + 날짜별 daily cap (상승/하락 버킷, 부분 클램프) ──
         task_delta: dict[tuple, float] = {}
-        used: dict[tuple, float] = {}   # (job_id, date, 'up'|'down') -> 누적 |Δ|
+        used: dict[tuple, float] = {}       # (job_id, date, 'up'|'down') -> 누적 |Δ|
+        tier3_used: dict[str, float] = {}   # job_id -> Tier3 누적 |기여|
         drivers: dict[str, list] = {}
         for ev, aff, d in ordered:
             if d == 0:
                 continue
+            # Tier3(벤더/커뮤니티) 누적 상한 게이트 — 대량 PR 펌핑 차단
+            if ev.source_tier == 3:
+                rem3 = TIER3_JOB_CAP - tier3_used.get(aff.job_id, 0.0)
+                if rem3 <= 0:
+                    continue
+                d = math.copysign(min(abs(d), rem3), d)
             day = ev.published_dt().date().isoformat()
             bucket = "up" if d > 0 else "down"
             ukey = (aff.job_id, day, bucket)
@@ -164,12 +178,19 @@ class ScoringEngine:
                 continue
             d_eff = math.copysign(min(abs(d), remaining), d)   # 폭주 방지: 잔여만큼만
             used[ukey] = used.get(ukey, 0.0) + abs(d_eff)
+            if ev.source_tier == 3:
+                tier3_used[aff.job_id] = tier3_used.get(aff.job_id, 0.0) + abs(d_eff)
+            # ★점수 누적엔 모든 비-0 기여 반영 (작은 신호 다수가 합쳐 의미가질 수 있음 — Codex)
             task_delta[(aff.job_id, aff.task_id)] = (
                 task_delta.get((aff.job_id, aff.task_id), 0.0) + d_eff)
-            tier = SOURCE_TIER[ev.source_tier]
+            # 드라이버 목록은 표시·감사용 — 미미한 기여(<EPSILON)는 여기서만 숨김
+            if abs(d_eff) < EPSILON:
+                continue
+            conf = FACTOR_CONF[ev.source_tier]
             drivers.setdefault(aff.job_id, []).append({
                 "task_id": aff.task_id, "delta": round(d_eff, 1), "direction": aff.direction,
-                "source_tier": ev.source_tier, "confidence": tier["confidence"],
+                "source_tier": ev.source_tier,
+                "confidence": round(sum(conf.values()) / len(conf), 2),
                 "url": ev.url, "reason_ko": aff.reason_ko, "title": ev.title,
                 "audit_label": "editorial_override" if getattr(ev, "override", False) else "auto",
             })

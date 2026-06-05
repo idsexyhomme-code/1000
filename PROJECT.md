@@ -69,9 +69,11 @@
   - **[자율결정]** R3 분량 커서 R3a(모듈+검증)/R3b(배선+통계)로 분할.
 - **R3b-1 (파이프라인 배선+라이브검증) ✅:** `src/pipeline.py` — fetch→관련성게이트→Gemini 점수화→Event저장→**전체 히스토리 감쇠 재점수(=mean-reversion ③)**→점수로그 append. 라이브 통과(OpenAI 블로그 'Endava' 기사 실채점, 멱등성 OK). **[자율결정+라이브 결함수정]** 벤더 자기홍보 블로그(openai/google/anthropic)를 tier1→**tier3(PR, max+2)** 강등 — 실데이터에서 벤더PR이 adoption/scale 펌핑하는 것 포착, 주니어지수 정정.
 - **R3b-2-a (수집/저장 정합성) ✅:** ①원자적 Event 저장(`status` complete/irrelevant/failed, 부분실패는 재시도, recompute는 complete만 반영) ②구조화 dedup_key(Gemini가 technology/vendor 반환→affected별 키, 논문→데모→GA 클러스터) ③_event_id 강건화(추적파라미터만 제거하는 canonical URL — Codex가 ?id 충돌 지적해 정밀화) ④조건부 스냅샷 append(index≥0.1·날씨 변화 시만). 라이브+Codex 교차검증 통과(Codex fix-first 2건 반영: URL충돌·affected별 키).
-- **R3b-2-b (다음) — 나머지 하드닝:**
-  - **이벤트 만료/프루닝**: decayed_delta<ε 또는 보존기간 지난 non-regulation 이벤트 아카이브(무한 재읽기 방지).
-  - **factor별 신뢰도 분리**: 벤더 발표는 maturity엔 신뢰, adoption/scale만 낮춤(블랭킷 tier3 too blunt).
+- **R3b-2-b (점수엔진 정확도) ✅:** ①**factor별 신뢰도 분리**(FACTOR_CONF[tier][factor] — 벤더 maturity 0.9 신뢰/adoption·scale 0.3 보수, 전역 신뢰도 1개를 factor별로 대체) ②**Tier3 누적 캡**(TIER3_JOB_CAP=6/직업, 대량 PR 펌핑 차단) ③**드라이버 표시 프루닝**(점수 누적엔 전부 반영 — Codex가 '작은신호 다수 소멸' 지적해 표시용으로만 제한). 라이브+단위테스트+Codex fix-first 통과(작은신호5건→컷편집 70→72.3 누적 확인).
+- **R3b-2-c (다음) — 잔여 하드닝:**
+  - **이벤트 만료/아카이브**: 보존기간 지난 non-regulation 이벤트 store에서 분리(무한 재읽기 방지) — storage 레벨.
+  - **CI propagation(weighted)**: 태스크 신뢰구간을 직업지수로 전파(현재 baseline CI 표시만).
+  - **응답계약 task-first**: 직업 단일 index를 secondary로, 태스크 우선 구조.
+  - **editorial override 분리**: 운영자 수동보정을 일반 Event와 별도 경로 + 감사로그.
   - **비용/쿼터**: article 단위 batch scoring + (article,job,prompt_ver) 캐시 + 429/5xx backoff.
-  - **남은 R2.5**: ① CI propagation(weighted) ② Tier3 누적 가중치 상한 ④ 응답계약 task-first ⑤ override 분리.
 - **R4 (이후):** 카카오 채널봇 카피·UI (Gemini 투입) + 미니웹 결과리포트(전략가타입 공유) + 유료트리거.
