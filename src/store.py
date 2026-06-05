@@ -30,6 +30,23 @@ def save_event(ev: dict) -> str:
     return path
 
 
+AUDIT_LOG = os.path.join(_DATA, "overrides_audit.jsonl")
+
+
+def save_override(ev: dict, operator: str, reason: str) -> str:
+    """운영자 수동보정 이벤트 — 일반 Event와 구조적으로 분리(override=True) + 별도 감사로그(R2.5 ⑤).
+    점수엔 반영되되 드라이버에 editorial_override 라벨로 노출돼 사후 감사 가능."""
+    _ensure()
+    ev = {**ev, "override": True, "status": "complete",
+          "audit": {"operator": operator, "reason": reason}}
+    path = save_event(ev)
+    rec = {"ts": datetime.now(timezone.utc).isoformat(), "event_id": ev["event_id"],
+           "operator": operator, "reason": reason}
+    with open(AUDIT_LOG, "a", encoding="utf-8") as f:
+        f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    return path
+
+
 def load_events() -> list[dict]:
     _ensure()
     out = []

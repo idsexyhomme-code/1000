@@ -81,6 +81,7 @@ class Event:
     affected: list[Affected]
     # 같은 (기술+벤더+영향태스크+주장유형)은 1건으로 dedup (§1.2 이벤트 클러스터링)
     dedup_key: str = ""
+    override: bool = False  # 운영자 수동보정 이벤트 — 감사로그에 editorial_override로 라벨
 
     def published_dt(self) -> datetime:
         return datetime.fromisoformat(self.published_at.replace("Z", "+00:00"))
@@ -192,7 +193,7 @@ class ScoringEngine:
                 "source_tier": ev.source_tier,
                 "confidence": round(sum(conf.values()) / len(conf), 2),
                 "url": ev.url, "reason_ko": aff.reason_ko, "title": ev.title,
-                "audit_label": "editorial_override" if getattr(ev, "override", False) else "auto",
+                "audit_label": "editorial_override" if ev.override else "auto",
             })
 
         # 직업별 집계: 직업지수 = 태스크지수 가중평균
@@ -216,13 +217,16 @@ class ScoringEngine:
             job_index = widx / wsum if wsum else job["baseline"]["index"]
             lbl, desc = to_weather(job_index)
             ds = sorted(drivers.get(job_id, []), key=lambda x: -abs(x["delta"]))
+            ranked = sorted(tasks_out, key=lambda x: -x["index"])
             out[job_id] = {
                 "job_name_ko": job["job_name_ko"],
-                "index": round(job_index, 1),
+                # ★task-first 응답계약: 태스크가 본체, 직업 단일지수는 보조 롤업 (단정 금지)
+                "headline_task": ranked[0] if ranked else None,
+                "tasks": ranked,
+                "top_drivers": ds[:3],          # 점수를 민 핵심 근거 — 유료 트리거에 사용
+                "index": round(job_index, 1),   # 보조 롤업 지표 (secondary)
                 "ci": job["baseline"].get("ci", 12),
                 "weather": lbl, "weather_desc": desc,
-                "tasks": sorted(tasks_out, key=lambda x: -x["index"]),
-                "top_drivers": ds[:3],   # 점수를 민 핵심 근거 — 유료 트리거에 사용
             }
         return out
 

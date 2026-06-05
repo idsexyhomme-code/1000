@@ -89,7 +89,8 @@ def _to_event(e: dict) -> Event:
                      dedup_key=a.get("dedup_key", "")) for a in e["affected"]]
     return Event(event_id=e["event_id"], title=e["title"], url=e["url"],
                  source_tier=e["source_tier"], published_at=e["published_at"],
-                 affected=affs, dedup_key=e.get("dedup_key", ""))
+                 affected=affs, dedup_key=e.get("dedup_key", ""),
+                 override=e.get("override", False))
 
 
 def ingest(sources=None, now=None, max_per_source: int | None = None) -> int:
