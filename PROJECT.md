@@ -72,6 +72,7 @@
 - **R3b-2-b (점수엔진 정확도) ✅:** ①**factor별 신뢰도 분리**(FACTOR_CONF[tier][factor] — 벤더 maturity 0.9 신뢰/adoption·scale 0.3 보수, 전역 신뢰도 1개를 factor별로 대체) ②**Tier3 누적 캡**(TIER3_JOB_CAP=6/직업, 대량 PR 펌핑 차단) ③**드라이버 표시 프루닝**(점수 누적엔 전부 반영 — Codex가 '작은신호 다수 소멸' 지적해 표시용으로만 제한). 라이브+단위테스트+Codex fix-first 통과(작은신호5건→컷편집 70→72.3 누적 확인).
 - **R3b-2-c (task-first + override) ✅:** ④`headline_task`로 태스크 우선 노출, 직업 index는 secondary 명시(소비자 무손상). ⑤Event.override 필드 + `store.save_override()`(override=True + 별도 감사로그 `overrides_audit.jsonl`)로 운영자 보정 구조 분리. 회귀 통과.
 - **R4a (카카오 푸시 카피 생성기) ✅:** `src/notify.py` — 점수 스냅샷→푸시 1줄. Gemini 2.5 Pro 카피 + 가드레일 후처리(금칙어 '대체된다' 등 차단) + Gemini 없이도 동작하는 폴백 템플릿. 라이브 통과(업무우선+근거+단정없음+행동유도). 한계: 금칙어 리스트는 백스톱일 뿐 의미적 조작 전부는 못 잡음.
-- **R4b (다음):** 미니웹 결과리포트 — '전략가 타입'(MBTI식 공유 UI, Gemini 카피) + 유료트리거("방금 본 내 문제→상위5% 해법") + 기상예보 시각화. HTML/정적.
+- **R4b (미니웹 결과리포트) ✅:** `src/report.py` — scoring 결과→모바일 우선 정적 HTML. 전략가 타입(Gemini, 위협+기회 동시 → 공유 가능, 예: "AI 편집 설계자형🧠") + 기상예보 시각화 + 태스크별 압력바 + 근거뉴스(출처 배지+링크) + 유료트리거. 라이브+Codex fix-first 통과(XSS scheme 차단 _safe_url). 샘플: `web/sample-report.html`(모바일에서 열어보면 실제 UI).
+- **R4c (다음):** 봇 서버 골격 — 카카오 채널 웹훅 수신 + 직업 선택 플로우 + notify(푸시카피)·report(웹리포트) 연결 + 일/주 배치 트리거. 정적→동작하는 서비스로.
 - **R5 (하드닝, 이후로 미룸):** 이벤트 만료·아카이브 / CI propagation(weighted) / 비용·쿼터(batch·캐시·backoff) / notify 가드레일 의미검증 강화.
 - **R4 (이후):** 카카오 채널봇 카피·UI (Gemini 투입) + 미니웹 결과리포트(전략가타입 공유) + 유료트리거.
