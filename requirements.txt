@@ -1,0 +1,5 @@
+# R2: 표준 라이브러리만으로 점수엔진 동작 (의존성 0)
+# R3에서 추가 예정:
+# requests        # 뉴스/RSS 수집
+# feedparser      # RSS 파싱
+# google-generativeai  # Gemini 2.5 Pro 점수화

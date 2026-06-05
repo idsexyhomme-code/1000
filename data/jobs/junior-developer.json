@@ -1,0 +1,19 @@
+{
+  "job_id": "junior-developer",
+  "job_name_ko": "주니어 개발자",
+  "job_name_en": "Junior Developer",
+  "baseline": {
+    "index": 54,
+    "ci": 13,
+    "source": "O*NET 15-1252 + 채용공고 추세 + 업무시간 비중 추정 (캘리브레이션 필요)",
+    "note": "채용공고 감소는 단독 증거 금지 — 경기·계절 조정 필요 (루브릭 §1.2)"
+  },
+  "tasks": [
+    {"task_id": "boilerplate-coding", "name_ko": "반복 코드작성",   "weight": 0.22, "baseline": 72, "ci": 10},
+    {"task_id": "bug-fixing",         "name_ko": "단순 버그수정",   "weight": 0.18, "baseline": 60, "ci": 11},
+    {"task_id": "testing",            "name_ko": "테스트 작성",     "weight": 0.15, "baseline": 64, "ci": 10},
+    {"task_id": "code-review",        "name_ko": "코드리뷰 보조",   "weight": 0.12, "baseline": 40, "ci": 12},
+    {"task_id": "architecture",       "name_ko": "설계·아키텍처",   "weight": 0.18, "baseline": 20, "ci": 10},
+    {"task_id": "debugging-complex",  "name_ko": "복합 디버깅",     "weight": 0.15, "baseline": 35, "ci": 12}
+  ]
+}

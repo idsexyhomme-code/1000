@@ -1,0 +1,19 @@
+{
+  "job_id": "video-editor",
+  "job_name_ko": "영상편집자",
+  "job_name_en": "Video Editor",
+  "baseline": {
+    "index": 58,
+    "ci": 12,
+    "source": "O*NET 27-4032 + 워크넷 + 채용공고 업무비중 추정 (캘리브레이션 필요)",
+    "note": "베이스라인은 임의값 금지. 관측데이터로 재산정 + 신뢰구간 표기 (루브릭 §1.1)"
+  },
+  "tasks": [
+    {"task_id": "cut-editing",  "name_ko": "컷 편집",        "weight": 0.25, "baseline": 70, "ci": 10},
+    {"task_id": "subtitle",     "name_ko": "자막 생성",      "weight": 0.15, "baseline": 82, "ci": 8},
+    {"task_id": "color-grading","name_ko": "색보정",        "weight": 0.13, "baseline": 52, "ci": 12},
+    {"task_id": "directing",    "name_ko": "현장 디렉팅·기획","weight": 0.22, "baseline": 22, "ci": 10},
+    {"task_id": "sound-mixing", "name_ko": "사운드·믹싱",    "weight": 0.10, "baseline": 48, "ci": 12},
+    {"task_id": "thumbnail",    "name_ko": "썸네일·그래픽",  "weight": 0.15, "baseline": 74, "ci": 10}
+  ]
+}
