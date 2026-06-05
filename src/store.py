@@ -1,0 +1,74 @@
+"""
+커리어 시그널 — 영속화 계층 (이벤트 스토어 + 점수로그 time series)
+
+stdlib만 사용(의존성 0). 이벤트는 JSON 파일, 점수 스냅샷은 JSONL append.
+점수로그가 곧 mean-reversion(이전 점수→baseline 회귀)과 '주식 호가창' 시계열의 기반 (R2.5).
+"""
+from __future__ import annotations
+
+import json
+import os
+from datetime import datetime, timezone
+
+_DATA = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
+EVENTS_DIR = os.path.join(_DATA, "events")
+SCORES_DIR = os.path.join(_DATA, "scores")
+
+
+def _ensure() -> None:
+    os.makedirs(EVENTS_DIR, exist_ok=True)
+    os.makedirs(SCORES_DIR, exist_ok=True)
+
+
+# ── 이벤트 스토어 ─────────────────────────────────────────────────────
+def save_event(ev: dict) -> str:
+    """점수화 완료된 이벤트(dict)를 저장. event_id로 멱등."""
+    _ensure()
+    path = os.path.join(EVENTS_DIR, f"{ev['event_id']}.json")
+    with open(path, "w", encoding="utf-8") as f:
+        json.dump(ev, f, ensure_ascii=False, indent=2)
+    return path
+
+
+def load_events() -> list[dict]:
+    _ensure()
+    out = []
+    for fn in sorted(os.listdir(EVENTS_DIR)):
+        if fn.endswith(".json"):
+            with open(os.path.join(EVENTS_DIR, fn), encoding="utf-8") as f:
+                out.append(json.load(f))
+    return out
+
+
+def event_exists(event_id: str) -> bool:
+    return os.path.exists(os.path.join(EVENTS_DIR, f"{event_id}.json"))
+
+
+# ── 점수로그 (time series) ───────────────────────────────────────────
+def append_score(job_id: str, snapshot: dict, ts: str | None = None) -> None:
+    """직무별 점수 스냅샷을 시계열로 append. ts 미지정 시 현재 UTC."""
+    _ensure()
+    rec = {"ts": ts or datetime.now(timezone.utc).isoformat(), **snapshot}
+    with open(os.path.join(SCORES_DIR, f"{job_id}.jsonl"), "a", encoding="utf-8") as f:
+        f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+
+
+def score_history(job_id: str, limit: int | None = None) -> list[dict]:
+    path = os.path.join(SCORES_DIR, f"{job_id}.jsonl")
+    if not os.path.exists(path):
+        return []
+    rows = [json.loads(ln) for ln in open(path, encoding="utf-8") if ln.strip()]
+    return rows[-limit:] if limit else rows
+
+
+def latest_score(job_id: str) -> dict | None:
+    h = score_history(job_id, limit=1)
+    return h[0] if h else None
+
+
+def delta_since_prev(job_id: str, current_index: float) -> float | None:
+    """직전 스냅샷 대비 변화량 — 푸시 알림 '+N' 표기용."""
+    prev = latest_score(job_id)
+    if not prev or "index" not in prev:
+        return None
+    return round(current_index - prev["index"], 1)

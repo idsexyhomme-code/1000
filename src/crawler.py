@@ -8,6 +8,9 @@
 """
 from __future__ import annotations
 
+import hashlib
+import urllib.request
+import xml.etree.ElementTree as ET
 from dataclasses import dataclass
 
 # 소스 티어링 (§1.3) — 도메인 → tier 매핑 (확장 예정)
@@ -69,8 +72,53 @@ def build_dedup_key(technology: str, vendor: str, task_id: str, claim_type: str)
     return f"{technology}+{vendor}+{task_id}+{claim_type}".lower()
 
 
-# R3 TODO:
-#  - RSS/API 소스 어댑터 2~3개 (OpenAI/Google 블로그, 테크 언론, GitHub Trending)
-#  - LLM 점수화 호출 (Gemini 2.5 Pro) + JSON 파싱/검증
-#  - 일/주 단위 배치 + 점수로그(time series) 영속화
-#  - 카카오 채널봇 푸시 연동 (카피는 Gemini 검수)
+def _text(elem, *tags) -> str:
+    for t in tags:
+        node = elem.find(t)
+        if node is not None and node.text:
+            return node.text.strip()
+    return ""
+
+
+class RSSSource(NewsSource):
+    """RSS/Atom 피드 어댑터 (stdlib만). RSS<item>·Atom<entry> 모두 처리."""
+
+    def __init__(self, name: str, url: str, limit: int = 15):
+        self.name = name
+        self.url = url
+        self.limit = limit
+
+    def fetch(self) -> list[RawArticle]:
+        req = urllib.request.Request(self.url, headers={"User-Agent": "career-signal/0.1"})
+        with urllib.request.urlopen(req, timeout=30) as r:
+            root = ET.fromstring(r.read())
+        # 네임스페이스 무시: 태그 localname으로 매칭
+        items = [e for e in root.iter() if e.tag.split("}")[-1] in ("item", "entry")]
+        out: list[RawArticle] = []
+        for it in items[: self.limit]:
+            title = _text(it, "title", "{http://www.w3.org/2005/Atom}title")
+            link = _text(it, "link", "guid")
+            if not link:  # Atom: link는 href 속성
+                ln = it.find("{http://www.w3.org/2005/Atom}link")
+                link = ln.get("href") if ln is not None else ""
+            pub = _text(it, "pubDate", "{http://www.w3.org/2005/Atom}updated",
+                        "{http://purl.org/dc/elements/1.1/}date")
+            body = _text(it, "description", "summary",
+                         "{http://www.w3.org/2005/Atom}summary")
+            if title:
+                out.append(RawArticle(title=title, url=link, published_at=pub, body=body))
+        return out
+
+
+# 기본 소스 레지스트리 (티어는 crawler.tier_of(url)로 자동 판정)
+DEFAULT_SOURCES = [
+    RSSSource("OpenAI Blog", "https://openai.com/blog/rss.xml"),
+    RSSSource("Google AI Blog", "https://blog.google/technology/ai/rss/"),
+    RSSSource("TechCrunch AI", "https://techcrunch.com/category/artificial-intelligence/feed/"),
+]
+
+
+# R3b TODO (다음 이터레이션):
+#  - pipeline 배선: fetch → 직무 관련성 필터 → gemini_scorer.score_article → Event → store
+#  - R2.5: CI propagation / Tier3 누적캡 / mean-reversion 상태모델 / task-first 응답계약 / override 분리
+#  - 카카오 채널봇 푸시 연동 (카피는 Gemini 검수, R4)

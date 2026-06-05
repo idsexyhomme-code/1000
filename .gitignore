@@ -30,3 +30,7 @@ tmp/
 # === 하니스/무관 프로젝트 제외 ===
 .claude/
 upsight/
+
+# === 런타임 생성물 (소스 아님) ===
+data/events/
+data/scores/

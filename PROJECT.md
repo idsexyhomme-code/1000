@@ -65,5 +65,7 @@
 - **R1 (설계+검증):** 루브릭 v1 작성 → Gemini(카피/UX)+Codex(적대 리뷰) 실호출 검증 → **v2 피벗 완료**(태스크 단위·근거등급·신뢰구간·기상예보·다음행동·한국규제 가드레일). 셋 다 "단일 숫자 격하"에 수렴.
 - **R2 (코드+검증) ✅:** v2 루브릭을 코드화. `src/scoring.py`(점수엔진, 실행됨)·`src/crawler.py`(수집 골격)·`data/jobs/{video-editor,junior-developer}.json`(시드 직무-태스크 매트릭스). Codex 적대 리뷰로 치명버그 다수 수정: 밴드 경계 빈틈, 요인 음수 부호뒤집힘, 출처불명→Δ=0, 멀티태스크 dedup 충돌(키에 job/task/direction 포함), daily cap 미작동·폭주(날짜별·상승/하락 버킷·부분 클램프), 비결정적 순서(Tier·|Δ| 정렬). 데모: 영상편집자 59[흐림]/주니어개발자 50.5[구름조금].
   - **[자율결정]** R2는 백엔드라 Codex 중심 검증, Gemini(카피/UX)는 R4(카카오봇 카피·UI)에서 투입.
-- **R3 (다음):** 크롤러 실구현 — RSS/API 소스 어댑터 2~3개 + Gemini 2.5 Pro 5요인 점수화 호출/검증 + 점수로그(time series) 영속화 + 일/주 배치.
-  - **R2.5 잔여 숙제(Codex, R3 통합 시 반영):** ① 태스크 CI propagation(신뢰구간 전파, weighted) ② Tier3 누적 가중치 상한(window/job 단위 — 단건 max+2 외) ③ mean-reversion 상태모델(이전 점수→baseline 회귀, score log 기반) ④ 응답계약 task-first로(직업 단일 index를 secondary로) ⑤ editorial override를 일반 Event와 분리.
+- **R3a (구현+라이브검증) ✅:** `src/store.py`(이벤트 스토어 + 점수로그 time series, 직전대비 델타) · `src/gemini_scorer.py`(Gemini 2.5 Pro 5요인 점수화, 키는 env GEMINI_API_KEY, responseMimeType=json + 자체검증) · `src/crawler.py` RSSSource(stdlib urllib+xml, RSS/Atom). **라이브 테스트 통과:** store 시계열·델타 / TechCrunch 실수집 3건 / Gemini가 영향없는 업무 정확히 제외하고 5요인 JSON 반환. 런타임 생성물(data/events, data/scores)은 .gitignore.
+  - **[자율결정]** R3 분량 커서 R3a(모듈+검증)/R3b(배선+통계)로 분할.
+- **R3b (다음):** pipeline 배선(fetch→관련성필터→gemini_scorer→Event→store→ScoringEngine→점수로그) + 일/주 배치 + **R2.5 잔여숙제**: ① 태스크 CI propagation(weighted) ② Tier3 누적 가중치 상한(window/job 단위) ③ mean-reversion 상태모델(점수로그 기반 baseline 회귀) ④ 응답계약 task-first ⑤ editorial override 분리.
+- **R4 (이후):** 카카오 채널봇 카피·UI (Gemini 투입) + 미니웹 결과리포트(전략가타입 공유) + 유료트리거.
