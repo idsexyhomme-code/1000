@@ -14,11 +14,13 @@ _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(_ROOT, "src"))
 
 import actionplan
+import gemini_client
 import notify
 import pipeline
 import report
 import scoring
 import sender
+import server
 import store
 from scoring import Affected, Event, ScoringEngine
 
@@ -186,6 +188,109 @@ def test_report_ungrounded_plan_no_paywall():
     h = report.render_html(job, strat, action_plan=up)
     assert "대응 전략 보기" not in h                                     # 유료 CTA 없음
     assert "직접 결박된 새 근거" in h                                    # 정직 안내
+
+
+# ── server ────────────────────────────────────────────────────────────
+def test_server_match_job():
+    assert server._match_job("영상편집자") == "video-editor"
+    assert server._match_job("관련없는말") is None
+
+
+def test_server_kakao_malformed_no_crash():
+    for bad in [[], None, {}, {"userRequest": None},
+                {"userRequest": {"user": "x", "utterance": 5}}]:
+        out = server.handle_kakao(bad)
+        assert "version" in out and out["template"]["outputs"]      # 항상 유효 카카오 응답
+
+
+def test_server_kakao_job_selection_stores_mapping():
+    _clear_users()
+    old = os.environ.pop("GEMINI_API_KEY", None)                    # 오프라인 강제(요약은 폴백)
+    try:
+        out = server.handle_kakao({"userRequest": {"utterance": "주니어 개발자",
+                                                   "user": {"id": "tu1"}}})
+        txt = out["template"]["outputs"][0]["simpleText"]["text"]
+        assert "주니어 개발자" in txt
+        assert store.get_user_job("tu1") == "junior-developer"
+    finally:
+        if old:
+            os.environ["GEMINI_API_KEY"] = old
+        _clear_users()
+
+
+def test_server_rate_limit():
+    server._rl.clear()
+    flags = [server._rate_ok("9.9.9.9") for _ in range(server.RATE_LIMIT + 2)]
+    assert flags[0] is True and flags[-1] is False                  # 초과 시 차단
+    server._rl.clear()
+
+
+# ── store ─────────────────────────────────────────────────────────────
+def _clear_users():
+    if os.path.exists(store.USERS_FILE):
+        os.remove(store.USERS_FILE)
+
+
+def test_store_user_mapping():
+    _clear_users()
+    store.set_user_job("a", "video-editor")
+    store.set_user_job("b", "video-editor")
+    assert store.get_user_job("a") == "video-editor"
+    assert set(store.users_by_job("video-editor")) == {"a", "b"}
+    _clear_users()
+
+
+def test_store_caches_roundtrip():
+    files = (store.STRATEGIST_FILE, store.ACTIONPLAN_FILE, store.NOTIFIED_FILE)
+    for f in files:
+        if os.path.exists(f):
+            os.remove(f)
+    store.save_strategist("j", {"type_name": "T"})
+    store.save_actionplan("j", {"source": "gemini"})
+    store.set_notified("j", "ts1")
+    assert store.get_strategist("j") == {"type_name": "T"}
+    assert store.get_actionplan("j") == {"source": "gemini"}
+    assert store.get_notified("j") == "ts1"
+    assert store.get_strategist("none") is None                     # 미존재 → None
+    for f in files:
+        if os.path.exists(f):
+            os.remove(f)
+
+
+def test_store_score_history_and_delta():
+    f = os.path.join(DATA, "scores", "tj.jsonl")
+    if os.path.exists(f):
+        os.remove(f)
+    store.append_score("tj", {"index": 50.0}, ts="2026-06-05T00:00:00Z")
+    store.append_score("tj", {"index": 55.0}, ts="2026-06-06T00:00:00Z")
+    assert store.latest_score("tj")["index"] == 55.0
+    assert store.delta_since_prev("tj", 60.0) == 5.0                 # 60 - 55
+    assert len(store.score_history("tj")) == 2
+    if os.path.exists(f):
+        os.remove(f)
+
+
+# ── gemini_client ─────────────────────────────────────────────────────
+def test_gemini_chain_config():
+    assert gemini_client.CHAINS["premium"][0].startswith("gemini-3")   # 최신 우선
+    assert gemini_client.CHAINS["premium"][-1] == "gemini-2.5-flash"    # 안정 fallback 종단
+    assert gemini_client.CHAINS["routine"][-1] == "gemini-2.5-flash"
+
+
+def test_gemini_key_required_fast_fail():
+    import time
+    old = os.environ.pop("GEMINI_API_KEY", None)
+    try:
+        t = time.time()
+        raised = False
+        try:
+            gemini_client.generate("hi", tier="premium")
+        except RuntimeError:
+            raised = True
+        assert raised and (time.time() - t) < 2                      # 즉시 실패(네트워크 루프 없음)
+    finally:
+        if old:
+            os.environ["GEMINI_API_KEY"] = old
 
 
 # ── runner ────────────────────────────────────────────────────────────
