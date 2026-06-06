@@ -15,6 +15,7 @@ from __future__ import annotations
 import json
 import os
 import sys
+import threading
 import time
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlsplit
@@ -42,6 +43,25 @@ def _cached_scores() -> dict:
         _score_cache["data"] = pipeline.current_scores()
         _score_cache["ts"] = now
     return _score_cache["data"]
+
+
+# ── 배포 보안: 웹훅 토큰 인증 + IP rate limit (R5) ────────────────────
+WEBHOOK_TOKEN = os.environ.get("WEBHOOK_TOKEN", "")  # 설정 시 /webhook은 ?token= 일치 요구
+RATE_LIMIT = int(os.environ.get("RATE_LIMIT", "60"))  # IP당 윈도우 요청 수
+RATE_WINDOW = 60.0
+_rl_lock = threading.Lock()
+_rl: dict[str, list] = {}  # ip -> [window_start, count]
+
+
+def _rate_ok(ip: str) -> bool:
+    now = time.monotonic()
+    with _rl_lock:
+        w = _rl.get(ip)
+        if not w or now - w[0] > RATE_WINDOW:
+            _rl[ip] = [now, 1]
+            return True
+        w[1] += 1
+        return w[1] <= RATE_LIMIT
 
 
 def _match_job(utterance: str) -> str | None:
@@ -115,6 +135,8 @@ class Handler(BaseHTTPRequestHandler):
                    "application/json; charset=utf-8")
 
     def do_GET(self):
+        if not _rate_ok(self.client_address[0]):
+            return self._send(429, b"rate limited", "text/plain; charset=utf-8")
         parts = urlsplit(self.path)
         if parts.path == "/health":
             return self._json(200, {"ok": True, "jobs": list(JOBS)})
@@ -133,6 +155,8 @@ class Handler(BaseHTTPRequestHandler):
         self._send(404, b"not found", "text/plain; charset=utf-8")
 
     def do_POST(self):
+        if not _rate_ok(self.client_address[0]):
+            return self._json(429, kakao_text("요청이 많아 잠시 후 다시 시도해 주세요."))
         parts = urlsplit(self.path)
         try:
             length = int(self.headers.get("Content-Length", 0) or 0)
@@ -142,6 +166,9 @@ class Handler(BaseHTTPRequestHandler):
             return self._json(413, kakao_text("요청이 너무 큽니다."))
         raw = self.rfile.read(length) if length else b"{}"
         if parts.path == "/webhook/kakao":
+            # 토큰 설정 시 일치 요구 (카카오 i오픈빌더 스킬 URL에 ?token= 박아 호출)
+            if WEBHOOK_TOKEN and parse_qs(parts.query).get("token", [""])[0] != WEBHOOK_TOKEN:
+                return self._json(401, kakao_text("인증에 실패했습니다."))
             try:
                 body = json.loads(raw or b"{}")
             except Exception:
