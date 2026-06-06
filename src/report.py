@@ -138,7 +138,11 @@ body{background:#000;color:var(--text-primary);font-family:"Pretendard Variable"
 
 def _gauge_svg(index: float, ci) -> str:
     # 반원(180°) arc. 인디케이터 각도 = 값/100 * 180° (좌단 0% → 우단 100%).
-    angle = max(0.0, min(100.0, float(index))) / 100 * 180
+    try:
+        idx = max(0.0, min(100.0, float(index)))   # index 비정상이어도 리포트 안 죽게 방어
+    except (TypeError, ValueError):
+        idx = 0.0
+    angle = idx / 100 * 180
     band = ('<path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="{c}" '
             'stroke-width="12" stroke-dasharray="62.83 502.65" stroke-dashoffset="{o}"/>')
     bands = (band.format(c="var(--color-clear)", o=0) + band.format(c="var(--color-pcloudy)", o=-62.83)
