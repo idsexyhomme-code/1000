@@ -127,6 +127,16 @@ body{background:#000;color:var(--text-primary);font-family:"Pretendard Variable"
 .cta-btn{display:inline-block;background:var(--text-primary);color:var(--bg-base);padding:14px 28px;border-radius:30px;font-size:15px;font-weight:700;text-decoration:none;letter-spacing:-.3px;}
 .share-btn{width:100%;background:var(--bg-elevate);color:var(--text-primary);border:1px solid var(--border-color);padding:16px;border-radius:16px;font-size:16px;font-weight:600;margin-bottom:24px;cursor:pointer;letter-spacing:-.3px;}
 .footer-text{font-size:12px;color:var(--text-tertiary);line-height:1.6;text-align:justify;word-break:keep-all;letter-spacing:-.2px;}
+.ap-section{margin-bottom:32px;}
+.ap-item{background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:14px;padding:14px 16px;margin-bottom:10px;}
+.ap-h{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;letter-spacing:-.3px;line-height:1.4;}
+.ap-tag{font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;flex-shrink:0;}
+.tag-defend{background:rgba(245,158,11,.15);color:#fbbf24;}
+.tag-pivot{background:rgba(59,130,246,.15);color:#60a5fa;}
+.ap-step{font-size:13px;color:var(--text-secondary);margin-top:8px;line-height:1.5;word-break:keep-all;}
+.ap-meta{font-size:12px;color:var(--text-tertiary);margin-top:6px;}
+.ap-item.locked .ap-h{filter:blur(5px);user-select:none;pointer-events:none;}
+.ap-lock{font-size:13px;color:var(--text-tertiary);margin-top:10px;text-align:center;}
 """
 
 
@@ -176,13 +186,41 @@ def _driver(d: dict) -> str:
             f'<p class="news-reason">{_e(d.get("reason_ko", ""))}</p></a>')
 
 
-def render_html(job: dict, strat: dict | None = None) -> str:
+def _action_plan_html(plan: dict) -> str:
+    """이번 주 생존 액션플랜 — 첫 1개 무료 티저, 나머지 잠금(유료 전환점). 해자를 유료CTA에 결박."""
+    actions = (plan or {}).get("actions", [])
+    if not actions:
+        return ""
+    rows = []
+    for i, a in enumerate(actions):
+        locked = i >= 1                       # 첫 1개만 공개, 2·3번 잠금
+        tag = {"defend": "방어", "pivot": "전환"}.get(a.get("strategy_type"), "")
+        tag_cls = "tag-defend" if a.get("strategy_type") == "defend" else "tag-pivot"
+        head = (f'<div class="ap-h"><span class="ap-tag {tag_cls}">{tag}</span>'
+                f'{_e(a.get("title_ko", ""))}</div>')
+        if locked:
+            body = '<div class="ap-lock">🔒 잠금 — 대응법 보기</div>'
+        else:
+            steps = a.get("action_steps", [])
+            step0 = _e(steps[0]) if steps else ""
+            meta = f'{_e(a.get("difficulty", ""))} · 주 {_e(a.get("time_hours", ""))}h · {_e(a.get("payoff_ko", ""))}'
+            body = f'<div class="ap-step">{step0}</div><div class="ap-meta">{meta}</div>'
+        rows.append(f'<div class="ap-item{" locked" if locked else ""}">{head}{body}</div>')
+    return ('<div class="ap-section"><h2 class="section-title">🧭 이번 주 생존 액션플랜</h2>'
+            + "".join(rows) + "</div>")
+
+
+def render_html(job: dict, strat: dict | None = None, action_plan: dict | None = None) -> str:
     strat = strat or strategist_type(job, use_gemini=False)
     tasks = job.get("tasks", [])
     tasks_html = "".join(_task_bar(t) for t in tasks)
     drivers = job.get("top_drivers", [])
     drv_html = "".join(_driver(d) for d in drivers) or '<p class="news-reason">오늘은 새 근거가 없습니다.</p>'
     head_task = (job.get("headline_task") or (tasks[0] if tasks else {})).get("name_ko", "핵심 업무")
+    if action_plan is None:        # 기본은 결정적 폴백(빠름·무비용). 배치가 캐시한 Gemini 플랜은 호출측이 주입.
+        import actionplan
+        action_plan = actionplan.make_action_plan(job, use_gemini=False)
+    ap_html = _action_plan_html(action_plan)
     return f"""<!doctype html><html lang="ko"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>커리어 시그널 · {_e(job.get('job_name_ko',''))}</title>
@@ -201,6 +239,7 @@ def render_html(job: dict, strat: dict | None = None) -> str:
   </div>
   <div class="task-section"><h2 class="section-title">📊 내 업무별 AI 압력 (높을수록 자동화 신호 ↑)</h2>{tasks_html}</div>
   <div class="news-section"><h2 class="section-title">🔎 오늘 점수를 움직인 근거</h2>{drv_html}</div>
+  {ap_html}
   <div class="cta-card"><div class="cta-icon">🔒</div>
     <h3 class="cta-title">상위 5%는 이미 대응 중입니다</h3>
     <p class="cta-text">방금 확인한 '{_e(head_task)}' 압력에<br>가장 먼저 대응한 사람들의 대응법 3가지</p>

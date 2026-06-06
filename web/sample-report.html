@@ -44,21 +44,32 @@ body{background:#000;color:var(--text-primary);font-family:"Pretendard Variable"
 .cta-btn{display:inline-block;background:var(--text-primary);color:var(--bg-base);padding:14px 28px;border-radius:30px;font-size:15px;font-weight:700;text-decoration:none;letter-spacing:-.3px;}
 .share-btn{width:100%;background:var(--bg-elevate);color:var(--text-primary);border:1px solid var(--border-color);padding:16px;border-radius:16px;font-size:16px;font-weight:600;margin-bottom:24px;cursor:pointer;letter-spacing:-.3px;}
 .footer-text{font-size:12px;color:var(--text-tertiary);line-height:1.6;text-align:justify;word-break:keep-all;letter-spacing:-.2px;}
+.ap-section{margin-bottom:32px;}
+.ap-item{background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:14px;padding:14px 16px;margin-bottom:10px;}
+.ap-h{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;letter-spacing:-.3px;line-height:1.4;}
+.ap-tag{font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;flex-shrink:0;}
+.tag-defend{background:rgba(245,158,11,.15);color:#fbbf24;}
+.tag-pivot{background:rgba(59,130,246,.15);color:#60a5fa;}
+.ap-step{font-size:13px;color:var(--text-secondary);margin-top:8px;line-height:1.5;word-break:keep-all;}
+.ap-meta{font-size:12px;color:var(--text-tertiary);margin-top:6px;}
+.ap-item.locked .ap-h{filter:blur(5px);user-select:none;pointer-events:none;}
+.ap-lock{font-size:13px;color:var(--text-tertiary);margin-top:10px;text-align:center;}
 </style></head><body><div class="app-container">
   <div class="hero-card">
     <div class="hero-emoji" role="img" aria-label="전략가 타입">🎬</div>
-    <h1 class="hero-title">AI를 지휘하는 마스터 디렉터형</h1>
-    <p class="hero-subtitle">"단순 편집은 AI에게 맡기고, 감각적 연출로 판을 짜는 크리에이터"</p>
+    <h1 class="hero-title">스토리 마스터 디렉터형</h1>
+    <p class="hero-subtitle">"단순 작업은 AI에게 맡기고, 나는 감정의 흐름을 지휘한다"</p>
     <div class="gauge-wrapper"><svg class="gauge-svg" viewBox="0 0 200 110" role="img" aria-label="AI 영향 참고지표 59.0, 신뢰구간 플러스마이너스 7.6"><path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#27272a" stroke-width="12" stroke-linecap="round"/><path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="var(--color-clear)" stroke-width="12" stroke-dasharray="62.83 502.65" stroke-dashoffset="0"/><path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="var(--color-pcloudy)" stroke-width="12" stroke-dasharray="62.83 502.65" stroke-dashoffset="-62.83"/><path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="var(--color-cloudy)" stroke-width="12" stroke-dasharray="62.83 502.65" stroke-dashoffset="-125.66"/><path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="var(--color-typhoon)" stroke-width="12" stroke-dasharray="62.83 502.65" stroke-dashoffset="-188.49"/><g transform="rotate(106.2, 100, 100)"><circle cx="20" cy="100" r="6" fill="#fff" stroke="#18181b" stroke-width="2.5"/></g><g transform="translate(0,-8)"><text x="100" y="55" font-size="11" font-weight="500" text-anchor="middle" fill="var(--text-secondary)">AI 영향 참고지표</text><text x="100" y="92" font-size="42" font-weight="800" text-anchor="middle" fill="#fff" letter-spacing="-1">59.0</text><text x="100" y="110" font-size="11" font-weight="500" text-anchor="middle" fill="var(--text-tertiary)">신뢰구간 ±7.6</text></g></svg></div>
   </div>
   <div class="insight-grid">
     <div class="insight-card"><div class="insight-header threat"><span class="insight-icon">⚡️</span> 위협</div>
-      <div class="insight-desc">자막 생성과 단순 컷 편집 등 규칙적이고 반복적인 작업은 AI의 압도적인 처리 속도에 의해 빠르게 자동화될 것입니다.</div></div>
+      <div class="insight-desc">자막 생성과 단순 컷 편집 등 기계적인 반복 작업은 AI 기술의 발달로 빠르게 자동화되며 효율성 압박을 가져오고 있습니다.</div></div>
     <div class="insight-card"><div class="insight-header opp"><span class="insight-icon">🎯</span> 기회</div>
-      <div class="insight-desc">하지만 AI가 흉내 낼 수 없는 사운드·믹싱의 미세한 감정선 조율과 현장 디렉팅 및 기획에 집중한다면, 단순 기술자를 넘어선 독보적인 총괄 연출가로 도약할 수 있습니다.</div></div>
+      <div class="insight-desc">AI가 아낀 시간을 사람만이 할 수 있는 미세한 사운드 믹싱과 현장 디렉팅·기획에 투자해, 단순 편집자를 넘어 대체 불가한 콘텐츠 총괄 연출가로 도약할 기회입니다.</div></div>
   </div>
   <div class="task-section"><h2 class="section-title">📊 내 업무별 AI 압력 (높을수록 자동화 신호 ↑)</h2><div class="task-item"><div class="task-label">자막 생성</div><div class="task-track"><div class="task-bar" style="width:82.0%;background:linear-gradient(90deg,#9f1239,#fb7185)"></div></div><div class="task-value">82.0</div></div><div class="task-item"><div class="task-label">컷 편집</div><div class="task-track"><div class="task-bar" style="width:76.8%;background:linear-gradient(90deg,#9f1239,#fb7185)"></div></div><div class="task-value">76.8</div></div><div class="task-item"><div class="task-label">썸네일·그래픽</div><div class="task-track"><div class="task-bar" style="width:74.0%;background:linear-gradient(90deg,#b45309,#f59e0b)"></div></div><div class="task-value">74.0</div></div><div class="task-item"><div class="task-label">색보정</div><div class="task-track"><div class="task-bar" style="width:52.0%;background:linear-gradient(90deg,#b45309,#f59e0b)"></div></div><div class="task-value">52.0</div></div><div class="task-item"><div class="task-label">사운드·믹싱</div><div class="task-track"><div class="task-bar" style="width:48.0%;background:linear-gradient(90deg,#5b21b6,#8b5cf6)"></div></div><div class="task-value">48.0</div></div><div class="task-item"><div class="task-label">현장 디렉팅·기획</div><div class="task-track"><div class="task-bar" style="width:22.0%;background:linear-gradient(90deg,#1d4ed8,#3b82f6)"></div></div><div class="task-value">22.0</div></div></div>
   <div class="news-section"><h2 class="section-title">🔎 오늘 점수를 움직인 근거</h2><a href="https://example.com/n1" target="_blank" rel="noopener" class="news-card"><div class="news-meta"><span class="news-badge badge-official">공식</span><span class="news-link-text">원문보기 ↗</span></div><h3 class="news-title">OpenAI, 영상 자동편집 모델 정식 출시 + 유료 고객사 확보</h3><p class="news-reason">컷편집 자동화 정식기능 + 유료고객으로 도입신호 상승</p></a></div>
+  <div class="ap-section"><h2 class="section-title">🧭 이번 주 생존 액션플랜</h2><div class="ap-item"><div class="ap-h"><span class="ap-tag tag-defend">방어</span>&#x27;OpenAI&#x27; 흡수해 &#x27;컷 편집&#x27; 초벌 워크플로 1개 만들기</div><div class="ap-step">&#x27;OpenAI&#x27;를 &#x27;컷 편집&#x27;의 초벌 단계에 적용해 이번 주 1건 처리해본다</div><div class="ap-meta">중급 · 주 4.0h · &#x27;컷 편집&#x27;의 자동화 압력을 도구 흡수로 상쇄해 생산성 단가를 방어</div></div><div class="ap-item locked"><div class="ap-h"><span class="ap-tag tag-pivot">전환</span>&#x27;현장 디렉팅·기획&#x27; 비중 늘려 고가치 업무로 시간 전환하기</div><div class="ap-lock">🔒 잠금 — 대응법 보기</div></div><div class="ap-item locked"><div class="ap-h"><span class="ap-tag tag-pivot">전환</span>&#x27;사운드·믹싱&#x27; 비중 늘려 고가치 업무로 시간 전환하기</div><div class="ap-lock">🔒 잠금 — 대응법 보기</div></div></div>
   <div class="cta-card"><div class="cta-icon">🔒</div>
     <h3 class="cta-title">상위 5%는 이미 대응 중입니다</h3>
     <p class="cta-text">방금 확인한 '자막 생성' 압력에<br>가장 먼저 대응한 사람들의 대응법 3가지</p>
