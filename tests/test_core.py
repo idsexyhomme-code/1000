@@ -225,6 +225,23 @@ def test_server_rate_limit():
     server._rl.clear()
 
 
+def test_server_report_quick_reply_not_deadend():
+    _clear_users()
+    old = os.environ.pop("GEMINI_API_KEY", None)
+    saved = server.REPORT_BASE_URL
+    server.REPORT_BASE_URL = "https://x.test"
+    try:
+        server.handle_kakao({"userRequest": {"utterance": "주니어 개발자", "user": {"id": "ru1"}}})
+        out = server.handle_kakao({"userRequest": {"utterance": "리포트 보기", "user": {"id": "ru1"}}})
+        txt = out["template"]["outputs"][0]["simpleText"]["text"]
+        assert "리포트" in txt and "report?user=ru1" in txt          # 데드엔드 아님 + 링크 포함
+    finally:
+        server.REPORT_BASE_URL = saved
+        if old:
+            os.environ["GEMINI_API_KEY"] = old
+        _clear_users()
+
+
 # ── store ─────────────────────────────────────────────────────────────
 def _clear_users():
     if os.path.exists(store.USERS_FILE):

@@ -47,6 +47,7 @@ def _cached_scores() -> dict:
 
 # ── 배포 보안: 웹훅 토큰 인증 + IP rate limit (R5) ────────────────────
 WEBHOOK_TOKEN = os.environ.get("WEBHOOK_TOKEN", "")  # 설정 시 /webhook은 ?token= 일치 요구
+REPORT_BASE_URL = os.environ.get("REPORT_BASE_URL", "")  # 예: https://api.example.com (리포트 링크용)
 RATE_LIMIT = int(os.environ.get("RATE_LIMIT", "60"))  # IP당 윈도우 요청 수
 RATE_WINDOW = 60.0
 _rl_lock = threading.Lock()
@@ -105,21 +106,36 @@ def handle_kakao(body: dict) -> dict:
     user_id = user.get("id") if isinstance(user.get("id"), str) else ""
     utterance = ureq.get("utterance") if isinstance(ureq.get("utterance"), str) else ""
     job_names = [j["job_name_ko"] for j in JOBS.values()]
+    cur = store.get_user_job(user_id) if user_id else None
 
+    # 1) 리포트 보기 — 상세 결과화면 링크 (이전엔 데드엔드였음)
+    if "리포트" in utterance:
+        if cur:
+            link = (f"{REPORT_BASE_URL}/report?user={user_id}" if REPORT_BASE_URL
+                    else "(리포트 링크는 배포 후 제공됩니다)")
+            return kakao_text(f"📄 '{JOBS[cur]['job_name_ko']}' 상세 리포트 — 업무별 압력·근거·이번 주 액션\n{link}",
+                              quick_replies=["다른 직업"])
+        return kakao_text("먼저 직업을 알려주세요 🙂", quick_replies=job_names[:10])
+
+    # 2) 직업 변경/탐색
+    if "다른 직업" in utterance or "변경" in utterance:
+        return kakao_text("어떤 직업의 AI 압력을 볼까요?", quick_replies=job_names[:10])
+
+    # 3) 직업 매칭 → 등록 + 요약
     jid = _match_job(utterance)
     if jid:
         if user_id:
             store.set_user_job(user_id, jid)
         return kakao_text(_summary_text(jid), quick_replies=["리포트 보기", "다른 직업"])
 
-    # 이미 등록된 사용자면 현재 상태
-    cur = store.get_user_job(user_id) if user_id else None
-    if cur and ("리포트" not in utterance):
+    # 4) 이미 등록된 사용자 → 현재 상태
+    if cur:
         return kakao_text(_summary_text(cur), quick_replies=["리포트 보기", "다른 직업"])
 
+    # 5) 첫 접점 — 온보딩(따뜻하게, 1탭 선택)
     return kakao_text(
-        "당신의 직업을 알려주세요. AI 압력 시그널을 매일 보내드립니다.\n(현재 베타: 아래에서 선택)",
-        quick_replies=job_names)
+        "👋 커리어 시그널이에요.\n내 직업이 AI에 얼마나 영향받는지 — 업무별로, 매일 알려드려요.\n\n직업을 선택하거나 직접 입력해보세요.",
+        quick_replies=job_names[:10])
 
 
 class Handler(BaseHTTPRequestHandler):
