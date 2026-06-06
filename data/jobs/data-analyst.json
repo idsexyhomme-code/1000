@@ -1,0 +1,56 @@
+{
+  "job_id": "data-analyst",
+  "job_name_ko": "데이터 분석가",
+  "job_name_en": "Data Analyst",
+  "baseline": {
+    "index": 68,
+    "ci": 12,
+    "source": "O*NET 15-2051 + 워크넷 + 채용공고 업무비중 추정 (캘리브레이션 필요)",
+    "note": "손추정 — O*NET·워크넷 캘리브레이션 필요",
+    "calibrated": false
+  },
+  "tasks": [
+    {
+      "task_id": "data-cleaning",
+      "name_ko": "데이터 정제 및 전처리",
+      "weight": 0.25,
+      "baseline": 90,
+      "ci": 8
+    },
+    {
+      "task_id": "writing-queries",
+      "name_ko": "SQL 쿼리 작성 및 데이터 추출",
+      "weight": 0.2,
+      "baseline": 85,
+      "ci": 10
+    },
+    {
+      "task_id": "dashboard-creation",
+      "name_ko": "대시보드 및 시각화 자료 생성",
+      "weight": 0.15,
+      "baseline": 70,
+      "ci": 12
+    },
+    {
+      "task_id": "statistical-analysis",
+      "name_ko": "통계 분석 및 모델링",
+      "weight": 0.15,
+      "baseline": 65,
+      "ci": 10
+    },
+    {
+      "task_id": "insight-generation",
+      "name_ko": "비즈니스 인사이트 도출",
+      "weight": 0.15,
+      "baseline": 40,
+      "ci": 14
+    },
+    {
+      "task_id": "stakeholder-communication",
+      "name_ko": "이해관계자 커뮤니케이션 및 설득",
+      "weight": 0.1,
+      "baseline": 20,
+      "ci": 10
+    }
+  ]
+}

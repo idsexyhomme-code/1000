@@ -1,0 +1,49 @@
+{
+  "job_id": "sales-rep",
+  "job_name_ko": "영업사원",
+  "job_name_en": "Sales Representative",
+  "baseline": {
+    "index": 45,
+    "ci": 10,
+    "source": "O*NET 41-4012 + 워크넷 + 채용공고 업무비중 추정 (캘리브레이션 필요)",
+    "note": "손추정 — O*NET·워크넷 캘리브레이션 필요",
+    "calibrated": false
+  },
+  "tasks": [
+    {
+      "task_id": "lead-generation",
+      "name_ko": "잠재 고객 발굴 및 데이터 입력",
+      "weight": 0.2,
+      "baseline": 85,
+      "ci": 10
+    },
+    {
+      "task_id": "cold-outreach",
+      "name_ko": "콜드콜 및 이메일 발송",
+      "weight": 0.15,
+      "baseline": 75,
+      "ci": 12
+    },
+    {
+      "task_id": "client-negotiation",
+      "name_ko": "고객 미팅 및 협상",
+      "weight": 0.3,
+      "baseline": 15,
+      "ci": 8
+    },
+    {
+      "task_id": "contract-admin",
+      "name_ko": "계약서 작성 및 행정 처리",
+      "weight": 0.15,
+      "baseline": 65,
+      "ci": 10
+    },
+    {
+      "task_id": "relationship-management",
+      "name_ko": "고객 관계 유지 및 관리",
+      "weight": 0.2,
+      "baseline": 10,
+      "ci": 10
+    }
+  ]
+}

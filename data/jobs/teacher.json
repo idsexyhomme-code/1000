@@ -1,0 +1,56 @@
+{
+  "job_id": "teacher",
+  "job_name_ko": "교사",
+  "job_name_en": "Teacher",
+  "baseline": {
+    "index": 41,
+    "ci": 12,
+    "source": "O*NET 25-2021 + 워크넷 + 채용공고 업무비중 추정 (캘리브레이션 필요)",
+    "note": "손추정 — O*NET·워크넷 캘리브레이션 필요",
+    "calibrated": false
+  },
+  "tasks": [
+    {
+      "task_id": "lesson-planning",
+      "name_ko": "수업 계획 및 자료 준비",
+      "weight": 0.2,
+      "baseline": 70,
+      "ci": 10
+    },
+    {
+      "task_id": "grading",
+      "name_ko": "과제 채점 및 평가",
+      "weight": 0.15,
+      "baseline": 80,
+      "ci": 8
+    },
+    {
+      "task_id": "classroom-teaching",
+      "name_ko": "대면 수업 진행",
+      "weight": 0.3,
+      "baseline": 20,
+      "ci": 12
+    },
+    {
+      "task_id": "student-counseling",
+      "name_ko": "학생 상담 및 생활 지도",
+      "weight": 0.2,
+      "baseline": 10,
+      "ci": 10
+    },
+    {
+      "task_id": "parent-communication",
+      "name_ko": "학부모 소통",
+      "weight": 0.1,
+      "baseline": 30,
+      "ci": 14
+    },
+    {
+      "task_id": "administrative-duties",
+      "name_ko": "학교 행정 업무",
+      "weight": 0.05,
+      "baseline": 75,
+      "ci": 10
+    }
+  ]
+}

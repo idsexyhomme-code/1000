@@ -1,0 +1,56 @@
+{
+  "job_id": "nurse",
+  "job_name_ko": "간호사",
+  "job_name_en": "Nurse",
+  "baseline": {
+    "index": 34,
+    "ci": 10,
+    "source": "O*NET 29-1141 + 워크넷 + 채용공고 업무비중 추정 (캘리브레이션 필요)",
+    "note": "손추정 — O*NET·워크넷 캘리브레이션 필요",
+    "calibrated": false
+  },
+  "tasks": [
+    {
+      "task_id": "patient-monitoring",
+      "name_ko": "환자 상태 모니터링 및 바이탈 체크",
+      "weight": 0.2,
+      "baseline": 40,
+      "ci": 12
+    },
+    {
+      "task_id": "administering-medication",
+      "name_ko": "투약 및 처치",
+      "weight": 0.2,
+      "baseline": 15,
+      "ci": 8
+    },
+    {
+      "task_id": "charting-documentation",
+      "name_ko": "간호 기록 및 차팅",
+      "weight": 0.25,
+      "baseline": 75,
+      "ci": 10
+    },
+    {
+      "task_id": "physical-care",
+      "name_ko": "환자 신체 간호 및 위생 관리",
+      "weight": 0.15,
+      "baseline": 5,
+      "ci": 10
+    },
+    {
+      "task_id": "emotional-support",
+      "name_ko": "환자 및 보호자 정서적 지원",
+      "weight": 0.1,
+      "baseline": 5,
+      "ci": 12
+    },
+    {
+      "task_id": "medical-communication",
+      "name_ko": "의료진 간 소통 및 인수인계",
+      "weight": 0.1,
+      "baseline": 30,
+      "ci": 14
+    }
+  ]
+}

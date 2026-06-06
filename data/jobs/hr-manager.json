@@ -1,0 +1,56 @@
+{
+  "job_id": "hr-manager",
+  "job_name_ko": "인사담당자",
+  "job_name_en": "HR Manager",
+  "baseline": {
+    "index": 51,
+    "ci": 10,
+    "source": "O*NET 11-3121 + 워크넷 + 채용공고 업무비중 추정 (캘리브레이션 필요)",
+    "note": "손추정 — O*NET·워크넷 캘리브레이션 필요",
+    "calibrated": false
+  },
+  "tasks": [
+    {
+      "task_id": "resume-screening",
+      "name_ko": "이력서 스크리닝 및 서류 심사",
+      "weight": 0.2,
+      "baseline": 85,
+      "ci": 8
+    },
+    {
+      "task_id": "payroll-processing",
+      "name_ko": "급여 처리 및 근태 관리",
+      "weight": 0.15,
+      "baseline": 90,
+      "ci": 10
+    },
+    {
+      "task_id": "interviewing",
+      "name_ko": "대면 면접 진행 및 평가",
+      "weight": 0.25,
+      "baseline": 30,
+      "ci": 12
+    },
+    {
+      "task_id": "conflict-resolution",
+      "name_ko": "노사 관계 관리 및 갈등 중재",
+      "weight": 0.15,
+      "baseline": 10,
+      "ci": 14
+    },
+    {
+      "task_id": "hr-strategy",
+      "name_ko": "인사 전략 기획 및 제도 설계",
+      "weight": 0.15,
+      "baseline": 40,
+      "ci": 12
+    },
+    {
+      "task_id": "onboarding-training",
+      "name_ko": "신규 입사자 온보딩 및 교육",
+      "weight": 0.1,
+      "baseline": 50,
+      "ci": 10
+    }
+  ]
+}
