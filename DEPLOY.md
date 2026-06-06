@@ -67,3 +67,28 @@ curl "localhost:8000/report?job=video-editor" > /tmp/r.html && open /tmp/r.html
 - [ ] 시드 직업 확대(현재 2개 → 주요 직군 N개)
 - [ ] `KakaoSender` 실구현 + 템플릿 승인
 - [ ] 개인정보처리방침·이용약관(개인정보보호법 §37-2, AI기본법 대응 — 가드레일은 코드에 내장됨)
+
+## 8. CI (선택 — 사용자 수동 설정 필요)
+테스트는 `python3 tests/test_core.py`로 언제든 실행 가능. GitHub Actions로 푸시마다 자동 실행하려면
+아래 파일을 추가하세요. **단, 워크플로 파일 푸시는 PAT에 `workflow` 스코프가 필요**합니다
+(현재 토큰은 `repo`만 보유 → 자동 푸시 불가). 둘 중 하나:
+- GitHub 웹에서 `.github/workflows/ci.yml` 직접 생성(아래 내용 붙여넣기), 또는
+- `github.com/settings/tokens`에서 토큰에 `workflow` 스코프 추가 후 푸시.
+
+```yaml
+# .github/workflows/ci.yml
+name: tests
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python3 tests/test_core.py   # stdlib·오프라인, 시크릿 불필요
+```
