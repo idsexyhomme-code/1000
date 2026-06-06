@@ -84,6 +84,12 @@ _FAVICON = ("<link rel=\"icon\" href=\"data:image/svg+xml,"
             "%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E"
             "%3Ctext y='.9em' font-size='88'%3E%F0%9F%93%A1%3C/text%3E%3C/svg%3E\">")
 
+
+def _og_image_meta() -> str:
+    """og:image는 절대 URL 필요 → REPORT_BASE_URL 설정 시에만 출력(정적파일은 reverse proxy가 /static/ 서빙)."""
+    base = os.environ.get("REPORT_BASE_URL", "")
+    return f'<meta property="og:image" content="{_e(base)}/static/og.png">' if base else ""
+
 _CSS = """
 :root{--bg-base:#09090b;--bg-surface:#18181b;--bg-elevate:#27272a;--border-color:#3f3f46;
 --text-primary:#fafafa;--text-secondary:#a1a1aa;--text-tertiary:#8b8b94;
@@ -237,7 +243,7 @@ def landing_html(jobs: dict) -> str:
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta property="og:type" content="website"><meta property="og:site_name" content="커리어 시그널">
 <meta property="og:title" content="내 직업, AI에 얼마나 영향받을까?">
-<meta property="og:description" content="업무별 AI 압력을 근거와 함께 — 커리어 시그널">
+<meta property="og:description" content="업무별 AI 압력을 근거와 함께 — 커리어 시그널">{_og_image_meta()}
 {_FAVICON}<title>커리어 시그널 — 내 직업, AI에 얼마나?</title>
 <style>{_CSS}{_LANDING_CSS}</style></head><body><div class="app-container">
   <div class="hero-card"><div class="hero-emoji">📡</div>
@@ -282,7 +288,7 @@ def render_html(job: dict, strat: dict | None = None, action_plan: dict | None =
     return f"""<!doctype html><html lang="ko"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta property="og:type" content="website"><meta property="og:site_name" content="커리어 시그널">
-<meta property="og:title" content="{_e(og_title)}"><meta property="og:description" content="{_e(og_desc)}">
+<meta property="og:title" content="{_e(og_title)}"><meta property="og:description" content="{_e(og_desc)}">{_og_image_meta()}
 {_FAVICON}<title>커리어 시그널 · {_e(job.get('job_name_ko',''))}</title>
 <style>{_CSS}</style></head><body><div class="app-container">
   <div class="hero-card">

@@ -41,8 +41,13 @@ curl "localhost:8000/report?job=video-editor" > /tmp/r.html && open /tmp/r.html
   ```
   # Caddy 예시 (자동 HTTPS)
   api.example.com {
+      handle /static/* {        # 정적 OG 이미지 등 (앱 대신 프록시가 서빙)
+          root * /srv/career-signal/web
+          file_server
+      }
       reverse_proxy 127.0.0.1:8000
   }
+  # → web/static/og.png (1200x630) 배치 + REPORT_BASE_URL 설정 시 카톡/SNS 공유 프리뷰 이미지 자동 노출.
   ```
 - 프로세스 관리: `systemd` 유닛 또는 `pm2`/`supervisor`로 server.py 상시 구동.
 
