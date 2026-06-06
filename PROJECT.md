@@ -77,6 +77,11 @@
   - **배포 전 필수(R5):** 웹훅 인증/서명 검증, rate limit, reverse proxy TLS.
 - **R4d (일/주 배치) ✅:** `src/batch.py` — pipeline.run()(수집·재점수) → 의미있는 변동(|Δ|≥2 or 날씨변화) 직무의 구독자에게 notify 푸시 큐잉(outbox) + 전략가타입 캐시. 카카오 발송은 스텁. 라이브 통과(영상편집자 Δ+17.3→u1 큐잉). Codex fix-first: **스냅샷 ts 기반 중복 알림 방지**(set_notified/get_notified — 매 배치 같은 알림 재큐잉 스팸 차단, 2회차 재큐잉 0 확인) + 전략가 Gemini는 변동 시에만 호출. server /report는 캐시된 전략가타입 사용.
   - **★ MVP 백엔드 완성:** 크롤링→Gemini채점→지수→시계열→봇서버(웹훅·리포트)→배치알림 전 과정 실작동. 카카오 채널 연결 + 발송 API만 붙이면 런칭 가능.
+- **D1 (결과리포트 디자인 고도화, Gemini 3.1 Pro 주도) ✅:** 표현층만 프리미엄 교체(콘텐츠·데이터·가드레일 문구 불변). `src/report.py` 재설계.
+  - **[자율결정]** 사용자 "Antigravity로 시도" 요청 → Antigravity는 별도 IDE라 호출 불가하나, 그 기반 모델 **gemini-3.1-pro-preview**가 API로 살아있어 디자인 생성에 사용(2.5 Pro 대비 우월). ※이전에 "Gemini 3.x 없음"이라 한 건 모델목록 출력을 [:12]로 잘라본 내 오류였음 — 3.1-pro/3.5-flash 등 실재.
+  - **레퍼런스(각 적용점):** Spotify Wrapped(데이터→공유 스토리, 타입을 '페르소나'로) · 16Personalities(명확한 타입 정체성) · Toss(카드 위계·여백) · Apple Health 링(수치를 위험 아닌 '상태'로, 숫자 보조화) · Apple Weather 밴드(색으로 직관) · Linear(절제된 프리미엄 다크).
+  - **구현:** 히어로 카드 안에 반원 SVG 게이지(각도=index/100×180° 동적) + 4단계 기상밴드 + 신뢰구간± / 위협·기회 양면 / task-first 업무바 / 티어배지(공식·언론·벤더PR)+근거 / 유료CTA / 가드레일 푸터. Pretendard 폰트스택·word-break:keep-all 한글 최적화.
+  - **Codex fix-first:** 카피 불변 위반(가드레일/섹션/CTA 문구 변경) 전량 복원 + 태풍 task바 빨강떡칠 완화(#e11d48→#fb7185). 통과: WCAG AA(5.89:1/5.25:1), 게이지 각도수학, _safe_url XSS.
 - **R5 (배포 전 하드닝):** 카카오 비즈메시지 발송 API 연동 + outbox sent-marker/재시도/rate-limit + 웹훅 인증·서명검증 + 이벤트 아카이브/프루닝 + CI propagation(weighted) + 크롤러 batch/cache/backoff. 배포(서버 호스팅 + 도메인 + TLS).
 - **R5 (하드닝, 이후로 미룸):** 이벤트 만료·아카이브 / CI propagation(weighted) / 비용·쿼터(batch·캐시·backoff) / notify 가드레일 의미검증 강화.
 - **R4 (이후):** 카카오 채널봇 카피·UI (Gemini 투입) + 미니웹 결과리포트(전략가타입 공유) + 유료트리거.
