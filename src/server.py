@@ -117,7 +117,9 @@ def handle_kakao(body: dict) -> dict:
     user = user if isinstance(user, dict) else {}
     user_id = user.get("id") if isinstance(user.get("id"), str) else ""
     utterance = ureq.get("utterance") if isinstance(ureq.get("utterance"), str) else ""
-    job_names = [j["job_name_ko"] for j in JOBS.values()]
+    # 고압력(가장 궁금해할) 직업 우선 노출 — quick reply 10개 한계 안에서 인게이지먼트 최대화
+    job_names = [j["job_name_ko"] for j in
+                 sorted(JOBS.values(), key=lambda x: -x.get("baseline", {}).get("index", 0))]
     cur = store.get_user_job(user_id) if user_id else None
 
     # 1) 리포트 보기 — 상세 결과화면 링크 (이전엔 데드엔드였음)
@@ -138,7 +140,8 @@ def handle_kakao(body: dict) -> dict:
 
     # 3) 직업 변경/탐색
     if "다른 직업" in utterance or "변경" in utterance:
-        return kakao_text("어떤 직업의 AI 압력을 볼까요?", quick_replies=job_names[:10])
+        return kakao_text("어떤 직업의 AI 압력을 볼까요?\n(목록에 없으면 직업명을 직접 입력하세요)",
+                          quick_replies=job_names[:10])
 
     # 4) 직업 매칭 → 등록 + 요약
     jid = _match_job(utterance)
