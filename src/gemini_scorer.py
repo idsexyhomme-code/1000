@@ -90,19 +90,9 @@ def score_article(job_name: str, tasks: list[dict], title: str, body: str,
     task_lines = "\n".join(f"- {t['task_id']}: {t['name_ko']}" for t in tasks)
     prompt = _PROMPT.format(job_name=job_name, title=title, body=body[:4000],
                             task_lines=task_lines)
-    payload = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {"temperature": 0.2, "responseMimeType": "application/json"},
-    }
-    req = urllib.request.Request(
-        _ENDPOINT.format(model=MODEL, key=_key()),
-        data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json"},
-    )
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        resp = json.load(r)
-    text = resp["candidates"][0]["content"]["parts"][0]["text"]
-    data = json.loads(text)
+    # 뉴스 채점 = routine 티어(저비용 2.5 Pro→flash, 대량 호출 대비)
+    import gemini_client
+    data, _model = gemini_client.generate_json(prompt, tier="routine", temperature=0.2, timeout=timeout)
     return {
         "technology": str(data.get("technology", "")).strip(),
         "vendor": str(data.get("vendor", "")).strip(),

@@ -209,19 +209,10 @@ def _gemini_plan(job_result: dict, timeout: int = 60) -> dict:
         schema_snippet=_SCHEMA_SNIPPET,
         disclaimer=_DISCLAIMER,
     )
-    payload = {
-        "contents": [{"parts": [{"text": prompt}]}],
-        "generationConfig": {"temperature": 0.6, "responseMimeType": "application/json"},
-    }
-    req = urllib.request.Request(
-        _ENDPOINT.format(model=MODEL, key=_key()),
-        data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json"},
-    )
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        resp = json.load(r)
-    text = resp["candidates"][0]["content"]["parts"][0]["text"]
-    return json.loads(text)
+    # 액션플랜(해자 카피) = premium 티어(3.1 Pro → 자동강등 + backoff)
+    import gemini_client
+    plan, _model = gemini_client.generate_json(prompt, tier="premium", temperature=0.6, timeout=timeout)
+    return plan
 
 
 # ── 검증 (gemini_scorer._validate와 동일한 'drop invalid' 패턴) ──────────────
