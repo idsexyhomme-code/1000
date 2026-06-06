@@ -60,15 +60,10 @@ def strategist_type(job: dict, use_gemini: bool = True) -> dict:
 
 
 def _gemini_type(job: str, high: str, low: str) -> dict:
-    key = os.environ["GEMINI_API_KEY"]
-    payload = {"contents": [{"parts": [{"text": _TYPE_PROMPT.format(job=job, high=high, low=low)}]}],
-               "generationConfig": {"temperature": 0.9, "responseMimeType": "application/json"}}
-    req = urllib.request.Request(_ENDPOINT.format(model=MODEL, key=key),
-                                 data=json.dumps(payload).encode("utf-8"),
-                                 headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=40) as r:
-        resp = json.load(r)
-    d = json.loads(resp["candidates"][0]["content"]["parts"][0]["text"])
+    # 카피/UX = premium 티어(3.1 Pro 최대한 → 죽으면 2.5-pro/flash 자동강등 + 429 backoff)
+    import gemini_client
+    d, _model = gemini_client.generate_json(
+        _TYPE_PROMPT.format(job=job, high=high, low=low), tier="premium", temperature=0.9)
     return {k: str(d.get(k, "")).strip() for k in
             ("type_name", "emoji", "tagline", "threat", "opportunity")}
 

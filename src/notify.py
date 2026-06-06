@@ -63,9 +63,6 @@ _PROMPT = """\
 
 
 def _gemini_copy(snap: dict, timeout: int = 40) -> str:
-    key = os.environ.get("GEMINI_API_KEY")
-    if not key:
-        raise RuntimeError("GEMINI_API_KEY 없음")
     drv = (snap.get("top_drivers") or [{}])[0]
     prompt = _PROMPT.format(
         maxlen=MAX_LEN,
@@ -78,15 +75,10 @@ def _gemini_copy(snap: dict, timeout: int = 40) -> str:
         drv_reason=drv.get("reason_ko", ""),
         drv_tier=drv.get("source_tier", 3),
     )
-    payload = {"contents": [{"parts": [{"text": prompt}]}],
-               "generationConfig": {"temperature": 0.8}}
-    req = urllib.request.Request(
-        _ENDPOINT.format(model=MODEL, key=key),
-        data=json.dumps(payload).encode("utf-8"),
-        headers={"Content-Type": "application/json"})
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        resp = json.load(r)
-    return resp["candidates"][0]["content"]["parts"][0]["text"].strip().strip('"')
+    # 카피 = premium 티어(3.1 Pro → 자동강등 + backoff). 결과 빈 문자열이면 호출측이 폴백 처리.
+    import gemini_client
+    text, _model = gemini_client.generate(prompt, tier="premium", temperature=0.8, timeout=timeout)
+    return text.strip().strip('"')
 
 
 def make_push(snap: dict, use_gemini: bool = True) -> dict:

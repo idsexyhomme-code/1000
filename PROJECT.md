@@ -94,7 +94,8 @@
 - **R5-a (배포 보안) ✅:** server.py — 웹훅 토큰 인증(env WEBHOOK_TOKEN, ?token= 불일치→401) + IP rate limit(env RATE_LIMIT, 윈도우 초과→429). 라이브 통과. **[자율결정]** 고난도 단계(카피·디자인)는 Gemini 3.1 Pro, 루틴(채점·요약)은 2.5 Pro/flash로 모델 분리(비용·품질 균형).
 - **R5-b (진행 중):**
   - **CI propagation(weighted) ✅:** `scoring._propagate_job_ci` — 태스크 CI→직업 CI 전파(부분상관 휴리스틱, 정식 통계CI 아님=참고지표). None/음수 가드 + 과신 방지 하한(0.75·가중평균, fear-adjacent 보수성, Codex fix-first). 데모 ±7.6~9.1.
-  - **남음:** outbox sent-marker/재시도/per-user throttle + 카카오 비즈메시지 발송 API 인터페이스 + 이벤트 아카이브/프루닝 + 크롤러 429/5xx backoff.
+  - **Gemini 중앙 클라이언트 ✅(비용·신뢰성):** `src/gemini_client.py` — 역할별 모델체인(premium=3.1 Pro→2.5 Pro→flash / routine=2.5 Pro→flash) + 프리뷰 deprecate 자동강등 + 429/5xx backoff + 빈응답/MAX_TOKENS soft-fail 강등 + 키 없으면 즉시실패. report·notify를 premium 티어로 연결(역할분담: 디자인·UX·카피=Gemini premium, 코드=Codex+Claude). **[사용자 비용 확인사항]** AI Studio 결제 티어/예산알림은 사용자가 콘솔에서 확인. 다음: actionplan·gemini_scorer도 클라이언트로 이관 + dead import 청소.
+  - **남음:** outbox sent-marker/재시도/per-user throttle + 카카오 비즈메시지 발송 API 인터페이스 + 이벤트 아카이브/프루닝.
 - **R6 (배포):** 서버 호스팅 + 도메인 + TLS + cron(배치) + 카카오 채널 연결(사용자 비즈계정 필요) + README 배포가이드.
 - **R5 (하드닝, 이후로 미룸):** 이벤트 만료·아카이브 / CI propagation(weighted) / 비용·쿼터(batch·캐시·backoff) / notify 가드레일 의미검증 강화.
 - **R4 (이후):** 카카오 채널봇 카피·UI (Gemini 투입) + 미니웹 결과리포트(전략가타입 공유) + 유료트리거.
