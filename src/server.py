@@ -172,6 +172,16 @@ class Handler(BaseHTTPRequestHandler):
         self._send(code, json.dumps(obj, ensure_ascii=False).encode("utf-8"),
                    "application/json; charset=utf-8")
 
+    def _not_found(self):
+        html = ('<!doctype html><meta charset="utf-8"><title>커리어 시그널</title>'
+                '<body style="background:#09090b;color:#fafafa;font-family:-apple-system,sans-serif;'
+                'text-align:center;padding:64px 20px"><div style="font-size:44px">📡</div>'
+                '<h1 style="font-size:20px">페이지를 찾을 수 없어요</h1>'
+                '<p style="color:#a1a1aa;font-size:14px">내 직업의 AI 압력을 확인해보세요.</p>'
+                '<a href="/" style="display:inline-block;margin-top:18px;background:#fafafa;color:#09090b;'
+                'padding:13px 26px;border-radius:26px;text-decoration:none;font-weight:700">시작하기 →</a></body>')
+        self._send(404, html.encode("utf-8"), "text/html; charset=utf-8")
+
     def do_GET(self):
         if not _rate_ok(self.client_address[0]):
             return self._send(429, b"rate limited", "text/plain; charset=utf-8")
@@ -187,14 +197,14 @@ class Handler(BaseHTTPRequestHandler):
             if not jid and q.get("user"):
                 jid = store.get_user_job(q["user"][0])
             if jid not in JOBS:
-                return self._send(404, b"unknown job", "text/plain; charset=utf-8")
+                return self._not_found()
             res = _cached_scores().get(jid)
             # 배치가 캐시한 전략가타입 우선, 없으면 폴백 (요청마다 Gemini 호출 금지)
             strat = store.get_strategist(jid) or report.strategist_type(res, use_gemini=False)
             plan = store.get_actionplan(jid)   # 배치 캐시 premium 플랜(없으면 render가 결정적 폴백)
             html = report.render_html(res, strat, action_plan=plan)
             return self._send(200, html.encode("utf-8"), "text/html; charset=utf-8")
-        self._send(404, b"not found", "text/plain; charset=utf-8")
+        self._not_found()
 
     def do_POST(self):
         if not _rate_ok(self.client_address[0]):

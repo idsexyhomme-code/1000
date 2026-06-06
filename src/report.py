@@ -80,6 +80,10 @@ def _safe_url(u: str) -> str:
 
 
 # ── 표현층 (Gemini 3.1 Pro 디자인) ────────────────────────────────────
+_FAVICON = ("<link rel=\"icon\" href=\"data:image/svg+xml,"
+            "%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E"
+            "%3Ctext y='.9em' font-size='88'%3E%F0%9F%93%A1%3C/text%3E%3C/svg%3E\">")
+
 _CSS = """
 :root{--bg-base:#09090b;--bg-surface:#18181b;--bg-elevate:#27272a;--border-color:#3f3f46;
 --text-primary:#fafafa;--text-secondary:#a1a1aa;--text-tertiary:#8b8b94;
@@ -234,7 +238,7 @@ def landing_html(jobs: dict) -> str:
 <meta property="og:type" content="website"><meta property="og:site_name" content="커리어 시그널">
 <meta property="og:title" content="내 직업, AI에 얼마나 영향받을까?">
 <meta property="og:description" content="업무별 AI 압력을 근거와 함께 — 커리어 시그널">
-<title>커리어 시그널 — 내 직업, AI에 얼마나?</title>
+{_FAVICON}<title>커리어 시그널 — 내 직업, AI에 얼마나?</title>
 <style>{_CSS}{_LANDING_CSS}</style></head><body><div class="app-container">
   <div class="hero-card"><div class="hero-emoji">📡</div>
     <h1 class="hero-title">커리어 시그널</h1>
@@ -279,7 +283,7 @@ def render_html(job: dict, strat: dict | None = None, action_plan: dict | None =
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta property="og:type" content="website"><meta property="og:site_name" content="커리어 시그널">
 <meta property="og:title" content="{_e(og_title)}"><meta property="og:description" content="{_e(og_desc)}">
-<title>커리어 시그널 · {_e(job.get('job_name_ko',''))}</title>
+{_FAVICON}<title>커리어 시그널 · {_e(job.get('job_name_ko',''))}</title>
 <style>{_CSS}</style></head><body><div class="app-container">
   <div class="hero-card">
     <div class="hero-emoji" role="img" aria-label="전략가 타입">{_e(strat.get('emoji','🧭'))}</div>
