@@ -6,7 +6,8 @@
     "index": 70,
     "ci": 10,
     "source": "O*NET 23-2011 + 워크넷 + 채용공고 업무비중 추정",
-    "note": "손추정 — O*NET·워크넷 캘리브레이션 필요"
+    "note": "손추정 — O*NET·워크넷 캘리브레이션 필요",
+    "calibrated": false
   },
   "tasks": [
     {

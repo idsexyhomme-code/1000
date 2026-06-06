@@ -6,7 +6,8 @@
     "index": 55,
     "ci": 12,
     "source": "O*NET 11-2021 + 워크넷 직무 분석",
-    "note": "손추정 — O*NET·워크넷 캘리브레이션 필요"
+    "note": "손추정 — O*NET·워크넷 캘리브레이션 필요",
+    "calibrated": false
   },
   "tasks": [
     {
