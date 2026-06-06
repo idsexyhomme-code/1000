@@ -18,6 +18,7 @@
 | `RATE_LIMIT` | IP당 분당 요청 수(기본 60) | 선택 |
 | `HOST` | 바인딩 주소(기본 127.0.0.1) | 선택 |
 | `REPORT_BASE_URL` | 카카오 봇 '리포트 보기' 링크용(예: `https://api.example.com`) | 배포 시 ✅ |
+| `CHANNEL_URL` | 카카오 채널 추가 링크(공유 메시지용) | 배포 시 ✅ |
 
 ```bash
 export GEMINI_API_KEY="..."          # 코드에 절대 박지 말 것

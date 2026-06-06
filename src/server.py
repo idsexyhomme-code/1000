@@ -48,6 +48,7 @@ def _cached_scores() -> dict:
 # ── 배포 보안: 웹훅 토큰 인증 + IP rate limit (R5) ────────────────────
 WEBHOOK_TOKEN = os.environ.get("WEBHOOK_TOKEN", "")  # 설정 시 /webhook은 ?token= 일치 요구
 REPORT_BASE_URL = os.environ.get("REPORT_BASE_URL", "")  # 예: https://api.example.com (리포트 링크용)
+CHANNEL_URL = os.environ.get("CHANNEL_URL", "")          # 카카오 채널 추가 링크(공유 바이럴용)
 RATE_LIMIT = int(os.environ.get("RATE_LIMIT", "60"))  # IP당 윈도우 요청 수
 RATE_WINDOW = 60.0
 _rl_lock = threading.Lock()
@@ -88,6 +89,17 @@ def _summary_text(job_id: str) -> str:
             f"가장 압력 높은 업무: {head.get('name_ko','-')} {head.get('index','')}\n\n{push}")
 
 
+def _share_text(job_id: str) -> str:
+    """친구에게 전달할 공유 메시지(바이럴 #1 레버). 전략가타입 캐시 있으면 활용."""
+    res = _cached_scores().get(job_id) or {}
+    strat = store.get_strategist(job_id) or {}
+    name = res.get("job_name_ko", "")
+    head = f"{strat['type_name']} {strat.get('emoji', '🧭')}\n" if strat.get("type_name") else ""
+    link = CHANNEL_URL or "(채널 링크는 배포 후 제공)"
+    return (f"📡 내 직무 AI 압력 리포트\n{head}{name} 압력지수 {res.get('index', '-')}({res.get('weather', '')})\n"
+            f"너의 직업은 안전할까? 👉 {link}")
+
+
 def kakao_text(text: str, quick_replies: list[str] | None = None) -> dict:
     out = {"version": "2.0", "template": {"outputs": [{"simpleText": {"text": text}}]}}
     if quick_replies:
@@ -117,22 +129,29 @@ def handle_kakao(body: dict) -> dict:
                               quick_replies=["다른 직업"])
         return kakao_text("먼저 직업을 알려주세요 🙂", quick_replies=job_names[:10])
 
-    # 2) 직업 변경/탐색
+    # 2) 공유 — 친구에게 전달할 메시지 (바이럴)
+    if "공유" in utterance:
+        if cur:
+            return kakao_text(_share_text(cur) + "\n\n☝️ 이 메시지를 친구에게 전달해보세요.",
+                              quick_replies=["다른 직업"])
+        return kakao_text("먼저 직업을 알려주세요 🙂", quick_replies=job_names[:10])
+
+    # 3) 직업 변경/탐색
     if "다른 직업" in utterance or "변경" in utterance:
         return kakao_text("어떤 직업의 AI 압력을 볼까요?", quick_replies=job_names[:10])
 
-    # 3) 직업 매칭 → 등록 + 요약
+    # 4) 직업 매칭 → 등록 + 요약
     jid = _match_job(utterance)
     if jid:
         if user_id:
             store.set_user_job(user_id, jid)
-        return kakao_text(_summary_text(jid), quick_replies=["리포트 보기", "다른 직업"])
+        return kakao_text(_summary_text(jid), quick_replies=["리포트 보기", "공유하기", "다른 직업"])
 
-    # 4) 이미 등록된 사용자 → 현재 상태
+    # 5) 이미 등록된 사용자 → 현재 상태
     if cur:
-        return kakao_text(_summary_text(cur), quick_replies=["리포트 보기", "다른 직업"])
+        return kakao_text(_summary_text(cur), quick_replies=["리포트 보기", "공유하기", "다른 직업"])
 
-    # 5) 첫 접점 — 온보딩(따뜻하게, 1탭 선택)
+    # 6) 첫 접점 — 온보딩(따뜻하게, 1탭 선택)
     return kakao_text(
         "👋 커리어 시그널이에요.\n내 직업이 AI에 얼마나 영향받는지 — 업무별로, 매일 알려드려요.\n\n직업을 선택하거나 직접 입력해보세요.",
         quick_replies=job_names[:10])
