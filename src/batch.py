@@ -81,12 +81,13 @@ def run_batch(now=None, max_per_source: int | None = None, send: bool = False) -
     return notices
 
 
-def _flush_outbox() -> int:
-    """발송 스텁 — 실제로는 카카오 비즈메시지(알림톡/친구톡) API 호출.
-    여기선 큐 길이만 로그. status 갱신/재시도/backoff는 R5."""
-    pending = [m for m in store.read_outbox() if m.get("status") == "queued"]
-    print(f"[batch] 발송 대기 {len(pending)}건 (카카오 비즈메시지 API 연동은 R5/배포)")
-    return len(pending)
+def _flush_outbox() -> dict:
+    """outbox 발송 — sent-marker/재시도/per-user throttle (현재 StubSender).
+    실제 카카오 비즈메시지는 sender.KakaoSender 연결(발신프로필+템플릿 승인 후, R6)."""
+    import sender
+    stats = sender.flush()
+    print(f"[batch] 발송: {stats}")
+    return stats
 
 
 if __name__ == "__main__":

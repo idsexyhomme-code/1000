@@ -164,6 +164,17 @@ def read_outbox() -> list[dict]:
     return [json.loads(ln) for ln in open(OUTBOX_FILE, encoding="utf-8") if ln.strip()]
 
 
+def update_outbox(rows: list[dict]) -> None:
+    """outbox 전체를 갱신된 상태로 원자적 재기록 (sent-marker/재시도 후)."""
+    _ensure()
+    with _STATE_LOCK:
+        tmp = OUTBOX_FILE + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            for r in rows:
+                f.write(json.dumps(r, ensure_ascii=False) + "\n")
+        os.replace(tmp, OUTBOX_FILE)
+
+
 NOTIFIED_FILE = os.path.join(_DATA, "notified.json")  # 직무별 마지막 알림 스냅샷 ts (중복 알림 방지)
 
 
