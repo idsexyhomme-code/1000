@@ -1,0 +1,55 @@
+{
+  "job_id": "marketer",
+  "job_name_ko": "마케터",
+  "job_name_en": "Marketer",
+  "baseline": {
+    "index": 55,
+    "ci": 12,
+    "source": "O*NET 11-2021 + 워크넷 직무 분석",
+    "note": "손추정 — O*NET·워크넷 캘리브레이션 필요"
+  },
+  "tasks": [
+    {
+      "task_id": "strategy-planning",
+      "name_ko": "마케팅 전략 기획",
+      "weight": 0.25,
+      "baseline": 20,
+      "ci": 12
+    },
+    {
+      "task_id": "market-research",
+      "name_ko": "시장 조사 및 데이터 수집",
+      "weight": 0.2,
+      "baseline": 85,
+      "ci": 10
+    },
+    {
+      "task_id": "content-creation",
+      "name_ko": "광고 카피 및 콘텐츠 제작",
+      "weight": 0.2,
+      "baseline": 65,
+      "ci": 10
+    },
+    {
+      "task_id": "report-writing",
+      "name_ko": "성과 리포트 작성",
+      "weight": 0.15,
+      "baseline": 90,
+      "ci": 8
+    },
+    {
+      "task_id": "campaign-management",
+      "name_ko": "캠페인 운영 및 예산 관리",
+      "weight": 0.1,
+      "baseline": 50,
+      "ci": 10
+    },
+    {
+      "task_id": "partner-communication",
+      "name_ko": "파트너 및 인플루언서 소통",
+      "weight": 0.1,
+      "baseline": 15,
+      "ci": 14
+    }
+  ]
+}

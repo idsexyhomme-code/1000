@@ -1,0 +1,48 @@
+{
+  "job_id": "call-center-agent",
+  "job_name_ko": "고객상담원",
+  "job_name_en": "Call Center Agent",
+  "baseline": {
+    "index": 65,
+    "ci": 10,
+    "source": "O*NET 43-4051 + 워크넷 직무 분석",
+    "note": "손추정 — O*NET·워크넷 캘리브레이션 필요"
+  },
+  "tasks": [
+    {
+      "task_id": "simple-inquiry-response",
+      "name_ko": "단순 문의 및 FAQ 응대",
+      "weight": 0.35,
+      "baseline": 95,
+      "ci": 8
+    },
+    {
+      "task_id": "empathetic-complaint-handling",
+      "name_ko": "불만 고객 공감 응대 및 케어",
+      "weight": 0.25,
+      "baseline": 15,
+      "ci": 12
+    },
+    {
+      "task_id": "data-entry",
+      "name_ko": "상담 이력 데이터 입력",
+      "weight": 0.15,
+      "baseline": 85,
+      "ci": 10
+    },
+    {
+      "task_id": "issue-escalation",
+      "name_ko": "복잡한 문제 파악 및 유관부서 이관",
+      "weight": 0.15,
+      "baseline": 40,
+      "ci": 12
+    },
+    {
+      "task_id": "outbound-calls",
+      "name_ko": "아웃바운드 영업 및 설문",
+      "weight": 0.1,
+      "baseline": 70,
+      "ci": 10
+    }
+  ]
+}
