@@ -34,3 +34,5 @@ upsight/
 # === 런타임 생성물 (소스 아님) ===
 data/events/
 data/scores/
+data/users.json
+data/overrides_audit.jsonl

@@ -73,6 +73,8 @@
 - **R3b-2-c (task-first + override) ✅:** ④`headline_task`로 태스크 우선 노출, 직업 index는 secondary 명시(소비자 무손상). ⑤Event.override 필드 + `store.save_override()`(override=True + 별도 감사로그 `overrides_audit.jsonl`)로 운영자 보정 구조 분리. 회귀 통과.
 - **R4a (카카오 푸시 카피 생성기) ✅:** `src/notify.py` — 점수 스냅샷→푸시 1줄. Gemini 2.5 Pro 카피 + 가드레일 후처리(금칙어 '대체된다' 등 차단) + Gemini 없이도 동작하는 폴백 템플릿. 라이브 통과(업무우선+근거+단정없음+행동유도). 한계: 금칙어 리스트는 백스톱일 뿐 의미적 조작 전부는 못 잡음.
 - **R4b (미니웹 결과리포트) ✅:** `src/report.py` — scoring 결과→모바일 우선 정적 HTML. 전략가 타입(Gemini, 위협+기회 동시 → 공유 가능, 예: "AI 편집 설계자형🧠") + 기상예보 시각화 + 태스크별 압력바 + 근거뉴스(출처 배지+링크) + 유료트리거. 라이브+Codex fix-first 통과(XSS scheme 차단 _safe_url). 샘플: `web/sample-report.html`(모바일에서 열어보면 실제 UI).
-- **R4c (다음):** 봇 서버 골격 — 카카오 채널 웹훅 수신 + 직업 선택 플로우 + notify(푸시카피)·report(웹리포트) 연결 + 일/주 배치 트리거. 정적→동작하는 서비스로.
+- **R4c (봇 서버 골격) ✅:** `src/server.py`(stdlib http.server, 의존성0) — POST /webhook/kakao(발화→직업선택→매핑저장→task-first 요약+푸시카피), GET /report(결과리포트 서빙), /health. store에 사용자-직업 매핑(락+원자적쓰기). 라이브 통과(엔드투엔드 사용자여정). Codex 보안 fix-first 5종: Content-Length 제한(64KB·413), body 타입검증(배열/null 크래시 방지), users.json 락+os.replace, /report 점수 TTL캐시+Gemini호출 제거(0.0007s), 127.0.0.1 기본 바인딩.
+  - **배포 전 필수(R5):** 웹훅 인증/서명 검증, rate limit, reverse proxy TLS.
+- **R4d (다음):** 일/주 배치 — pipeline.run() 주기 실행 + 압력 변동 시 사용자에게 notify 푸시(전략가타입 Gemini 결과 캐시). cron/스케줄러 연결.
 - **R5 (하드닝, 이후로 미룸):** 이벤트 만료·아카이브 / CI propagation(weighted) / 비용·쿼터(batch·캐시·backoff) / notify 가드레일 의미검증 강화.
 - **R4 (이후):** 카카오 채널봇 카피·UI (Gemini 투입) + 미니웹 결과리포트(전략가타입 공유) + 유료트리거.

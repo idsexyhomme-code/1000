@@ -168,6 +168,15 @@ def recompute(now=None) -> dict:
     return result
 
 
+def current_scores(now=None) -> dict:
+    """점수만 계산(점수로그 append 없는 읽기전용) — 봇 서버 /report·요약용."""
+    now = now or datetime.now(timezone.utc)
+    eng = ScoringEngine(JOBS_DIR)
+    events = [_to_event(e) for e in store.load_events()
+              if e.get("affected") and e.get("status") == "complete"]
+    return eng.score(events, now=now)
+
+
 def run(now=None, max_per_source: int | None = None) -> dict:
     new = ingest(now=now, max_per_source=max_per_source)
     print(f"[ingest] 신규 점수화 {new}건")

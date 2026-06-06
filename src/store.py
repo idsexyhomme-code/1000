@@ -8,7 +8,10 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 from datetime import datetime, timezone
+
+_USERS_LOCK = threading.Lock()
 
 _DATA = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
 EVENTS_DIR = os.path.join(_DATA, "events")
@@ -102,3 +105,34 @@ def delta_since_prev(job_id: str, current_index: float) -> float | None:
     if not prev or "index" not in prev:
         return None
     return round(current_index - prev["index"], 1)
+
+
+# ── 사용자-직업 매핑 (봇 서버용) ──────────────────────────────────────
+USERS_FILE = os.path.join(_DATA, "users.json")  # 런타임/개인정보 → .gitignore
+
+
+def _load_users() -> dict:
+    if not os.path.exists(USERS_FILE):
+        return {}
+    try:
+        with open(USERS_FILE, encoding="utf-8") as f:
+            return json.load(f)
+    except Exception:
+        return {}
+
+
+def set_user_job(user_id: str, job_id: str) -> None:
+    """동시쓰기 안전(락 + temp→os.replace 원자적 저장), user_id 길이 제한."""
+    _ensure()
+    user_id = str(user_id)[:128]
+    with _USERS_LOCK:
+        users = _load_users()
+        users[user_id] = {"job_id": job_id}
+        tmp = USERS_FILE + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(users, f, ensure_ascii=False, indent=2)
+        os.replace(tmp, USERS_FILE)  # 원자적 교체 — 읽는 중 파일 날아감 방지
+
+
+def get_user_job(user_id: str) -> str | None:
+    return _load_users().get(user_id, {}).get("job_id")
