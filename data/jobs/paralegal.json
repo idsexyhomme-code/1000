@@ -1,0 +1,48 @@
+{
+  "job_id": "paralegal",
+  "job_name_ko": "법률사무원",
+  "job_name_en": "Paralegal",
+  "baseline": {
+    "index": 70,
+    "ci": 10,
+    "source": "O*NET 23-2011 + 워크넷 + 채용공고 업무비중 추정",
+    "note": "손추정 — O*NET·워크넷 캘리브레이션 필요"
+  },
+  "tasks": [
+    {
+      "task_id": "case-research",
+      "name_ko": "판례 및 법령 검색",
+      "weight": 0.25,
+      "baseline": 90,
+      "ci": 8
+    },
+    {
+      "task_id": "document-review",
+      "name_ko": "법률 문서 검토 및 분류",
+      "weight": 0.25,
+      "baseline": 85,
+      "ci": 10
+    },
+    {
+      "task_id": "drafting-contracts",
+      "name_ko": "표준 계약서 초안 작성",
+      "weight": 0.2,
+      "baseline": 80,
+      "ci": 12
+    },
+    {
+      "task_id": "court-filing",
+      "name_ko": "법원 서류 제출 및 행정 처리",
+      "weight": 0.15,
+      "baseline": 50,
+      "ci": 14
+    },
+    {
+      "task_id": "client-intake",
+      "name_ko": "의뢰인 기초 상담 및 안내",
+      "weight": 0.15,
+      "baseline": 30,
+      "ci": 10
+    }
+  ]
+}

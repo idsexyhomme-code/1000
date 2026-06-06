@@ -1,0 +1,48 @@
+{
+  "job_id": "graphic-designer",
+  "job_name_ko": "그래픽 디자이너",
+  "job_name_en": "Graphic Designer",
+  "baseline": {
+    "index": 65,
+    "ci": 10,
+    "source": "O*NET 27-1024 + 워크넷 + 채용공고 업무비중 추정",
+    "note": "손추정 — O*NET·워크넷 캘리브레이션 필요"
+  },
+  "tasks": [
+    {
+      "task_id": "image-generation",
+      "name_ko": "이미지 생성 및 리터칭",
+      "weight": 0.25,
+      "baseline": 85,
+      "ci": 10
+    },
+    {
+      "task_id": "layout-design",
+      "name_ko": "레이아웃 및 템플릿 작업",
+      "weight": 0.2,
+      "baseline": 70,
+      "ci": 12
+    },
+    {
+      "task_id": "creative-concept",
+      "name_ko": "창의적 컨셉 기획",
+      "weight": 0.2,
+      "baseline": 25,
+      "ci": 10
+    },
+    {
+      "task_id": "client-communication",
+      "name_ko": "클라이언트 소통 및 요구사항 분석",
+      "weight": 0.2,
+      "baseline": 15,
+      "ci": 8
+    },
+    {
+      "task_id": "file-formatting",
+      "name_ko": "파일 포맷 변환 및 최적화",
+      "weight": 0.15,
+      "baseline": 90,
+      "ci": 8
+    }
+  ]
+}

@@ -1,0 +1,55 @@
+{
+  "job_id": "office-admin",
+  "job_name_ko": "사무·행정직",
+  "job_name_en": "Office Administrator",
+  "baseline": {
+    "index": 75,
+    "ci": 10,
+    "source": "O*NET 43-6014 + 워크넷 + 채용공고 업무비중 추정",
+    "note": "손추정 — O*NET·워크넷 캘리브레이션 필요"
+  },
+  "tasks": [
+    {
+      "task_id": "expense-processing",
+      "name_ko": "경비 정산 및 영수증 처리",
+      "weight": 0.2,
+      "baseline": 95,
+      "ci": 8
+    },
+    {
+      "task_id": "document-formatting",
+      "name_ko": "문서 서식 지정 및 취합",
+      "weight": 0.2,
+      "baseline": 90,
+      "ci": 8
+    },
+    {
+      "task_id": "schedule-management",
+      "name_ko": "일정 관리 및 회의실 예약",
+      "weight": 0.15,
+      "baseline": 85,
+      "ci": 10
+    },
+    {
+      "task_id": "supplies-management",
+      "name_ko": "사무용품 재고 관리",
+      "weight": 0.1,
+      "baseline": 60,
+      "ci": 14
+    },
+    {
+      "task_id": "internal-communication",
+      "name_ko": "사내 공지 및 부서 간 조율",
+      "weight": 0.25,
+      "baseline": 35,
+      "ci": 12
+    },
+    {
+      "task_id": "visitor-reception",
+      "name_ko": "방문객 응대 및 전화 연결",
+      "weight": 0.1,
+      "baseline": 20,
+      "ci": 10
+    }
+  ]
+}

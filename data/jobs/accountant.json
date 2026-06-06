@@ -1,0 +1,48 @@
+{
+  "job_id": "accountant",
+  "job_name_ko": "회계사",
+  "job_name_en": "Accountant",
+  "baseline": {
+    "index": 60,
+    "ci": 12,
+    "source": "O*NET 13-2011 + 워크넷 + 채용공고 업무비중 추정",
+    "note": "손추정 — O*NET·워크넷 캘리브레이션 필요"
+  },
+  "tasks": [
+    {
+      "task_id": "data-entry",
+      "name_ko": "전표 입력 및 데이터 정리",
+      "weight": 0.2,
+      "baseline": 95,
+      "ci": 8
+    },
+    {
+      "task_id": "financial-reporting",
+      "name_ko": "재무제표 작성",
+      "weight": 0.25,
+      "baseline": 80,
+      "ci": 10
+    },
+    {
+      "task_id": "tax-calculation",
+      "name_ko": "세무 계산 및 신고",
+      "weight": 0.2,
+      "baseline": 75,
+      "ci": 12
+    },
+    {
+      "task_id": "audit-and-assurance",
+      "name_ko": "회계 감사 및 검증",
+      "weight": 0.2,
+      "baseline": 45,
+      "ci": 14
+    },
+    {
+      "task_id": "strategic-advisory",
+      "name_ko": "경영 전략 및 재무 자문",
+      "weight": 0.15,
+      "baseline": 15,
+      "ci": 10
+    }
+  ]
+}

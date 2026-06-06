@@ -1,0 +1,48 @@
+{
+  "job_id": "journalist",
+  "job_name_ko": "기자",
+  "job_name_en": "Journalist",
+  "baseline": {
+    "index": 55,
+    "ci": 12,
+    "source": "O*NET 27-3022 + 워크넷 + 채용공고 업무비중 추정",
+    "note": "손추정 — O*NET·워크넷 캘리브레이션 필요"
+  },
+  "tasks": [
+    {
+      "task_id": "press-release-rewriting",
+      "name_ko": "보도자료 요약 및 재작성",
+      "weight": 0.2,
+      "baseline": 90,
+      "ci": 8
+    },
+    {
+      "task_id": "data-journalism",
+      "name_ko": "데이터 수집 및 분석",
+      "weight": 0.15,
+      "baseline": 75,
+      "ci": 10
+    },
+    {
+      "task_id": "article-writing",
+      "name_ko": "기사 초안 작성 및 송고",
+      "weight": 0.2,
+      "baseline": 60,
+      "ci": 10
+    },
+    {
+      "task_id": "investigative-reporting",
+      "name_ko": "심층 탐사 보도 기획",
+      "weight": 0.2,
+      "baseline": 20,
+      "ci": 14
+    },
+    {
+      "task_id": "interviewing",
+      "name_ko": "취재원 섭외 및 인터뷰",
+      "weight": 0.25,
+      "baseline": 10,
+      "ci": 12
+    }
+  ]
+}
