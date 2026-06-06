@@ -10,10 +10,6 @@ from __future__ import annotations
 
 import json
 import os
-import urllib.request
-
-MODEL = "gemini-2.5-pro"
-_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
 
 DIRECTIONS = {"automation", "wage-pressure", "tool-adoption", "regulation", "demand-growth"}
 FACTOR_MAX = {"proximity": 3, "maturity": 3, "adoption": 3, "irreversibility": 3, "scale": 2}
@@ -52,13 +48,6 @@ _PROMPT = """\
 - scale: 대중 보급형 2 / 니치 0
 절대 특정 직업/회사/개인이 '대체된다'고 단정하지 말 것. '관측된 자동화 압력'으로만 표현.
 """
-
-
-def _key() -> str:
-    k = os.environ.get("GEMINI_API_KEY")
-    if not k:
-        raise RuntimeError("GEMINI_API_KEY 환경변수가 필요합니다 (코드에 키를 박지 말 것).")
-    return k
 
 
 def _validate(data: dict, valid_task_ids: set[str]) -> list[dict]:

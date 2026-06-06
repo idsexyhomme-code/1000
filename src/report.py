@@ -15,11 +15,7 @@ from __future__ import annotations
 import html
 import json
 import os
-import urllib.request
 from urllib.parse import urlsplit
-
-MODEL = "gemini-2.5-pro"
-_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
 
 # 기상밴드: (이모지, solid색, 그라디언트 시작색). 태풍은 공포 떡칠 대신 절제된 로즈.
 WEATHER_STYLE = {

@@ -11,10 +11,7 @@ from __future__ import annotations
 
 import json
 import os
-import urllib.request
 
-MODEL = "gemini-2.5-pro"
-_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
 MAX_LEN = 90
 
 # 단정·공포조작 금칙어 (§1.6 법적/윤리 가드레일)

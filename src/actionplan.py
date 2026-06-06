@@ -22,10 +22,6 @@ from __future__ import annotations
 import datetime as _dt
 import json
 import os
-import urllib.request
-
-MODEL = "gemini-3.1-pro-preview"
-_ENDPOINT = "https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent?key={key}"
 
 # ── enum / 상수 ────────────────────────────────────────────────────────────
 _WEATHER = ("맑음", "구름조금", "흐림", "태풍경보")
@@ -173,13 +169,6 @@ _PROMPT = """\
 ※ disclaimer_ko 에는 다음 문구를 그대로 넣어라: '{disclaimer}' (개인정보보호법 §37-2 준수)
 ※ as_of 는 호출 시각(ISO8601)을 넣어라. source/guardrail_ok 는 호출측이 채우므로 비워도 된다.
 """
-
-
-def _key() -> str:
-    k = os.environ.get("GEMINI_API_KEY")
-    if not k:
-        raise RuntimeError("GEMINI_API_KEY 환경변수가 필요합니다 (코드에 키를 박지 말 것).")
-    return k
 
 
 def _fmt_tasks_for_prompt(job_result: dict) -> str:
