@@ -25,7 +25,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import gemini_scorer
 import store
 from crawler import DEFAULT_SOURCES, tier_of
-from scoring import Affected, Event, ScoringEngine
+from scoring import Affected, Event, ScoringEngine, decay_factor
 
 JOBS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "jobs")
 
@@ -177,9 +177,37 @@ def current_scores(now=None) -> dict:
     return eng.score(events, now=now)
 
 
+PRUNE_EPSILON = 0.03   # 감쇠계수 이만큼 미만이면 기여 무시 가능 → 아카이브
+
+
+def prune_events(now=None) -> int:
+    """감쇠로 소멸한 non-regulation 이벤트를 아카이브 — 무한 재읽기 방지(Codex R3b-1).
+    규제 이벤트는 만료 없음(decay_factor가 1.0 유지)이라 자동 보존. 반환: 아카이브 건수."""
+    now = now or datetime.now(timezone.utc)
+    archived = 0
+    for e in store.load_events():
+        affs = e.get("affected") or []
+        if not affs:
+            continue
+        try:
+            pub = datetime.fromisoformat(e["published_at"].replace("Z", "+00:00"))
+            age = max(0.0, (now - pub).total_seconds() / 86400)
+        except Exception:
+            continue
+        # 영향들 중 최대 감쇠계수(가장 살아있는 것) — 이마저 ε 미만이면 전부 소멸
+        max_decay = max(decay_factor(a.get("event_kind", "evidence"), age) for a in affs)
+        if max_decay < PRUNE_EPSILON:
+            if store.archive_event(e["event_id"]):
+                archived += 1
+    return archived
+
+
 def run(now=None, max_per_source: int | None = None) -> dict:
     new = ingest(now=now, max_per_source=max_per_source)
     print(f"[ingest] 신규 점수화 {new}건")
+    pruned = prune_events(now=now)
+    if pruned:
+        print(f"[prune] 감쇠소멸 이벤트 {pruned}건 아카이브")
     result = recompute(now=now)
     for job_id, r in result.items():
         d = next(iter(store.score_history(job_id, 1)), {}).get("delta")

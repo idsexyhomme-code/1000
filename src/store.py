@@ -65,6 +65,19 @@ def event_exists(event_id: str) -> bool:
     return os.path.exists(os.path.join(EVENTS_DIR, f"{event_id}.json"))
 
 
+ARCHIVE_DIR = os.path.join(_DATA, "events_archive")
+
+
+def archive_event(event_id: str) -> bool:
+    """감쇠 소멸 이벤트를 아카이브로 이동(점수 재계산 입력에서 제외, 기록은 보존)."""
+    src = os.path.join(EVENTS_DIR, f"{event_id}.json")
+    if not os.path.exists(src):
+        return False
+    os.makedirs(ARCHIVE_DIR, exist_ok=True)
+    os.replace(src, os.path.join(ARCHIVE_DIR, f"{event_id}.json"))
+    return True
+
+
 def event_status(event_id: str) -> str | None:
     """저장된 이벤트의 status 반환(없으면 None).
     원자적 저장(Codex 리뷰 최우선): 'failed'는 재시도 대상, 'complete'/'irrelevant'는 처리완료."""
