@@ -83,7 +83,9 @@
   - **구현:** 히어로 카드 안에 반원 SVG 게이지(각도=index/100×180° 동적) + 4단계 기상밴드 + 신뢰구간± / 위협·기회 양면 / task-first 업무바 / 티어배지(공식·언론·벤더PR)+근거 / 유료CTA / 가드레일 푸터. Pretendard 폰트스택·word-break:keep-all 한글 최적화.
   - **Codex fix-first:** 카피 불변 위반(가드레일/섹션/CTA 문구 변경) 전량 복원 + 태풍 task바 빨강떡칠 완화(#e11d48→#fb7185). 통과: WCAG AA(5.89:1/5.25:1), 게이지 각도수학, _safe_url XSS.
 - **R5-a (배포 보안) ✅:** server.py — 웹훅 토큰 인증(env WEBHOOK_TOKEN, ?token= 불일치→401) + IP rate limit(env RATE_LIMIT, 윈도우 초과→429). 라이브 통과. **[자율결정]** 고난도 단계(카피·디자인)는 Gemini 3.1 Pro, 루틴(채점·요약)은 2.5 Pro/flash로 모델 분리(비용·품질 균형).
-- **R5-b (다음):** outbox sent-marker/재시도/per-user throttle + 카카오 비즈메시지 발송 API 인터페이스 + 이벤트 아카이브/프루닝 + CI propagation(weighted) + 크롤러 429/5xx backoff.
+- **R5-b (진행 중):**
+  - **CI propagation(weighted) ✅:** `scoring._propagate_job_ci` — 태스크 CI→직업 CI 전파(부분상관 휴리스틱, 정식 통계CI 아님=참고지표). None/음수 가드 + 과신 방지 하한(0.75·가중평균, fear-adjacent 보수성, Codex fix-first). 데모 ±7.6~9.1.
+  - **남음:** outbox sent-marker/재시도/per-user throttle + 카카오 비즈메시지 발송 API 인터페이스 + 이벤트 아카이브/프루닝 + 크롤러 429/5xx backoff.
 - **R6 (배포):** 서버 호스팅 + 도메인 + TLS + cron(배치) + 카카오 채널 연결(사용자 비즈계정 필요) + README 배포가이드.
 - **R5 (하드닝, 이후로 미룸):** 이벤트 만료·아카이브 / CI propagation(weighted) / 비용·쿼터(batch·캐시·backoff) / notify 가드레일 의미검증 강화.
 - **R4 (이후):** 카카오 채널봇 카피·UI (Gemini 투입) + 미니웹 결과리포트(전략가타입 공유) + 유료트리거.

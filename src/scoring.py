@@ -118,6 +118,34 @@ def decay_factor(event_kind: str, age_days: float) -> float:
 
 
 # ── 점수 엔진 ─────────────────────────────────────────────────────────
+def _num(x, default: float) -> float:
+    """안전 형변환: None/비수치/NaN/음수 → default (CI 계산 크래시·왜곡 방지)."""
+    try:
+        v = float(x)
+        return v if (v == v and v >= 0) else default
+    except (TypeError, ValueError):
+        return default
+
+
+def _propagate_job_ci(tasks: list[dict], drivers: list[dict], fallback: float) -> float:
+    """태스크 신뢰구간 → 직업 신뢰구간 전파 (R5-b, Codex '표시만 흉내' 지적 반영).
+    부분상관 휴리스틱 구간(정식 통계 CI 아님 — 제품은 '참고지표'로 표기). 근거 신뢰도로 불확실성 가감.
+    ★fear-adjacent 제품이라 과신 금지: 하한 0.75·가중평균으로 너무 타이트해지지 않게 (Codex).
+    """
+    weights = [_num(t.get("weight"), 0.0) for t in tasks]
+    cis = [_num(t.get("ci"), 10.0) for t in tasks]
+    den = sum(weights)
+    if den <= 0:
+        return fallback
+    w_avg = sum(w * c for w, c in zip(weights, cis)) / den                 # 완전상관 상한
+    quad = math.sqrt(sum((w * c) ** 2 for w, c in zip(weights, cis))) / den  # 독립 하한
+    base = max((w_avg + quad) / 2, w_avg * 0.75)                            # 과신 방지 하한
+    confs = [_num(d.get("confidence"), 0.7) for d in drivers]
+    avg_conf = sum(confs) / len(confs) if confs else 0.6   # 근거 없거나 약하면 불확실성↑
+    inflate = 1.0 + (1.0 - avg_conf) * 0.5
+    return round(min(25.0, max(4.0, base * inflate)), 1)
+
+
 class ScoringEngine:
     def __init__(self, jobs_dir: str):
         self.jobs = {}
@@ -225,7 +253,8 @@ class ScoringEngine:
                 "tasks": ranked,
                 "top_drivers": ds[:3],          # 점수를 민 핵심 근거 — 유료 트리거에 사용
                 "index": round(job_index, 1),   # 보조 롤업 지표 (secondary)
-                "ci": job["baseline"].get("ci", 12),
+                "ci": _propagate_job_ci(tasks_out, drivers.get(job_id, []),
+                                        job["baseline"].get("ci", 12)),
                 "weather": lbl, "weather_desc": desc,
             }
         return out
