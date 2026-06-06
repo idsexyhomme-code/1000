@@ -30,13 +30,17 @@ def _delta_phrase(delta) -> str:
 
 
 def fallback_copy(snap: dict) -> str:
-    """Gemini 없이도 동작하는 결정적 템플릿 (근거+업무+날씨+행동)."""
+    """Gemini 없이도 동작하는 결정적 템플릿 (근거+업무+날씨+행동). action_title 있으면 이번 주 할 일 노출."""
     job = snap.get("job_name_ko", "내 직무")
     task = (snap.get("headline_task") or {}).get("name_ko", "핵심 업무")
     weather = snap.get("weather", "흐림")
     drv = (snap.get("top_drivers") or [{}])[0]
     src = drv.get("title", "최신 AI 동향")
-    msg = f"[{weather}] '{job}'의 '{task}' 업무 {_delta_phrase(snap.get('delta'))}. 근거: {src[:30]}… 대응전략 보기"
+    action = snap.get("action_title")
+    if action:   # 경고→구명조끼: 이번 주 구체 행동 1개를 푸시에 노출
+        msg = f"[{weather}] '{task}' 업무 {_delta_phrase(snap.get('delta'))}. 이번 주: {action}"
+    else:
+        msg = f"[{weather}] '{job}'의 '{task}' 업무 {_delta_phrase(snap.get('delta'))}. 근거: {src[:30]}… 대응전략 보기"
     return msg[:MAX_LEN]
 
 
@@ -56,11 +60,13 @@ _PROMPT = """\
 핵심 근거 뉴스: {drv_title}
 근거 요약: {drv_reason}
 출처 등급: T{drv_tier} (T1 공식 > T2 언론 > T3 벤더PR)
+{action_line}
 """
 
 
 def _gemini_copy(snap: dict, timeout: int = 40) -> str:
     drv = (snap.get("top_drivers") or [{}])[0]
+    action = snap.get("action_title")
     prompt = _PROMPT.format(
         maxlen=MAX_LEN,
         job=snap.get("job_name_ko", ""),
@@ -71,6 +77,8 @@ def _gemini_copy(snap: dict, timeout: int = 40) -> str:
         drv_title=drv.get("title", ""),
         drv_reason=drv.get("reason_ko", ""),
         drv_tier=drv.get("source_tier", 3),
+        action_line=(f"이번 주 추천 행동(메시지 끝에 '이번 주: ~' 한 구절로 간결히 녹여라): {action}"
+                     if action else ""),
     )
     # 카피 = premium 티어(3.1 Pro → 자동강등 + backoff). 결과 빈 문자열이면 호출측이 폴백 처리.
     import gemini_client

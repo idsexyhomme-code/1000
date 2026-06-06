@@ -58,8 +58,16 @@ def run_batch(now=None, max_per_source: int | None = None, send: bool = False) -
 
         if not new_alert:
             continue
+        # 근거 결박된 플랜이 있으면 첫 액션을 푸시에 노출(경고→구명조끼). ungrounded면 미노출.
+        plan = store.get_actionplan(job_id)
+        action_title = None
+        if plan and plan.get("guardrail_ok"):
+            acts = plan.get("actions") or []
+            if acts:
+                action_title = acts[0].get("title_ko")
         snap = {"job_name_ko": res["job_name_ko"], "weather": res["weather"], "delta": delta,
-                "headline_task": res.get("headline_task"), "top_drivers": res.get("top_drivers", [])}
+                "headline_task": res.get("headline_task"), "top_drivers": res.get("top_drivers", []),
+                "action_title": action_title}
         msg = notify.make_push(snap)["text"]
         subs = store.users_by_job(job_id)
         for uid in subs:
