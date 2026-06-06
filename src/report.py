@@ -231,6 +231,9 @@ def landing_html(jobs: dict) -> str:
                     for j in items)
     return f"""<!doctype html><html lang="ko"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta property="og:type" content="website"><meta property="og:site_name" content="커리어 시그널">
+<meta property="og:title" content="내 직업, AI에 얼마나 영향받을까?">
+<meta property="og:description" content="업무별 AI 압력을 근거와 함께 — 커리어 시그널">
 <title>커리어 시그널 — 내 직업, AI에 얼마나?</title>
 <style>{_CSS}{_LANDING_CSS}</style></head><body><div class="app-container">
   <div class="hero-card"><div class="hero-emoji">📡</div>
@@ -267,8 +270,15 @@ def render_html(job: dict, strat: dict | None = None, action_plan: dict | None =
                 f"{strat.get('tagline','')}\n{job.get('job_name_ko','')} AI 압력지수 "
                 f"{job.get('index','-')}({job.get('weather','')}) — 내 직무는?",
     }, ensure_ascii=False).replace("</", "<\\/")
+    # OG 메타(공유 링크 프리뷰 = 바이럴 레버). 카톡/SNS에서 매력적으로 보이게.
+    og_title = (f"{strat.get('type_name','전략가형')} · {job.get('job_name_ko','')} "
+                f"AI 압력 {job.get('index','-')}")
+    og_desc = (strat.get('tagline', '') or strat.get('threat', '')
+               or "내 직무가 AI에 얼마나 영향받는지 업무별로 확인하세요")
     return f"""<!doctype html><html lang="ko"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta property="og:type" content="website"><meta property="og:site_name" content="커리어 시그널">
+<meta property="og:title" content="{_e(og_title)}"><meta property="og:description" content="{_e(og_desc)}">
 <title>커리어 시그널 · {_e(job.get('job_name_ko',''))}</title>
 <style>{_CSS}</style></head><body><div class="app-container">
   <div class="hero-card">
