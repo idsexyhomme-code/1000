@@ -184,9 +184,15 @@ def _driver(d: dict) -> str:
 
 def _action_plan_html(plan: dict) -> str:
     """이번 주 생존 액션플랜 — 첫 1개 무료 티저, 나머지 잠금(유료 전환점). 해자를 유료CTA에 결박."""
-    actions = (plan or {}).get("actions", [])
+    plan = plan or {}
+    actions = plan.get("actions", [])
     if not actions:
         return ""
+    # 근거 미확보(guardrail_ok=False) → 유료 잠금 대신 정직한 안내 (근거 없는 조언 판매 방지)
+    if not plan.get("guardrail_ok", True):
+        return ('<div class="ap-section"><h2 class="section-title">🧭 이번 주 생존 액션플랜</h2>'
+                '<div class="ap-item"><div class="ap-step">오늘은 당신 직무에 <b>직접 결박된 새 근거 뉴스</b>가 '
+                '없어 맞춤 대응법을 준비하지 못했습니다. 근거가 잡히면 바로 알려드릴게요.</div></div></div>')
     rows = []
     for i, a in enumerate(actions):
         locked = i >= 1                       # 첫 1개만 공개, 2·3번 잠금
@@ -217,6 +223,12 @@ def render_html(job: dict, strat: dict | None = None, action_plan: dict | None =
         import actionplan
         action_plan = actionplan.make_action_plan(job, use_gemini=False)
     ap_html = _action_plan_html(action_plan)
+    # 유료 CTA는 근거 결박된(guardrail_ok) 플랜이 있을 때만 — 근거 없는 조언 판매 금지
+    grounded = bool((action_plan or {}).get("guardrail_ok", True) and (action_plan or {}).get("actions"))
+    cta_html = (f'''<div class="cta-card"><div class="cta-icon">🔒</div>
+    <h3 class="cta-title">상위 5%는 이미 대응 중입니다</h3>
+    <p class="cta-text">방금 확인한 '{_e(head_task)}' 압력에<br>가장 먼저 대응한 사람들의 대응법 3가지</p>
+    <a href="#" class="cta-btn">대응 전략 보기</a></div>''' if grounded else '')
     return f"""<!doctype html><html lang="ko"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>커리어 시그널 · {_e(job.get('job_name_ko',''))}</title>
@@ -236,10 +248,7 @@ def render_html(job: dict, strat: dict | None = None, action_plan: dict | None =
   <div class="task-section"><h2 class="section-title">📊 내 업무별 AI 압력 (높을수록 자동화 신호 ↑)</h2>{tasks_html}</div>
   <div class="news-section"><h2 class="section-title">🔎 오늘 점수를 움직인 근거</h2>{drv_html}</div>
   {ap_html}
-  <div class="cta-card"><div class="cta-icon">🔒</div>
-    <h3 class="cta-title">상위 5%는 이미 대응 중입니다</h3>
-    <p class="cta-text">방금 확인한 '{_e(head_task)}' 압력에<br>가장 먼저 대응한 사람들의 대응법 3가지</p>
-    <a href="#" class="cta-btn">대응 전략 보기</a></div>
+  {cta_html}
   <button class="share-btn">📲 내 전략가 타입 공유하기</button>
   <p class="footer-text">※ 본 지수는 공개된 AI 뉴스를 정해진 원칙으로 계량화한 <b>참고 지표</b>입니다. 특정 개인·기업의 대체를 단정하지 않으며, 모든 변동의 근거를 공개합니다.</p>
 </div></body></html>"""
