@@ -216,6 +216,33 @@ def _action_plan_html(plan: dict) -> str:
             + "".join(rows) + "</div>")
 
 
+_LANDING_CSS = """
+.lj-lead{font-size:14px;color:var(--text-secondary);text-align:center;margin:0 0 20px;word-break:keep-all;}
+.lj-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.lj-card{display:block;background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:14px;
+padding:16px 14px;text-align:center;text-decoration:none;color:var(--text-primary);font-weight:600;font-size:15px;letter-spacing:-.3px;}
+"""
+
+
+def landing_html(jobs: dict) -> str:
+    """웹 진입점 — 직업 그리드(고압력순) → /report?job=. 공유받은 친구의 '내 직업 확인' 루프 완성."""
+    items = sorted(jobs.values(), key=lambda j: -j.get("baseline", {}).get("index", 0))
+    cards = "".join(f'<a class="lj-card" href="/report?job={_e(j["job_id"])}">{_e(j["job_name_ko"])}</a>'
+                    for j in items)
+    return f"""<!doctype html><html lang="ko"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>커리어 시그널 — 내 직업, AI에 얼마나?</title>
+<style>{_CSS}{_LANDING_CSS}</style></head><body><div class="app-container">
+  <div class="hero-card"><div class="hero-emoji">📡</div>
+    <h1 class="hero-title">커리어 시그널</h1>
+    <p class="hero-subtitle">내 직업이 AI에 얼마나 영향받을까?<br>업무별 압력을 근거와 함께, 매일.</p>
+  </div>
+  <p class="lj-lead">직업을 선택하면 업무별 AI 압력 리포트를 보여드려요.</p>
+  <div class="lj-grid">{cards}</div>
+  <p class="footer-text">※ 본 지수는 공개된 AI 뉴스를 정해진 원칙으로 계량화한 <b>참고 지표</b>입니다. 특정 개인·기업의 대체를 단정하지 않으며, 모든 변동의 근거를 공개합니다.</p>
+</div></body></html>"""
+
+
 def render_html(job: dict, strat: dict | None = None, action_plan: dict | None = None) -> str:
     strat = strat or strategist_type(job, use_gemini=False)
     tasks = job.get("tasks", [])
@@ -267,6 +294,7 @@ def render_html(job: dict, strat: dict | None = None, action_plan: dict | None =
     else if(navigator.clipboard){{navigator.clipboard.writeText(d.text+" "+d.url);alert("공유 링크를 복사했어요!");}}
     else {{window.prompt("공유 링크",d.url);}}}}
   </script>
+  <a href="/" style="display:block;text-align:center;color:var(--text-secondary);font-size:13px;margin:2px 0 18px;text-decoration:none">🔎 내 직업도 확인하기 →</a>
   <p class="footer-text">※ 본 지수는 공개된 AI 뉴스를 정해진 원칙으로 계량화한 <b>참고 지표</b>입니다. 특정 개인·기업의 대체를 단정하지 않으며, 모든 변동의 근거를 공개합니다.</p>
 </div></body></html>"""
 

@@ -210,6 +210,13 @@ def test_report_ungrounded_plan_no_paywall():
     assert "직접 결박된 새 근거" in h                                    # 정직 안내
 
 
+def test_report_landing_lists_jobs():
+    h = report.landing_html(server.JOBS)
+    assert h.rstrip().endswith("</html>")
+    assert h.count('class="lj-card"') >= 10                              # 직업 카드 그리드
+    assert "참고 지표" in h                                              # 가드레일 푸터
+
+
 # ── server ────────────────────────────────────────────────────────────
 def test_server_match_job():
     assert server._match_job("영상편집자") == "video-editor"

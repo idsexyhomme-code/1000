@@ -176,6 +176,9 @@ class Handler(BaseHTTPRequestHandler):
         if not _rate_ok(self.client_address[0]):
             return self._send(429, b"rate limited", "text/plain; charset=utf-8")
         parts = urlsplit(self.path)
+        if parts.path in ("/", ""):     # 웹 진입점 — 직업 그리드(공유 바이럴 루프 완성)
+            return self._send(200, report.landing_html(JOBS).encode("utf-8"),
+                              "text/html; charset=utf-8")
         if parts.path == "/health":
             return self._json(200, {"ok": True, "jobs": list(JOBS)})
         if parts.path == "/report":
