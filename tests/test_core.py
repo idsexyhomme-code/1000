@@ -14,6 +14,7 @@ _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, os.path.join(_ROOT, "src"))
 
 import actionplan
+import deepdive
 import gemini_client
 import notify
 import pipeline
@@ -215,6 +216,19 @@ def test_report_landing_lists_jobs():
     assert h.rstrip().endswith("</html>")
     assert h.count('class="lj-card"') >= 10                              # 직업 카드 그리드
     assert "참고 지표" in h                                              # 가드레일 푸터
+
+
+def test_deepdive_and_detail_honest():
+    job = ScoringEngine(JOBS).score([], now=NOW)["video-editor"]
+    deep = deepdive.build(job)
+    assert deep["automation"]["calibrated"] is False                     # 손추정 정직 표기
+    assert deep["hiring"]["available"] is False                          # 데이터 없음 → 스텁(가짜숫자 금지)
+    assert len(deep["automation"]["tasks"]) == len(job["tasks"])         # 전 과업 자동화율
+    assert deep["pivot"]["within_job"]                                   # 전이경로(저압력 업무)
+    h = report.detail_html(job, deep)
+    assert h.rstrip().endswith("</html>")
+    assert "과업별 자동화율" in h and "방법론" in h                       # 5섹션 + 방법론
+    assert "데이터 연동 필요" in h                                       # 스텁 정직 노출(패딩 아님)
 
 
 # ── server ────────────────────────────────────────────────────────────

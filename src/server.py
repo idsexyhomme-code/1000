@@ -204,6 +204,16 @@ class Handler(BaseHTTPRequestHandler):
             plan = store.get_actionplan(jid)   # 배치 캐시 premium 플랜(없으면 render가 결정적 폴백)
             html = report.render_html(res, strat, action_plan=plan)
             return self._send(200, html.encode("utf-8"), "text/html; charset=utf-8")
+        if parts.path == "/detail":     # 상세 분석(drill-down) — 점진적 공개
+            q = parse_qs(parts.query)
+            jid = (q.get("job") or [None])[0]
+            if not jid and q.get("user"):
+                jid = store.get_user_job(q["user"][0])
+            if jid not in JOBS:
+                return self._not_found()
+            res = _cached_scores().get(jid)
+            return self._send(200, report.detail_html(res).encode("utf-8"),
+                              "text/html; charset=utf-8")
         self._not_found()
 
     def do_POST(self):

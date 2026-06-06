@@ -256,6 +256,92 @@ def landing_html(jobs: dict) -> str:
 </div></body></html>"""
 
 
+_DETAIL_CSS = """
+.dd-sec{background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:16px;padding:18px 16px;margin-bottom:14px;}
+.dd-h{font-size:16px;font-weight:700;margin-bottom:4px;letter-spacing:-.3px;}
+.dd-src{font-size:11px;color:var(--text-tertiary);margin-bottom:12px;}
+.dd-row{display:flex;align-items:center;margin-bottom:10px;font-size:14px;}
+.dd-row .n{width:104px;color:var(--text-secondary);flex-shrink:0;letter-spacing:-.3px;}
+.dd-track{flex:1;height:7px;background:var(--bg-elevate);border-radius:4px;margin:0 10px;overflow:hidden;}
+.dd-track i{display:block;height:100%;border-radius:4px;}
+.dd-v{width:30px;text-align:right;font-weight:600;}
+.dd-tl .it{border-left:2px solid var(--bg-elevate);padding:0 0 12px 14px;margin-left:4px;}
+.dd-stage{font-size:11px;font-weight:700;color:#fbbf24;}.dd-date{font-size:11px;color:var(--text-tertiary);margin-left:6px;}
+.dd-tl a{color:var(--text-primary);text-decoration:none;font-size:13px;font-weight:600;display:block;margin-top:3px;line-height:1.4;}
+.dd-pending{background:rgba(245,158,11,.07);border:1px dashed rgba(245,158,11,.3);border-radius:12px;padding:14px;font-size:13px;color:var(--text-secondary);line-height:1.5;}
+.dd-pending b{color:#fbbf24;}
+.dd-chip{display:inline-block;background:var(--bg-elevate);border-radius:8px;padding:7px 12px;margin:4px 5px 0 0;font-size:13px;}
+.dd-back{display:block;text-align:center;color:var(--text-secondary);font-size:14px;margin:6px 0 18px;text-decoration:none;}
+.dd-note{font-size:12px;color:var(--text-tertiary);margin-top:10px;line-height:1.5;}
+"""
+
+
+def detail_html(job_result: dict, deep: dict | None = None) -> str:
+    """상세 분석(drill-down) — 5섹션. 실데이터로 받칠 수 있는 것만 채우고 나머지는 정직한 '연동 필요'."""
+    import deepdive
+    deep = deep or deepdive.build(job_result)
+    jid = _e(job_result.get("job_id", ""))
+    name = _e(job_result.get("job_name_ko", ""))
+
+    # 1) 과업별 자동화율
+    ab = deep["automation"]
+    rows = ""
+    for t in ab["tasks"]:
+        _e2, solid, grad = WEATHER_STYLE.get(t["weather"], ("", "#71717a", "#52525b"))
+        pct = max(2, min(100, t["automation_pct"]))
+        rows += (f'<div class="dd-row"><span class="n">{_e(t["name_ko"])}</span>'
+                 f'<span class="dd-track"><i style="width:{pct}%;background:linear-gradient(90deg,{grad},{solid})"></i></span>'
+                 f'<span class="dd-v">{_e(t["automation_pct"])}</span></div>')
+    sec_auto = (f'<div class="dd-sec"><div class="dd-h">📊 과업별 자동화율</div>'
+                f'<div class="dd-src">{_e(ab["source"])}</div>{rows}'
+                f'<div class="dd-note">※ 현재 손추정(미보정) — O*NET·워크넷 실데이터 연동 시 정밀 수치로 격상됩니다.</div></div>')
+
+    # 2) 기술 상용화 타임라인
+    tl = deep["timeline"]
+    if tl["items"]:
+        its = "".join(f'<div class="it"><span class="dd-stage">{_e(i["stage"])}</span>'
+                      f'<span class="dd-date">{_e(i["date"])} · T{i["source_tier"]}</span>'
+                      f'<a href="{_e(_safe_url(i["url"]))}" target="_blank" rel="noopener">{_e(i["title"])[:70]}</a></div>'
+                      for i in tl["items"])
+        body_tl = f'<div class="dd-tl">{its}</div>'
+    else:
+        body_tl = f'<div class="dd-pending">{_e(tl["note"])}</div>'
+    sec_tl = (f'<div class="dd-sec"><div class="dd-h">🗓️ 기술 상용화 타임라인</div>'
+              f'<div class="dd-src">{_e(tl["source"])}</div>{body_tl}</div>')
+
+    # 3) 전이경로
+    pv = deep["pivot"]
+    chips = "".join(f'<span class="dd-chip">🛡️ {_e(t["name_ko"])} ({_e(t["automation_pct"])})</span>'
+                    for t in pv["within_job"])
+    sec_pv = (f'<div class="dd-sec"><div class="dd-h">🧭 전이경로 — 어디로 무게를 옮길까</div>'
+              f'<div class="dd-src">{_e(pv["source"])}</div>'
+              f'<div>{chips}</div>'
+              f'<div class="dd-note">{_e(pv["cross_job_note"])}</div></div>')
+
+    # 4) 채용 트렌드 (스텁) / 5) 임금 타격 (스텁)
+    hr, wg = deep["hiring"], deep["wage"]
+    sec_hr = (f'<div class="dd-sec"><div class="dd-h">📈 실시간 채용 트렌드</div>'
+              f'<div class="dd-pending"><b>데이터 연동 필요</b> — {_e(hr["note"])}</div></div>')
+    sec_wg = (f'<div class="dd-sec"><div class="dd-h">💰 임금 타격 예측</div>'
+              f'<div class="dd-pending"><b>데이터 연동 필요</b> — {_e(wg["note"])}</div></div>')
+
+    return f"""<!doctype html><html lang="ko"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+{_FAVICON}<title>{name} 상세 분석 · 커리어 시그널</title>
+<style>{_CSS}{_DETAIL_CSS}</style></head><body><div class="app-container">
+  <a class="dd-back" href="/report?job={jid}">← 요약으로 돌아가기</a>
+  <div class="hero-card"><div class="hero-emoji">🔬</div>
+    <h1 class="hero-title">{name} 상세 분석</h1>
+    <p class="hero-subtitle">업무별 근거를 깊게 — 분량이 아니라 근거로.</p></div>
+  {sec_auto}{sec_tl}{sec_pv}{sec_hr}{sec_wg}
+  <div class="dd-sec"><div class="dd-h">🧪 방법론 & 한계 (투명 공개)</div>
+    <div class="dd-note">· 압력지수는 공개 AI뉴스를 정해진 5요인 루브릭으로 계량화한 <b>참고 지표</b>입니다(예측 아님).<br>
+    · 현재 baseline은 <b>손추정(calibrated: false)</b> — O*NET·채용·임금 데이터 연동으로 보정 예정.<br>
+    · 모든 변동은 출처·신뢰도를 동반하며, 근거 없는 처방은 생성하지 않습니다(개인 자동판정 아님, 개인정보보호법 §37-2).</div></div>
+  <p class="footer-text">※ 본 지수는 공개된 AI 뉴스를 정해진 원칙으로 계량화한 <b>참고 지표</b>입니다. 특정 개인·기업의 대체를 단정하지 않으며, 모든 변동의 근거를 공개합니다.</p>
+</div></body></html>"""
+
+
 def render_html(job: dict, strat: dict | None = None, action_plan: dict | None = None) -> str:
     strat = strat or strategist_type(job, use_gemini=False)
     tasks = job.get("tasks", [])
@@ -307,6 +393,7 @@ def render_html(job: dict, strat: dict | None = None, action_plan: dict | None =
   <div class="news-section"><h2 class="section-title">🔎 오늘 점수를 움직인 근거</h2>{drv_html}</div>
   {ap_html}
   {cta_html}
+  <a href="/detail?job={_e(job.get('job_id',''))}" style="display:block;text-align:center;background:var(--bg-elevate);color:var(--text-primary);padding:13px;border-radius:14px;margin:0 0 12px;text-decoration:none;font-size:14px;font-weight:600;letter-spacing:-.3px">🔬 더 깊은 상세 분석 보기 →</a>
   <button class="share-btn" onclick="csShare()">📲 내 전략가 타입 공유하기</button>
   <script>
   function csShare(){{var d={_share};d.url=location.href;
