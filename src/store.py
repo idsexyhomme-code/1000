@@ -147,6 +147,7 @@ def users_by_job(job_id: str) -> list[str]:
 # ── 발송 큐 (카카오 API 발송 전 단계) + 전략가타입 캐시 ────────────────
 OUTBOX_FILE = os.path.join(_DATA, "outbox.jsonl")        # 런타임 → .gitignore
 STRATEGIST_FILE = os.path.join(_DATA, "strategist_cache.json")
+ACTIONPLAN_FILE = os.path.join(_DATA, "actionplan_cache.json")
 
 
 def append_outbox(user_id: str, text: str, job_id: str, ts: str | None = None) -> None:
@@ -200,6 +201,15 @@ def save_strategist(job_id: str, obj: dict) -> None:
 
 def get_strategist(job_id: str) -> dict | None:
     return _get_state(STRATEGIST_FILE, job_id)
+
+
+def save_actionplan(job_id: str, plan: dict) -> None:
+    """배치가 생성한 Gemini 액션플랜 캐시 — /report가 요청마다 호출 없이 premium 플랜 사용."""
+    _save_state(ACTIONPLAN_FILE, job_id, plan)
+
+
+def get_actionplan(job_id: str) -> dict | None:
+    return _get_state(ACTIONPLAN_FILE, job_id)
 
 
 def get_notified(job_id: str):

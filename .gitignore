@@ -38,4 +38,5 @@ data/users.json
 data/overrides_audit.jsonl
 data/outbox.jsonl
 data/strategist_cache.json
+data/actionplan_cache.json
 data/notified.json

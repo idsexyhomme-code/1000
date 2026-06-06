@@ -150,7 +150,8 @@ class Handler(BaseHTTPRequestHandler):
             res = _cached_scores().get(jid)
             # 배치가 캐시한 전략가타입 우선, 없으면 폴백 (요청마다 Gemini 호출 금지)
             strat = store.get_strategist(jid) or report.strategist_type(res, use_gemini=False)
-            html = report.render_html(res, strat)
+            plan = store.get_actionplan(jid)   # 배치 캐시 premium 플랜(없으면 render가 결정적 폴백)
+            html = report.render_html(res, strat, action_plan=plan)
             return self._send(200, html.encode("utf-8"), "text/html; charset=utf-8")
         self._send(404, b"not found", "text/plain; charset=utf-8")
 

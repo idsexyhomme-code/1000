@@ -17,6 +17,7 @@ from datetime import datetime, timezone
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
+import actionplan
 import notify
 import pipeline
 import report
@@ -43,12 +44,17 @@ def run_batch(now=None, max_per_source: int | None = None, send: bool = False) -
         # 이 스냅샷으로 이미 알림했으면 재알림 금지 — 매 배치 중복 스팸 방지 (Codex)
         new_alert = bool(material and snap_ts and store.get_notified(job_id) != snap_ts)
 
-        # 전략가타입 캐시: 없거나 새 변동일 때만 Gemini 호출 (비용 절감)
+        # 전략가타입 + 액션플랜 캐시: 없거나 새 변동일 때만 Gemini 호출 (비용 절감, /report가 캐시 사용)
         if store.get_strategist(job_id) is None or new_alert:
             try:
                 store.save_strategist(job_id, report.strategist_type(res, use_gemini=True))
             except Exception as e:
                 print(f"[batch] 전략가타입 캐시 실패 {job_id}: {type(e).__name__} {e}")
+        if store.get_actionplan(job_id) is None or new_alert:
+            try:
+                store.save_actionplan(job_id, actionplan.make_action_plan(res, use_gemini=True))
+            except Exception as e:
+                print(f"[batch] 액션플랜 캐시 실패 {job_id}: {type(e).__name__} {e}")
 
         if not new_alert:
             continue
