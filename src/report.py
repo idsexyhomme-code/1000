@@ -233,6 +233,13 @@ def render_html(job: dict, strat: dict | None = None, action_plan: dict | None =
     <h3 class="cta-title">상위 5%는 이미 대응 중입니다</h3>
     <p class="cta-text">방금 확인한 '{_e(head_task)}' 압력에<br>가장 먼저 대응한 사람들의 대응법 3가지</p>
     <a href="#" class="cta-btn">대응 전략 보기</a></div>''' if grounded else '')
+    # 공유 페이로드(바이럴 #1 레버). json.dumps→유효 JS 객체. </script 브레이크아웃 방어로 <\/ 치환.
+    _share = json.dumps({
+        "title": "커리어 시그널",
+        "text": f"[{strat.get('type_name','전략가형')} {strat.get('emoji','🧭')}] "
+                f"{strat.get('tagline','')}\n{job.get('job_name_ko','')} AI 압력지수 "
+                f"{job.get('index','-')}({job.get('weather','')}) — 내 직무는?",
+    }, ensure_ascii=False).replace("</", "<\\/")
     return f"""<!doctype html><html lang="ko"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <title>커리어 시그널 · {_e(job.get('job_name_ko',''))}</title>
@@ -253,7 +260,13 @@ def render_html(job: dict, strat: dict | None = None, action_plan: dict | None =
   <div class="news-section"><h2 class="section-title">🔎 오늘 점수를 움직인 근거</h2>{drv_html}</div>
   {ap_html}
   {cta_html}
-  <button class="share-btn">📲 내 전략가 타입 공유하기</button>
+  <button class="share-btn" onclick="csShare()">📲 내 전략가 타입 공유하기</button>
+  <script>
+  function csShare(){{var d={_share};d.url=location.href;
+    if(navigator.share){{navigator.share(d).catch(function(){{}});}}
+    else if(navigator.clipboard){{navigator.clipboard.writeText(d.text+" "+d.url);alert("공유 링크를 복사했어요!");}}
+    else {{window.prompt("공유 링크",d.url);}}}}
+  </script>
   <p class="footer-text">※ 본 지수는 공개된 AI 뉴스를 정해진 원칙으로 계량화한 <b>참고 지표</b>입니다. 특정 개인·기업의 대체를 단정하지 않으며, 모든 변동의 근거를 공개합니다.</p>
 </div></body></html>"""
 
