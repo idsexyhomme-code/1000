@@ -126,8 +126,9 @@ class Handler(BaseHTTPRequestHandler):
             if jid not in JOBS:
                 return self._send(404, b"unknown job", "text/plain; charset=utf-8")
             res = _cached_scores().get(jid)
-            # 요청마다 Gemini 호출 금지(비용·40s latency) — 폴백 타입으로 즉시 렌더. 캐시는 R4d.
-            html = report.render_html(res, report.strategist_type(res, use_gemini=False))
+            # 배치가 캐시한 전략가타입 우선, 없으면 폴백 (요청마다 Gemini 호출 금지)
+            strat = store.get_strategist(jid) or report.strategist_type(res, use_gemini=False)
+            html = report.render_html(res, strat)
             return self._send(200, html.encode("utf-8"), "text/html; charset=utf-8")
         self._send(404, b"not found", "text/plain; charset=utf-8")
 

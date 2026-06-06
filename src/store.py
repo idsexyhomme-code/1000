@@ -12,6 +12,7 @@ import threading
 from datetime import datetime, timezone
 
 _USERS_LOCK = threading.Lock()
+_STATE_LOCK = threading.Lock()  # strategist/notified 등 소형 상태파일용 (users와 분리)
 
 _DATA = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
 EVENTS_DIR = os.path.join(_DATA, "events")
@@ -136,3 +137,75 @@ def set_user_job(user_id: str, job_id: str) -> None:
 
 def get_user_job(user_id: str) -> str | None:
     return _load_users().get(user_id, {}).get("job_id")
+
+
+def users_by_job(job_id: str) -> list[str]:
+    """해당 직무를 구독한 사용자 ID 목록 (배치 푸시 대상)."""
+    return [uid for uid, v in _load_users().items() if v.get("job_id") == job_id]
+
+
+# ── 발송 큐 (카카오 API 발송 전 단계) + 전략가타입 캐시 ────────────────
+OUTBOX_FILE = os.path.join(_DATA, "outbox.jsonl")        # 런타임 → .gitignore
+STRATEGIST_FILE = os.path.join(_DATA, "strategist_cache.json")
+
+
+def append_outbox(user_id: str, text: str, job_id: str, ts: str | None = None) -> None:
+    _ensure()
+    rec = {"ts": ts or datetime.now(timezone.utc).isoformat(), "user_id": user_id,
+           "job_id": job_id, "text": text, "status": "queued"}
+    with open(OUTBOX_FILE, "a", encoding="utf-8") as f:
+        f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+
+
+def read_outbox() -> list[dict]:
+    if not os.path.exists(OUTBOX_FILE):
+        return []
+    return [json.loads(ln) for ln in open(OUTBOX_FILE, encoding="utf-8") if ln.strip()]
+
+
+NOTIFIED_FILE = os.path.join(_DATA, "notified.json")  # 직무별 마지막 알림 스냅샷 ts (중복 알림 방지)
+
+
+def _save_state(path: str, key: str, val) -> None:
+    _ensure()
+    with _STATE_LOCK:
+        data = {}
+        if os.path.exists(path):
+            try:
+                with open(path, encoding="utf-8") as f:
+                    data = json.load(f)
+            except Exception:
+                data = {}
+        data[key] = val
+        tmp = path + ".tmp"
+        with open(tmp, "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+        os.replace(tmp, path)
+
+
+def _get_state(path: str, key: str):
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, encoding="utf-8") as f:
+            return json.load(f).get(key)
+    except Exception:
+        return None
+
+
+def save_strategist(job_id: str, obj: dict) -> None:
+    """전략가타입 캐시 — /report가 요청마다 Gemini 호출하지 않도록 배치에서 미리 저장."""
+    _save_state(STRATEGIST_FILE, job_id, obj)
+
+
+def get_strategist(job_id: str) -> dict | None:
+    return _get_state(STRATEGIST_FILE, job_id)
+
+
+def get_notified(job_id: str):
+    """이 직무로 마지막에 알림 보낸 스냅샷 ts. 같은 ts면 재알림 금지(중복 스팸 방지)."""
+    return _get_state(NOTIFIED_FILE, job_id)
+
+
+def set_notified(job_id: str, snap_ts) -> None:
+    _save_state(NOTIFIED_FILE, job_id, snap_ts)

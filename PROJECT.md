@@ -75,6 +75,8 @@
 - **R4b (미니웹 결과리포트) ✅:** `src/report.py` — scoring 결과→모바일 우선 정적 HTML. 전략가 타입(Gemini, 위협+기회 동시 → 공유 가능, 예: "AI 편집 설계자형🧠") + 기상예보 시각화 + 태스크별 압력바 + 근거뉴스(출처 배지+링크) + 유료트리거. 라이브+Codex fix-first 통과(XSS scheme 차단 _safe_url). 샘플: `web/sample-report.html`(모바일에서 열어보면 실제 UI).
 - **R4c (봇 서버 골격) ✅:** `src/server.py`(stdlib http.server, 의존성0) — POST /webhook/kakao(발화→직업선택→매핑저장→task-first 요약+푸시카피), GET /report(결과리포트 서빙), /health. store에 사용자-직업 매핑(락+원자적쓰기). 라이브 통과(엔드투엔드 사용자여정). Codex 보안 fix-first 5종: Content-Length 제한(64KB·413), body 타입검증(배열/null 크래시 방지), users.json 락+os.replace, /report 점수 TTL캐시+Gemini호출 제거(0.0007s), 127.0.0.1 기본 바인딩.
   - **배포 전 필수(R5):** 웹훅 인증/서명 검증, rate limit, reverse proxy TLS.
-- **R4d (다음):** 일/주 배치 — pipeline.run() 주기 실행 + 압력 변동 시 사용자에게 notify 푸시(전략가타입 Gemini 결과 캐시). cron/스케줄러 연결.
+- **R4d (일/주 배치) ✅:** `src/batch.py` — pipeline.run()(수집·재점수) → 의미있는 변동(|Δ|≥2 or 날씨변화) 직무의 구독자에게 notify 푸시 큐잉(outbox) + 전략가타입 캐시. 카카오 발송은 스텁. 라이브 통과(영상편집자 Δ+17.3→u1 큐잉). Codex fix-first: **스냅샷 ts 기반 중복 알림 방지**(set_notified/get_notified — 매 배치 같은 알림 재큐잉 스팸 차단, 2회차 재큐잉 0 확인) + 전략가 Gemini는 변동 시에만 호출. server /report는 캐시된 전략가타입 사용.
+  - **★ MVP 백엔드 완성:** 크롤링→Gemini채점→지수→시계열→봇서버(웹훅·리포트)→배치알림 전 과정 실작동. 카카오 채널 연결 + 발송 API만 붙이면 런칭 가능.
+- **R5 (배포 전 하드닝):** 카카오 비즈메시지 발송 API 연동 + outbox sent-marker/재시도/rate-limit + 웹훅 인증·서명검증 + 이벤트 아카이브/프루닝 + CI propagation(weighted) + 크롤러 batch/cache/backoff. 배포(서버 호스팅 + 도메인 + TLS).
 - **R5 (하드닝, 이후로 미룸):** 이벤트 만료·아카이브 / CI propagation(weighted) / 비용·쿼터(batch·캐시·backoff) / notify 가드레일 의미검증 강화.
 - **R4 (이후):** 카카오 채널봇 카피·UI (Gemini 투입) + 미니웹 결과리포트(전략가타입 공유) + 유료트리거.
