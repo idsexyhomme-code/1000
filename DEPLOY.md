@@ -66,7 +66,7 @@ curl "localhost:8000/report?job=video-editor" > /tmp/r.html && open /tmp/r.html
 ## 7. 출시 전 체크
 - [ ] `WEBHOOK_TOKEN` 설정 + reverse proxy TLS
 - [ ] 베이스라인 캘리브레이션(현재 손추정 → O*NET·워크넷 실데이터로 — 신뢰성 핵심, R7)
-- [ ] 시드 직업 확대(현재 2개 → 주요 직군 N개)
+- [x] 시드 직업 확대 (현재 10개 직군) · 추가 확장 가능
 - [ ] `KakaoSender` 실구현 + 템플릿 승인
 - [ ] 개인정보처리방침·이용약관(개인정보보호법 §37-2, AI기본법 대응 — 가드레일은 코드에 내장됨)
 

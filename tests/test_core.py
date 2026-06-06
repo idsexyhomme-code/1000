@@ -64,6 +64,26 @@ def test_all_jobs_load_and_score():
         assert 0 <= r["index"] <= 100 and 4 <= r["ci"] <= 25
 
 
+def test_all_job_files_schema_valid():
+    import json
+    for fn in os.listdir(JOBS):
+        if not fn.endswith(".json"):
+            continue
+        j = json.load(open(os.path.join(JOBS, fn), encoding="utf-8"))
+        assert j.get("job_id") and j.get("job_name_ko"), fn
+        b = j.get("baseline", {})
+        assert isinstance(b.get("index"), (int, float)) and isinstance(b.get("ci"), (int, float)), fn
+        assert "calibrated" in b, f"{fn}: calibrated 플래그 누락"
+        assert "캘리브레이션" in b.get("note", "") or "손추정" in b.get("note", ""), f"{fn}: 정직 note 누락"
+        tasks = j.get("tasks", [])
+        assert len(tasks) >= 4, fn
+        ws = round(sum(t.get("weight", 0) for t in tasks), 3)
+        assert 0.95 <= ws <= 1.05, f"{fn}: weight 합 {ws}"
+        for t in tasks:
+            assert t.get("task_id") and t.get("name_ko"), fn
+            assert 0 <= t.get("baseline", -1) <= 100, fn
+
+
 # ── actionplan ────────────────────────────────────────────────────────
 def _job(drivers):
     return {"job_id": "x", "job_name_ko": "테스트직", "weather": "흐림", "index": 59, "ci": 9,
