@@ -188,6 +188,46 @@ def update_outbox(rows: list[dict]) -> None:
         os.replace(tmp, OUTBOX_FILE)
 
 
+# ── 사전예약/결제의사 수집 (지불주체 검증 = 30일 스모크 테스트) ────────
+INTEREST_FILE = os.path.join(_DATA, "interest.jsonl")   # 연락처 포함 → .gitignore 필수
+_INTEREST_LOCK = threading.Lock()
+
+
+def _norm_contact(c: str) -> str:
+    return (c or "").strip().lower()
+
+
+def append_interest(rec: dict) -> bool:
+    """사전예약 리드 1건 적재 (원자적 append + (contact,job) 중복제거).
+    rec엔 PII(연락처) 포함 → 절대 커밋 금지(.gitignore). 반환: 신규 적재 여부(중복이면 False)."""
+    _ensure()
+    rec = dict(rec)
+    rec.setdefault("ts", datetime.now(timezone.utc).isoformat())
+    key = (_norm_contact(rec.get("contact", "")), rec.get("job", ""))
+    with _INTEREST_LOCK:
+        if os.path.exists(INTEREST_FILE):
+            for ln in open(INTEREST_FILE, encoding="utf-8"):
+                if not ln.strip():
+                    continue
+                try:
+                    p = json.loads(ln)
+                except Exception:
+                    continue
+                if (_norm_contact(p.get("contact", "")), p.get("job", "")) == key:
+                    return False        # 같은 연락처+직무 중복 → 지표 오염 방지
+        with open(INTEREST_FILE, "a", encoding="utf-8") as f:
+            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    return True
+
+
+def interest_count() -> int:
+    """수집된 사전예약 건수 (30일 지불주체 테스트 측정 지표)."""
+    if not os.path.exists(INTEREST_FILE):
+        return 0
+    with _INTEREST_LOCK:
+        return sum(1 for ln in open(INTEREST_FILE, encoding="utf-8") if ln.strip())
+
+
 NOTIFIED_FILE = os.path.join(_DATA, "notified.json")  # 직무별 마지막 알림 스냅샷 ts (중복 알림 방지)
 
 

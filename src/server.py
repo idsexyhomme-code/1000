@@ -12,6 +12,7 @@ stdlib http.server 기반(의존성 0). 정적 모듈(scoring/notify/report/stor
 """
 from __future__ import annotations
 
+import hashlib
 import json
 import os
 import sys
@@ -49,10 +50,23 @@ def _cached_scores() -> dict:
 WEBHOOK_TOKEN = os.environ.get("WEBHOOK_TOKEN", "")  # 설정 시 /webhook은 ?token= 일치 요구
 REPORT_BASE_URL = os.environ.get("REPORT_BASE_URL", "")  # 예: https://api.example.com (리포트 링크용)
 CHANNEL_URL = os.environ.get("CHANNEL_URL", "")          # 카카오 채널 추가 링크(공유 바이럴용)
+PAYMENT_URL = os.environ.get("PAYMENT_URL", "")          # 설정 시 /offer가 실결제 버튼, 미설정 시 사전예약 수집
 RATE_LIMIT = int(os.environ.get("RATE_LIMIT", "60"))  # IP당 윈도우 요청 수
 RATE_WINDOW = 60.0
 _rl_lock = threading.Lock()
 _rl: dict[str, list] = {}  # ip -> [window_start, count]
+
+
+def _valid_contact(c: str) -> bool:
+    """이메일 또는 카카오 오픈채팅 ID로 보이는지 최소 검증(쓰레기/인젝션 거부)."""
+    if not c or len(c) < 3 or len(c) > 120:
+        return False
+    if any(ch in c for ch in "<>\"'\\\n\r\t ") or "  " in c:
+        return False
+    if "@" in c:                      # 이메일류: a@b.c 꼴
+        local, _, dom = c.partition("@")
+        return bool(local) and "." in dom and not dom.startswith(".")
+    return len(c) >= 3                # 카카오 오픈채팅 ID류
 
 
 def _rate_ok(ip: str) -> bool:
@@ -190,7 +204,10 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, report.landing_html(JOBS).encode("utf-8"),
                               "text/html; charset=utf-8")
         if parts.path == "/health":
-            return self._json(200, {"ok": True, "jobs": list(JOBS)})
+            # presale_leads = 사전예약 리드 수(무료 연락처, 중복제거됨). ★실제 결제(WTP)는
+            # PAYMENT_URL 연결 후 결제이벤트로 측정 — 리드≠지불. 혼동 금지.
+            return self._json(200, {"ok": True, "jobs": list(JOBS),
+                                    "presale_leads": store.interest_count()})
         if parts.path == "/report":
             q = parse_qs(parts.query)
             jid = (q.get("job") or [None])[0]
@@ -214,6 +231,16 @@ class Handler(BaseHTTPRequestHandler):
             res = _cached_scores().get(jid)
             return self._send(200, report.detail_html(res).encode("utf-8"),
                               "text/html; charset=utf-8")
+        if parts.path == "/offer":      # AI 대응 스프린트 사전판매(런칭=지불주체 테스트)
+            q = parse_qs(parts.query)
+            jid = (q.get("job") or [None])[0]
+            if not jid and q.get("user"):
+                jid = store.get_user_job(q["user"][0])
+            if jid not in JOBS:
+                return self._not_found()
+            res = _cached_scores().get(jid)
+            return self._send(200, report.offer_html(res, PAYMENT_URL or None).encode("utf-8"),
+                              "text/html; charset=utf-8")
         self._not_found()
 
     def do_POST(self):
@@ -236,6 +263,33 @@ class Handler(BaseHTTPRequestHandler):
             except Exception:
                 return self._json(400, kakao_text("요청을 이해하지 못했습니다."))
             return self._json(200, handle_kakao(body))
+        if parts.path == "/offer/interest":   # 사전예약 리드 수집 (지불주체 스모크테스트)
+            try:
+                body = json.loads(raw or b"{}")
+            except Exception:
+                return self._json(400, {"ok": False})
+            if not isinstance(body, dict):
+                return self._json(400, {"ok": False})
+            # 봇 트랩(honeypot): 사람은 비워두는 숨김필드가 채워지면 = 봇 → 조용히 통과(저장 안 함)
+            if str(body.get("hp_url", "")).strip():
+                return self._json(200, {"ok": True})
+            # 개인정보 수집 동의 필수 (PIPA — 화면 동의 체크와 결박)
+            if not body.get("consent"):
+                return self._json(400, {"ok": False, "error": "consent required"})
+            contact = str(body.get("contact", "")).strip()[:120]
+            if not _valid_contact(contact):
+                return self._json(400, {"ok": False, "error": "invalid contact"})
+            job = str(body.get("job", ""))[:60]
+            # IP는 평문 저장 금지 — 일별 솔트 해시(중복/남용 탐지용, 역추적 불가)
+            iph = hashlib.sha256(
+                f"{self.client_address[0]}".encode()).hexdigest()[:12]
+            store.append_interest({                # 중복(contact+job)이면 내부에서 skip
+                "contact": contact,
+                "job": job if job in JOBS else "",
+                "price_shown": str(body.get("price_shown", ""))[:20],
+                "iph": iph,
+            })
+            return self._json(200, {"ok": True})
         self._send(404, b"not found", "text/plain; charset=utf-8")
 
     def log_message(self, *a):  # 조용히

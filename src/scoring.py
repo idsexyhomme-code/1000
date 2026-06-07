@@ -247,6 +247,7 @@ class ScoringEngine:
             ds = sorted(drivers.get(job_id, []), key=lambda x: -abs(x["delta"]))
             ranked = sorted(tasks_out, key=lambda x: -x["index"])
             out[job_id] = {
+                "job_id": job_id,               # 리포트/상세/오퍼 링크가 의존 (없으면 빈 링크)
                 "job_name_ko": job["job_name_ko"],
                 # ★task-first 응답계약: 태스크가 본체, 직업 단일지수는 보조 롤업 (단정 금지)
                 "headline_task": ranked[0] if ranked else None,

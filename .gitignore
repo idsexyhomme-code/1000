@@ -41,3 +41,4 @@ data/strategist_cache.json
 data/actionplan_cache.json
 data/notified.json
 data/events_archive/
+data/interest.jsonl

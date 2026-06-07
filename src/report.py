@@ -354,11 +354,12 @@ def render_html(job: dict, strat: dict | None = None, action_plan: dict | None =
         action_plan = actionplan.make_action_plan(job, use_gemini=False)
     ap_html = _action_plan_html(action_plan)
     # 유료 CTA는 근거 결박된(guardrail_ok) 플랜이 있을 때만 — 근거 없는 조언 판매 금지
+    # 정직성: 검증 못 한 사회증명("상위 5%" 등) 금지. 가치(결과물 남는 패키지)로만 소구.
     grounded = bool((action_plan or {}).get("guardrail_ok", True) and (action_plan or {}).get("actions"))
-    cta_html = (f'''<div class="cta-card"><div class="cta-icon">🔒</div>
-    <h3 class="cta-title">상위 5%는 이미 대응 중입니다</h3>
-    <p class="cta-text">방금 확인한 '{_e(head_task)}' 압력에<br>가장 먼저 대응한 사람들의 대응법 3가지</p>
-    <a href="#" class="cta-btn">대응 전략 보기</a></div>''' if grounded else '')
+    cta_html = (f'''<div class="cta-card"><div class="cta-icon">🧭</div>
+    <h3 class="cta-title">'{_e(head_task)}' 압력, 혼자 두지 마세요</h3>
+    <p class="cta-text">매주 근거 기반 맞춤 대응 + 이력서·포트폴리오에<br>남는 결과물까지 — <b>AI 대응 스프린트</b></p>
+    <a href="/offer?job={_e(job.get('job_id',''))}" class="cta-btn">대응 스프린트 보기 →</a></div>''' if grounded else '')
     # 공유 페이로드(바이럴 #1 레버). json.dumps→유효 JS 객체. </script 브레이크아웃 방어로 <\/ 치환.
     _share = json.dumps({
         "title": "커리어 시그널",
@@ -404,6 +405,96 @@ def render_html(job: dict, strat: dict | None = None, action_plan: dict | None =
   <a href="/" style="display:block;text-align:center;color:var(--text-secondary);font-size:13px;margin:2px 0 18px;text-decoration:none">🔎 내 직업도 확인하기 →</a>
   <p class="footer-text">※ 본 지수는 공개된 AI 뉴스를 정해진 원칙으로 계량화한 <b>참고 지표</b>입니다. 특정 개인·기업의 대체를 단정하지 않으며, 모든 변동의 근거를 공개합니다.</p>
 </div></body></html>"""
+
+
+_OFFER_CSS = """
+.of-price{display:flex;align-items:baseline;gap:9px;justify-content:center;margin:8px 0 2px;}
+.of-now{font-size:30px;font-weight:800;letter-spacing:-1px;}
+.of-unit{font-size:13px;color:var(--text-secondary);}
+.of-list{list-style:none;padding:0;margin:16px 0 6px;}
+.of-list li{display:flex;gap:11px;padding:12px 0;border-bottom:1px solid var(--bg-elevate);font-size:14px;line-height:1.45;word-break:keep-all;}
+.of-list li:last-child{border-bottom:0;}
+.of-ic{flex-shrink:0;}
+.of-soon{color:var(--text-tertiary);}
+.of-input{width:100%;box-sizing:border-box;background:var(--bg-elevate);border:1px solid transparent;border-radius:12px;
+padding:14px;font-size:15px;color:var(--text-primary);margin-bottom:10px;-webkit-appearance:none;}
+.of-input:focus{outline:none;border-color:#6366f1;}
+.of-submit{width:100%;background:#fafafa;color:#09090b;border:0;border-radius:14px;padding:15px;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;display:block;text-align:center;box-sizing:border-box;}
+.of-ok{display:none;text-align:center;padding:20px;background:rgba(99,102,241,.1);border-radius:14px;font-size:14px;line-height:1.55;}
+.of-note{font-size:12px;color:var(--text-tertiary);margin-top:14px;line-height:1.6;}
+.of-back{display:block;text-align:center;color:var(--text-secondary);font-size:14px;margin:4px 0 16px;text-decoration:none;}
+"""
+
+# 가격은 검증 대상 가설(테스트가) — 가짜 할인 금지. 정상가는 운영된 적 없으므로 취소선 표기 안 함.
+PRESALE_PRICE = "9,900"
+
+
+def offer_html(job: dict, payment_url: str | None = None) -> str:
+    """AI 대응 스프린트 — 런칭=지불주체 스모크테스트. 결과물 남는 패키지(Codex fix).
+    PAYMENT_URL(env) 연결 시 실결제 버튼+결제 고지, 미연결 시 사전예약 리드 수집."""
+    jid = _e(job.get("job_id", ""))
+    name = _e(job.get("job_name_ko", ""))
+    head_task = _e((job.get("headline_task") or {}).get("name_ko") or "핵심 업무")
+    real = bool(payment_url)
+    if real:                           # 실결제 모드 — 결제 고지(환불·제공시점 등 운영 시 약관 링크 필요)
+        price_label = '<span class="of-unit">월 구독</span>'
+        action = (f'<a href="{_e(_safe_url(payment_url))}" class="of-submit">'
+                  f'지금 시작하기 — 월 {PRESALE_PRICE}원 결제 →</a>')
+        note = (f'※ <b>월 {PRESALE_PRICE}원이 결제</b>되는 구독입니다(언제든 해지 가능, 결제 페이지의 환불·약관 적용). '
+                f'맞춤 대응은 <b>당신 직무에 결박된 근거가 있을 때만</b> 생성하며, 근거 없는 조언은 팔지 않습니다. '
+                f'참고 정보이며 개인에 대한 자동 판정이 아닙니다.')
+    else:                              # 사전예약(비결제) 모드 — 리드 수집
+        price_label = '<span class="of-unit">/ 월 (테스트 가격, 정식가는 오픈 전 확정)</span>'
+        action = (f'''<form id="ofForm" onsubmit="return ofSubmit(event)">
+      <input class="of-input" id="ofHp" name="hp_url" type="text" tabindex="-1" autocomplete="off"
+        style="position:absolute;left:-9999px" aria-hidden="true">
+      <input class="of-input" id="ofContact" type="text" maxlength="120" required
+        placeholder="이메일 또는 카카오 오픈채팅 ID" autocomplete="email">
+      <label style="display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--text-secondary);margin:0 2px 12px;text-align:left;line-height:1.5">
+        <input type="checkbox" id="ofConsent" style="margin-top:2px;flex-shrink:0">
+        <span>(필수) 사전예약 안내를 위해 연락처 수집·이용에 동의합니다. 목적: 오픈 알림 / 보관: 정식 오픈 후 6개월 또는 삭제 요청 시까지 / 삭제·문의는 회신으로 요청 가능.</span></label>
+      <button class="of-submit" type="submit">사전예약 — 오픈 시 우선 안내</button>
+    </form>
+    <div class="of-ok" id="ofOk">신청 완료! 정식 오픈하면 가장 먼저 알려드릴게요.<br>관심 가져주셔서 고맙습니다. 🙏</div>''')
+        note = ('※ <b>사전예약은 결제가 아닙니다</b> — 정식 오픈 시 우선 안내드립니다. '
+                '맞춤 대응은 <b>당신 직무에 결박된 근거가 있을 때만</b> 생성하며, 근거 없는 조언은 팔지 않습니다. '
+                '참고 정보이며 개인에 대한 자동 판정이 아닙니다.')
+    return f"""<!doctype html><html lang="ko"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+{_FAVICON}<title>AI 대응 스프린트 · {name}</title>
+<style>{_CSS}{_OFFER_CSS}</style></head><body><div class="app-container">
+  <a class="of-back" href="/report?job={jid}">← 내 리포트로</a>
+  <div class="hero-card"><div class="hero-emoji">🧭</div>
+    <h1 class="hero-title">AI 대응 스프린트</h1>
+    <p class="hero-subtitle">'{head_task}' 압력을 확인했다면,<br>이제 <b>실제로 뭘 할지</b>를 매주 함께.</p>
+  </div>
+  <div class="cta-card" style="text-align:center">
+    <div class="of-price"><span class="of-now">{PRESALE_PRICE}원</span>{price_label}</div>
+    <ul class="of-list">
+      <li><span class="of-ic">📅</span><div><b>매주 맞춤 대응 플랜</b> — 근거 뉴스에 결박된 방어·전환 액션(실툴·난이도·소요시간까지).</div></li>
+      <li><span class="of-ic">📄</span><div><b>결과물 체크인</b> — 이력서·포트폴리오에 실제로 반영했는지 점검. 텍스트가 아니라 남는 결과물.</div></li>
+      <li><span class="of-ic">📈</span><div><b>진척 추적</b> — 이번 주 실행했는지, 무엇이 쌓였는지 한눈에.</div></li>
+      <li class="of-soon"><span class="of-ic">🔜</span><div>멘토 피드백 · 같은 직무 코호트 <span class="of-soon">(준비 중)</span></div></li>
+    </ul>
+    {action}
+  </div>
+  <p class="of-note">{note}</p>
+</div>
+<script>
+function ofSubmit(e){{e.preventDefault();
+  var c=document.getElementById('ofContact').value.trim();
+  var hp=document.getElementById('ofHp').value;
+  if(!c){{return false;}}
+  if(!document.getElementById('ofConsent').checked){{alert('개인정보 수집·이용 동의가 필요합니다.');return false;}}
+  fetch('/offer/interest',{{method:'POST',headers:{{'Content-Type':'application/json'}},
+    body:JSON.stringify({{contact:c,job:'{jid}',price_shown:'{PRESALE_PRICE}',consent:true,hp_url:hp}})}})
+   .then(function(r){{if(!r.ok){{throw new Error('bad');}}
+     document.getElementById('ofForm').style.display='none';
+     document.getElementById('ofOk').style.display='block';}})
+   .catch(function(){{alert('잠시 후 다시 시도해 주세요.');}});
+  return false;}}
+</script>
+</body></html>"""
 
 
 if __name__ == "__main__":
