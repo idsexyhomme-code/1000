@@ -19,6 +19,7 @@
 | `HOST` | 바인딩 주소(기본 127.0.0.1) | 선택 |
 | `REPORT_BASE_URL` | 카카오 봇 '리포트 보기' 링크용(예: `https://api.example.com`) | 배포 시 ✅ |
 | `CHANNEL_URL` | 카카오 채널 추가 링크(공유 메시지용) | 배포 시 ✅ |
+| `PAYMENT_URL` | 설정 시 `/offer`가 **실결제 버튼**으로 전환(예: 토스페이먼츠/스트라이프 결제링크). 미설정 시 사전예약 리드 수집 | 결제 테스트 시 ✅ |
 
 ```bash
 export GEMINI_API_KEY="..."          # 코드에 절대 박지 말 것
@@ -34,6 +35,32 @@ GEMINI_API_KEY=... python3 src/batch.py --max 2 --send
 # 리포트 확인
 curl "localhost:8000/report?job=video-editor" > /tmp/r.html && open /tmp/r.html
 ```
+
+## 2.5 ★ 런칭 = 지불주체 스모크테스트 (가장 먼저 할 것)
+> 검증 판정(POSITIONING.md): "더 만들기"가 아니라 **30일 내 지불주체 1명 증명**이 먼저.
+> 카카오 연결(§5, 계정·승인 필요) 없이도 **웹 + 사전판매 오퍼만으로 즉시 런칭 가능**.
+
+**1단계 — 리드 검증 런칭 (결제 없이, 가장 빠름):**
+1. **개인정보 선행조건(필수·먼저):** 연락처(PII)를 받는 순간 개인정보처리방침 수립·공개가 **법적 의무**(PIPA). `/offer`의 인라인 동의문구만으론 부족 → **개인정보처리방침·문의/삭제 채널을 먼저 갖춘 뒤** 수집 시작. (방침 페이지는 사업자/연락처 정보 필요 = 사용자 작성. 미비 시 리드 수집 끄고 '관심만 표시'로 운영.)
+2. **호스팅 1대** (§3) — `python3 src/server.py` + reverse proxy TLS + 도메인. `INTEREST_SALT` 설정(IP 남용탐지 해시용).
+3. **유입** — 랜딩(`/`)→리포트(`/report?job=`)→오퍼(`/offer?job=`) 이미 연결됨. 카톡/커뮤니티에 리포트 링크 공유(바이럴).
+4. **측정** (§2.6) — `python3 src/interest.py`. ※리드=관심 신호, **지불 의사 아님**.
+
+**2단계 — 실제 결제 검증 (지불주체 진짜 증명, 벽 높음):**
+- ⚠️ **현재 `PAYMENT_URL`은 외부 결제링크로 보내기만 한다 — 결제 성공을 앱이 모른다.** 즉 이 상태로는 "결제 이벤트로 WTP 측정"이 **아직 구현 안 됨**. 결제완료 콜백/웹훅(`/payment/success`, `/webhook/payment`) + `payments` 저장이 있어야 `paid_customers`를 지표화 가능 (= 다음 빌드 TODO).
+- ⚠️ **국내 PG 현실:** 토스페이먼츠 등은 **사업자등록 + 홈페이지/상품·환불·해지 고지 + 카드사 심사(최대 ~14일)** 필요. 즉시 발급 아님. **Stripe는 한국 사업자 미지원**(기본 경로에서 제외).
+- 그 전까지의 차선책: 결제링크가 준비되면 `PAYMENT_URL`로 1차 '카드 도달률'만이라도 측정(완료율은 PG 대시보드에서 수동 대조).
+
+**통과/실패 기준:** 30일 내 실제 결제(또는 강한 리드→결제 전환)가 안 나오면 B2C 유료는 접고 B2B/정부 경로로(POSITIONING.md §5.5). 코드 추가는 그 전까지 동결.
+
+## 2.6 사전예약 리드 측정
+```bash
+python3 src/interest.py          # 총 리드·직무별·가격별·최근(연락처 마스킹)
+python3 src/interest.py --csv    # CSV 내보내기 (연락처 평문 — 운영자 본인만, 외부공유 금지)
+curl localhost:8000/health       # {"presale_leads": N} 빠른 확인
+```
+- 데이터: `data/interest.jsonl`(연락처 PII → **.gitignore, 절대 커밋·외부공유 금지**). honeypot+중복제거+동의(PIPA)+IP는 솔트 HMAC(`INTEREST_SALT` 없으면 미저장) 내장. `--csv`는 마스킹 기본, 원본은 `--raw`(운영자 본인만).
+- ⚠️ **라벨 정직성:** `presale_leads`는 무료 연락처 = **관심 신호**다. **지불 의사(WTP)가 아니다.** 실 WTP는 `PAYMENT_URL` 결제 이벤트로만.
 
 ## 3. 서버 호스팅 (사용자 결정)
 - 아무 리눅스 VM(또는 Fly.io/Render/Railway 등). 파이썬 3.10+만 있으면 됨.
@@ -69,6 +96,9 @@ curl "localhost:8000/report?job=video-editor" > /tmp/r.html && open /tmp/r.html
 - **Google Cloud Billing 예산 알림** 권장(후불은 자동 상한 없음). 유저 폭증 시 비용은 호출 수에 비례.
 
 ## 7. 출시 전 체크
+- [ ] **(PII 게이트·먼저)** 개인정보처리방침·이용약관·삭제/문의 채널 공개 → 그 후에만 `/offer` 리드 수집 ON
+- [ ] **(런칭 1단계)** 호스팅 + TLS + 도메인 + `INTEREST_SALT` → `/`,`/report`,`/offer` 접속 확인 (카카오 없이 가능)
+- [ ] **(런칭 2단계)** 사업자등록 + PG 심사(토스 ~14일) → 결제 웹훅/성공콜백 구현(TODO) → `PAYMENT_URL` → 실결제 측정
 - [ ] `WEBHOOK_TOKEN` 설정 + reverse proxy TLS
 - [ ] 베이스라인 캘리브레이션(현재 손추정 → O*NET·워크넷 실데이터로 — 신뢰성 핵심, R7)
 - [x] 시드 직업 확대 (현재 10개 직군) · 추가 확장 가능

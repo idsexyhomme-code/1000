@@ -199,7 +199,8 @@ def _norm_contact(c: str) -> str:
 
 def append_interest(rec: dict) -> bool:
     """사전예약 리드 1건 적재 (원자적 append + (contact,job) 중복제거).
-    rec엔 PII(연락처) 포함 → 절대 커밋 금지(.gitignore). 반환: 신규 적재 여부(중복이면 False)."""
+    rec엔 PII(연락처) 포함 → 절대 커밋 금지(.gitignore). 반환: 신규 적재 여부(중복이면 False).
+    ※ 중복검사는 전체 스캔(O(n)) — 스모크테스트 규모(수백~수천)에선 충분. 대량화 시 인덱스/SQLite로 교체."""
     _ensure()
     rec = dict(rec)
     rec.setdefault("ts", datetime.now(timezone.utc).isoformat())
@@ -221,11 +222,20 @@ def append_interest(rec: dict) -> bool:
 
 
 def interest_count() -> int:
-    """수집된 사전예약 건수 (30일 지불주체 테스트 측정 지표)."""
+    """수집된 사전예약 리드 수 — 유효 JSON 줄만 카운트(CLI와 동일 기준, 지표 분기 방지)."""
     if not os.path.exists(INTEREST_FILE):
         return 0
+    n = 0
     with _INTEREST_LOCK:
-        return sum(1 for ln in open(INTEREST_FILE, encoding="utf-8") if ln.strip())
+        for ln in open(INTEREST_FILE, encoding="utf-8"):
+            if not ln.strip():
+                continue
+            try:
+                json.loads(ln)
+                n += 1
+            except Exception:
+                pass        # 깨진 줄은 건너뜀 — /health와 interest.py 카운트 일치
+    return n
 
 
 NOTIFIED_FILE = os.path.join(_DATA, "notified.json")  # 직무별 마지막 알림 스냅샷 ts (중복 알림 방지)

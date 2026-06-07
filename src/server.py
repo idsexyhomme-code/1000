@@ -13,6 +13,7 @@ stdlib http.server 기반(의존성 0). 정적 모듈(scoring/notify/report/stor
 from __future__ import annotations
 
 import hashlib
+import hmac
 import json
 import os
 import sys
@@ -51,6 +52,7 @@ WEBHOOK_TOKEN = os.environ.get("WEBHOOK_TOKEN", "")  # 설정 시 /webhook은 ?t
 REPORT_BASE_URL = os.environ.get("REPORT_BASE_URL", "")  # 예: https://api.example.com (리포트 링크용)
 CHANNEL_URL = os.environ.get("CHANNEL_URL", "")          # 카카오 채널 추가 링크(공유 바이럴용)
 PAYMENT_URL = os.environ.get("PAYMENT_URL", "")          # 설정 시 /offer가 실결제 버튼, 미설정 시 사전예약 수집
+INTEREST_SALT = os.environ.get("INTEREST_SALT", "") or WEBHOOK_TOKEN  # 리드 IP HMAC 솔트(없으면 IP 미저장)
 RATE_LIMIT = int(os.environ.get("RATE_LIMIT", "60"))  # IP당 윈도우 요청 수
 RATE_WINDOW = 60.0
 _rl_lock = threading.Lock()
@@ -280,9 +282,10 @@ class Handler(BaseHTTPRequestHandler):
             if not _valid_contact(contact):
                 return self._json(400, {"ok": False, "error": "invalid contact"})
             job = str(body.get("job", ""))[:60]
-            # IP는 평문 저장 금지 — 일별 솔트 해시(중복/남용 탐지용, 역추적 불가)
-            iph = hashlib.sha256(
-                f"{self.client_address[0]}".encode()).hexdigest()[:12]
+            # IP 평문 저장 금지. 비밀 솔트(INTEREST_SALT/없으면 WEBHOOK_TOKEN)로 HMAC →
+            # 솔트 없으면 아예 저장 안 함(무염 SHA256은 IP 사전대입으로 역추적 가능하므로).
+            iph = (hmac.new(INTEREST_SALT.encode(), self.client_address[0].encode(),
+                            hashlib.sha256).hexdigest()[:12] if INTEREST_SALT else "")
             store.append_interest({                # 중복(contact+job)이면 내부에서 skip
                 "contact": contact,
                 "job": job if job in JOBS else "",
