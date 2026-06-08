@@ -83,7 +83,7 @@ padding:14px;font-size:15px;color:var(--text-primary);margin-bottom:10px;-webkit
     <p class="hero-subtitle">'자막 생성' 압력 데이터를 근거로,<br><b>AI가 상대적으로 덜 대체하는 사람 고유 역량</b> 중심으로 이력서를 재설계합니다.</p>
   </div>
   <div class="cta-card" style="text-align:center">
-    <div class="of-price"><span class="of-now">99,000원</span><span class="of-unit">/ 1회 (테스트 가격 · 정식가는 오픈 전 확정)</span></div>
+    <div class="of-price"><span class="of-now">99,000원</span><span class="of-unit">/ 1회 · 영업일 5일 내 전달</span></div>
     <div class="of-kicker">손에 남는 결과물</div>
     <ul class="of-list">
       <li><span class="of-ic">📊</span><div><b>데이터 기반 직무 진단</b> — 실제 AI 뉴스·근거에 기반해 내 직무의 '위험 업무/안전 업무'를 분류한 리포트.</div></li>
@@ -93,26 +93,16 @@ padding:14px;font-size:15px;color:var(--text-primary);margin-bottom:10px;-webkit
     </ul>
     <div class="of-kicker">진행 과정</div>
     <ol class="of-steps">
-      <li>신청 후 기존 이력서·포트폴리오 제출</li>
+      <li>결제 후 기존 이력서·포트폴리오 제출</li>
       <li>WorkRadar 데이터로 직무 태스크 분석 + '안전 역량' 매핑</li>
       <li>1:1 서면 인터뷰 — 이력서에 누락된 '쉽게 대체되지 않는 경험' 발굴</li>
       <li>최종 패키지 전달 + 적용 가이드 (영업일 5일 내)</li>
     </ol>
     <div class="of-human">🤝 <b>AI가 어디까지 하나:</b> 직무 압력 데이터 수집·1차 분류는 AI가, <b>당신의 고유 경험 발굴과 이력서 최종 문장은 커리어 디렉터가 직접 검토·작성</b>합니다. 'AI가 다 써준다'가 아닙니다.</div>
     <div class="of-cap">🪑 사람이 직접 검토·작성하므로 <b>초기에는 주 최대 5명까지 수동 검토</b>합니다.<br><span class="of-unit">실제 처리 한계 — 가짜 카운트다운 아님</span></div>
-    <form id="ofForm" onsubmit="return ofSubmit(event)">
-      <input class="of-input" id="ofHp" name="hp_url" type="text" tabindex="-1" autocomplete="off"
-        style="position:absolute;left:-9999px" aria-hidden="true">
-      <input class="of-input" id="ofContact" type="text" maxlength="120" required
-        placeholder="이메일 또는 카카오 오픈채팅 ID" autocomplete="email">
-      <label style="display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--text-secondary);margin:0 2px 12px;text-align:left;line-height:1.5">
-        <input type="checkbox" id="ofConsent" style="margin-top:2px;flex-shrink:0">
-        <span>(필수) 오픈 안내를 위해 연락처 수집·이용에 동의합니다. 수집 항목: 연락처(이메일 또는 카카오 오픈채팅 ID) / 목적: 오픈 알림 / 보관: 정식 오픈 후 6개월 또는 삭제 요청 시까지 / 삭제·문의는 회신으로 요청 가능. 동의를 거부하실 수 있으며, 거부 시 사전신청 안내가 제공되지 않을 뿐 다른 불이익은 없습니다.</span></label>
-      <button class="of-submit" type="submit">사전신청 — 오픈 시 우선 안내</button>
-    </form>
-    <div class="of-ok" id="ofOk">신청 완료! 정식 오픈하면 가장 먼저 알려드릴게요.<br>관심 가져주셔서 고맙습니다. 🙏</div>
+    <a href="https://pay.example.com/checkout/abc" class="of-submit">지금 신청하기 — 99,000원 결제 →</a>
   </div>
-  <p class="of-note">※ <b>사전신청은 결제가 아닙니다</b> — 정식 오픈 시 우선 안내드립니다. 이력서 재설계는 <b>당신 직무에 결박된 근거가 있을 때만</b> 수행하며, 근거 없는 조언은 팔지 않습니다. AI 압력지수는 참고용 통계 지표이며 개인에 대한 자동 판정이 아닙니다.</p>
+  <p class="of-note">※ <b>99,000원이 1회 결제</b>됩니다(구독 아님). 결제는 외부 결제 페이지에서 진행되며, 현재 결제 완료는 자동 확인되지 않아 영업일 내 수동 확인 후 작업을 시작합니다. <b>법정 청약철회권 및 계약 불일치 시 환불권은 보장</b>되며(결제 후 작업 미개시분은 전액 환불), 이미 제공 개시된 맞춤 용역 부분은 관련 법령(전자상거래법) 범위 내에서만 공제될 수 있습니다(영업일 5일 내 전달). 이력서 재설계는 <b>당신 직무에 결박된 근거가 있을 때만</b> 수행하며, 근거 없는 조언은 팔지 않습니다. AI 압력지수는 참고용 통계 지표이며 개인에 대한 자동 판정이 아닙니다.</p>
 </div>
 <script>
 function ofSubmit(e){e.preventDefault();

@@ -356,10 +356,10 @@ def render_html(job: dict, strat: dict | None = None, action_plan: dict | None =
     # 유료 CTA는 근거 결박된(guardrail_ok) 플랜이 있을 때만 — 근거 없는 조언 판매 금지
     # 정직성: 검증 못 한 사회증명("상위 5%" 등) 금지. 가치(결과물 남는 패키지)로만 소구.
     grounded = bool((action_plan or {}).get("guardrail_ok", True) and (action_plan or {}).get("actions"))
-    cta_html = (f'''<div class="cta-card"><div class="cta-icon">🧭</div>
-    <h3 class="cta-title">'{_e(head_task)}' 압력, 혼자 두지 마세요</h3>
-    <p class="cta-text">매주 근거 기반 맞춤 대응 + 이력서·포트폴리오에<br>남는 결과물까지 — <b>AI 대응 스프린트</b></p>
-    <a href="/offer?job={_e(job.get('job_id',''))}" class="cta-btn">대응 스프린트 보기 →</a></div>''' if grounded else '')
+    cta_html = (f'''<div class="cta-card"><div class="cta-icon">🛡️</div>
+    <h3 class="cta-title">'{_e(head_task)}' 압력, 이력서부터 점검하세요</h3>
+    <p class="cta-text">데이터로 본 '덜 대체되는 역량' 중심으로<br>이력서를 재설계 — 손에 남는 결과물</p>
+    <a href="/offer?job={_e(job.get('job_id',''))}" class="cta-btn">{OFFER_NAME} 보기 →</a></div>''' if grounded else '')
     # 공유 페이로드(바이럴 #1 레버). json.dumps→유효 JS 객체. </script 브레이크아웃 방어로 <\/ 치환.
     _share = json.dumps({
         "title": "커리어 시그널",
@@ -423,28 +423,45 @@ padding:14px;font-size:15px;color:var(--text-primary);margin-bottom:10px;-webkit
 .of-ok{display:none;text-align:center;padding:20px;background:rgba(99,102,241,.1);border-radius:14px;font-size:14px;line-height:1.55;}
 .of-note{font-size:12px;color:var(--text-tertiary);margin-top:14px;line-height:1.6;}
 .of-back{display:block;text-align:center;color:var(--text-secondary);font-size:14px;margin:4px 0 16px;text-decoration:none;}
+.of-kicker{font-size:12px;font-weight:700;color:var(--text-tertiary);letter-spacing:.4px;margin:18px 2px 2px;text-transform:uppercase;}
+.of-steps{list-style:none;counter-reset:s;padding:0;margin:8px 0 4px;}
+.of-steps li{counter-increment:s;display:flex;gap:11px;padding:8px 0;font-size:13.5px;line-height:1.5;color:var(--text-secondary);word-break:keep-all;}
+.of-steps li::before{content:counter(s);flex-shrink:0;width:22px;height:22px;border-radius:50%;background:var(--bg-elevate);color:var(--text-primary);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+.of-human{font-size:12.5px;color:var(--text-secondary);background:var(--bg-elevate);border-radius:12px;padding:12px 13px;margin:14px 0 4px;line-height:1.55;word-break:keep-all;}
+.of-cap{font-size:13px;color:var(--text-primary);font-weight:600;text-align:center;margin:16px 0 12px;line-height:1.5;}
 """
 
 # 가격은 검증 대상 가설(테스트가) — 가짜 할인 금지. 정상가는 운영된 적 없으므로 취소선 표기 안 함.
-PRESALE_PRICE = "9,900"
+OFFER_NAME = "AI 시대 커리어 재설계 패키지"   # '대체 불가/AI-Proof'식 절대보장 표현 회피(표시광고법, Codex fix)
+OFFER_PRICE = "99,000"           # 1회성 패키지(월 구독 아님) · 테스트 가격(시세 10~20만원 대비 진입가)
+OFFER_DELIVERY_DAYS = 5          # 영업일 기준 납기
+OFFER_WEEKLY_CAP = 5             # 사람이 직접 검토하므로 주당 실제 처리 가능 인원 = 정직한 수용한계(가짜 카운터 아님)
+PRESALE_PRICE = OFFER_PRICE      # 하위호환(interest price_shown 라벨)
 
 
 def offer_html(job: dict, payment_url: str | None = None) -> str:
-    """AI 대응 스프린트 — 런칭=지불주체 스모크테스트. 결과물 남는 패키지(Codex fix).
-    PAYMENT_URL(env) 연결 시 실결제 버튼+결제 고지, 미연결 시 사전예약 리드 수집."""
+    """AI-Proof 커리어 재설계 패키지 — 런칭=지불주체 스모크테스트. '결과물이 손에 남는' 1회성 패키지.
+    위협지수(무료 미끼) → 결과물(이력서 재설계)이 유료 정점. 주간 텍스트 구독(commodity) 폐기.
+    PAYMENT_URL(env) 연결 시 실결제 버튼+환불 고지, 미연결 시 사전신청(리드) 수집."""
     jid = _e(job.get("job_id", ""))
     name = _e(job.get("job_name_ko", ""))
     head_task = _e((job.get("headline_task") or {}).get("name_ko") or "핵심 업무")
-    real = bool(payment_url)
-    if real:                           # 실결제 모드 — 결제 고지(환불·제공시점 등 운영 시 약관 링크 필요)
-        price_label = '<span class="of-unit">월 구독</span>'
-        action = (f'<a href="{_e(_safe_url(payment_url))}" class="of-submit">'
-                  f'지금 시작하기 — 월 {PRESALE_PRICE}원 결제 →</a>')
-        note = (f'※ <b>월 {PRESALE_PRICE}원이 결제</b>되는 구독입니다(언제든 해지 가능, 결제 페이지의 환불·약관 적용). '
-                f'맞춤 대응은 <b>당신 직무에 결박된 근거가 있을 때만</b> 생성하며, 근거 없는 조언은 팔지 않습니다. '
-                f'참고 정보이며 개인에 대한 자동 판정이 아닙니다.')
-    else:                              # 사전예약(비결제) 모드 — 리드 수집
-        price_label = '<span class="of-unit">/ 월 (테스트 가격, 정식가는 오픈 전 확정)</span>'
+    safe_payment_url = _safe_url(payment_url) if payment_url else "#"
+    real = safe_payment_url != "#"     # 잘못된 URL(javascript: 등)이면 실결제 모드로 오인 금지(Codex fix)
+    cap_line = (f'<div class="of-cap">🪑 사람이 직접 검토·작성하므로 <b>초기에는 주 최대 {OFFER_WEEKLY_CAP}명까지 수동 검토</b>합니다.'
+                f'<br><span class="of-unit">실제 처리 한계 — 가짜 카운트다운 아님</span></div>')
+    if real:                           # 실결제 모드 — 환불·제공시점 고지(운영 시 약관 페이지 링크 권장)
+        price_label = f'<span class="of-unit">/ 1회 · 영업일 {OFFER_DELIVERY_DAYS}일 내 전달</span>'
+        action = (f'<a href="{_e(safe_payment_url)}" class="of-submit">'
+                  f'지금 신청하기 — {OFFER_PRICE}원 결제 →</a>')
+        note = (f'※ <b>{OFFER_PRICE}원이 1회 결제</b>됩니다(구독 아님). 결제는 외부 결제 페이지에서 진행되며, '
+                f'현재 결제 완료는 자동 확인되지 않아 영업일 내 수동 확인 후 작업을 시작합니다. '
+                f'<b>법정 청약철회권 및 계약 불일치 시 환불권은 보장</b>되며(결제 후 작업 미개시분은 전액 환불), '
+                f'이미 제공 개시된 맞춤 용역 부분은 관련 법령(전자상거래법) 범위 내에서만 공제될 수 있습니다(영업일 {OFFER_DELIVERY_DAYS}일 내 전달). '
+                f'이력서 재설계는 <b>당신 직무에 결박된 근거가 있을 때만</b> 수행하며, 근거 없는 조언은 팔지 않습니다. '
+                f'AI 압력지수는 참고용 통계 지표이며 개인에 대한 자동 판정이 아닙니다.')
+    else:                              # 사전신청(비결제) 모드 — 리드 수집(결제 아님)
+        price_label = f'<span class="of-unit">/ 1회 (테스트 가격 · 정식가는 오픈 전 확정)</span>'
         action = (f'''<form id="ofForm" onsubmit="return ofSubmit(event)">
       <input class="of-input" id="ofHp" name="hp_url" type="text" tabindex="-1" autocomplete="off"
         style="position:absolute;left:-9999px" aria-hidden="true">
@@ -452,30 +469,40 @@ def offer_html(job: dict, payment_url: str | None = None) -> str:
         placeholder="이메일 또는 카카오 오픈채팅 ID" autocomplete="email">
       <label style="display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--text-secondary);margin:0 2px 12px;text-align:left;line-height:1.5">
         <input type="checkbox" id="ofConsent" style="margin-top:2px;flex-shrink:0">
-        <span>(필수) 사전예약 안내를 위해 연락처 수집·이용에 동의합니다. 목적: 오픈 알림 / 보관: 정식 오픈 후 6개월 또는 삭제 요청 시까지 / 삭제·문의는 회신으로 요청 가능.</span></label>
-      <button class="of-submit" type="submit">사전예약 — 오픈 시 우선 안내</button>
+        <span>(필수) 오픈 안내를 위해 연락처 수집·이용에 동의합니다. 수집 항목: 연락처(이메일 또는 카카오 오픈채팅 ID) / 목적: 오픈 알림 / 보관: 정식 오픈 후 6개월 또는 삭제 요청 시까지 / 삭제·문의는 회신으로 요청 가능. 동의를 거부하실 수 있으며, 거부 시 사전신청 안내가 제공되지 않을 뿐 다른 불이익은 없습니다.</span></label>
+      <button class="of-submit" type="submit">사전신청 — 오픈 시 우선 안내</button>
     </form>
     <div class="of-ok" id="ofOk">신청 완료! 정식 오픈하면 가장 먼저 알려드릴게요.<br>관심 가져주셔서 고맙습니다. 🙏</div>''')
-        note = ('※ <b>사전예약은 결제가 아닙니다</b> — 정식 오픈 시 우선 안내드립니다. '
-                '맞춤 대응은 <b>당신 직무에 결박된 근거가 있을 때만</b> 생성하며, 근거 없는 조언은 팔지 않습니다. '
-                '참고 정보이며 개인에 대한 자동 판정이 아닙니다.')
+        note = ('※ <b>사전신청은 결제가 아닙니다</b> — 정식 오픈 시 우선 안내드립니다. '
+                '이력서 재설계는 <b>당신 직무에 결박된 근거가 있을 때만</b> 수행하며, 근거 없는 조언은 팔지 않습니다. '
+                'AI 압력지수는 참고용 통계 지표이며 개인에 대한 자동 판정이 아닙니다.')
     return f"""<!doctype html><html lang="ko"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-{_FAVICON}<title>AI 대응 스프린트 · {name}</title>
+{_FAVICON}<title>{OFFER_NAME} · {name}</title>
 <style>{_CSS}{_OFFER_CSS}</style></head><body><div class="app-container">
   <a class="of-back" href="/report?job={jid}">← 내 리포트로</a>
-  <div class="hero-card"><div class="hero-emoji">🧭</div>
-    <h1 class="hero-title">AI 대응 스프린트</h1>
-    <p class="hero-subtitle">'{head_task}' 압력을 확인했다면,<br>이제 <b>실제로 뭘 할지</b>를 매주 함께.</p>
+  <div class="hero-card"><div class="hero-emoji">🛡️</div>
+    <h1 class="hero-title">{OFFER_NAME}</h1>
+    <p class="hero-subtitle">'{head_task}' 압력 데이터를 근거로,<br><b>AI가 상대적으로 덜 대체하는 사람 고유 역량</b> 중심으로 이력서를 재설계합니다.</p>
   </div>
   <div class="cta-card" style="text-align:center">
-    <div class="of-price"><span class="of-now">{PRESALE_PRICE}원</span>{price_label}</div>
+    <div class="of-price"><span class="of-now">{OFFER_PRICE}원</span>{price_label}</div>
+    <div class="of-kicker">손에 남는 결과물</div>
     <ul class="of-list">
-      <li><span class="of-ic">📅</span><div><b>매주 맞춤 대응 플랜</b> — 근거 뉴스에 결박된 방어·전환 액션(실툴·난이도·소요시간까지).</div></li>
-      <li><span class="of-ic">📄</span><div><b>결과물 체크인</b> — 이력서·포트폴리오에 실제로 반영했는지 점검. 텍스트가 아니라 남는 결과물.</div></li>
-      <li><span class="of-ic">📈</span><div><b>진척 추적</b> — 이번 주 실행했는지, 무엇이 쌓였는지 한눈에.</div></li>
-      <li class="of-soon"><span class="of-ic">🔜</span><div>멘토 피드백 · 같은 직무 코호트 <span class="of-soon">(준비 중)</span></div></li>
+      <li><span class="of-ic">📊</span><div><b>데이터 기반 직무 진단</b> — 실제 AI 뉴스·근거에 기반해 내 직무의 '위험 업무/안전 업무'를 분류한 리포트.</div></li>
+      <li><span class="of-ic">✨</span><div><b>사람 고유 역량 발굴</b> — AI가 잘하는 단순반복은 줄이고, 문제해결·기획·도메인 강점을 강조하도록 이력서 재배치 가이드(절대적 방어 보장이 아니라 상대적 강조점 재배치).</div></li>
+      <li><span class="of-ic">📝</span><div><b>이력서 핵심 문장 초안</b> — 커리어 디렉터가 직접 다듬은 요약(Summary)·성과 불릿 초안 + 적용 가이드.</div></li>
+      <li><span class="of-ic">🧭</span><div><b>1~3년 커리어 디펜스 플랜</b> — 추가로 쌓으면 좋은 권장 스킬셋.</div></li>
     </ul>
+    <div class="of-kicker">진행 과정</div>
+    <ol class="of-steps">
+      <li>{'결제' if real else '신청'} 후 기존 이력서·포트폴리오 제출</li>
+      <li>WorkRadar 데이터로 직무 태스크 분석 + '안전 역량' 매핑</li>
+      <li>1:1 서면 인터뷰 — 이력서에 누락된 '쉽게 대체되지 않는 경험' 발굴</li>
+      <li>최종 패키지 전달 + 적용 가이드 (영업일 {OFFER_DELIVERY_DAYS}일 내)</li>
+    </ol>
+    <div class="of-human">🤝 <b>AI가 어디까지 하나:</b> 직무 압력 데이터 수집·1차 분류는 AI가, <b>당신의 고유 경험 발굴과 이력서 최종 문장은 커리어 디렉터가 직접 검토·작성</b>합니다. 'AI가 다 써준다'가 아닙니다.</div>
+    {cap_line}
     {action}
   </div>
   <p class="of-note">{note}</p>
