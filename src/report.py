@@ -141,8 +141,9 @@ body{background:#000;color:var(--text-primary);font-family:"Pretendard Variable"
 .tag-pivot{background:rgba(59,130,246,.15);color:#60a5fa;}
 .ap-step{font-size:13px;color:var(--text-secondary);margin-top:8px;line-height:1.5;word-break:keep-all;}
 .ap-meta{font-size:12px;color:var(--text-tertiary);margin-top:6px;}
-.ap-item.locked .ap-h{filter:blur(5px);user-select:none;pointer-events:none;}
-.ap-lock{font-size:13px;color:var(--text-tertiary);margin-top:10px;text-align:center;}
+.ap-sub{font-size:12.5px;color:var(--text-secondary);margin:-2px 2px 14px;line-height:1.55;word-break:keep-all;}
+.ap-free{font-size:10.5px;font-weight:700;color:#34d399;background:rgba(52,211,153,.12);padding:2px 7px;border-radius:6px;margin-left:auto;flex-shrink:0;}
+.ap-lock{font-size:12.5px;color:var(--text-secondary);margin-top:10px;line-height:1.55;word-break:keep-all;display:flex;gap:7px;align-items:flex-start;background:var(--bg-elevate);border-radius:10px;padding:10px 12px;}
 """
 
 
@@ -197,33 +198,42 @@ def _driver(d: dict) -> str:
 
 
 def _action_plan_html(plan: dict) -> str:
-    """이번 주 생존 액션플랜 — 첫 1개 무료 티저, 나머지 잠금(유료 전환점). 해자를 유료CTA에 결박."""
+    """이번 주 액션플랜 — 매주 '방향'을 무료로 제시(미끼/리텐션). 2·3번은 방향만 보이는 '맛보기'.
+    유료 전환은 '텍스트 해제'가 아니라 아래 재설계 패키지(결과물=이력서 재설계)로 연결(commodity 함정
+    회피, Gemini 카피 + Codex 검증). 잠긴 제목 blur 제거 = 방향은 보이고, 파는 건 '내 이력서 반영'."""
     plan = plan or {}
     actions = plan.get("actions", [])
     if not actions:
         return ""
-    # 근거 미확보(guardrail_ok=False) → 유료 잠금 대신 정직한 안내 (근거 없는 조언 판매 방지)
-    if not plan.get("guardrail_ok", True):
-        return ('<div class="ap-section"><h2 class="section-title">🧭 이번 주 생존 액션플랜</h2>'
+    # 근거 미확보(guardrail_ok=False) → 잠금/판매 대신 정직한 안내 (근거 없는 조언 판매 방지)
+    # fail-closed: 플래그 누락 캐시는 '무근거'로 간주(Codex — fail-open 위험 차단)
+    if not plan.get("guardrail_ok", False):
+        return ('<div class="ap-section"><h2 class="section-title">🧭 이번 주 액션플랜</h2>'
                 '<div class="ap-item"><div class="ap-step">오늘은 당신 직무에 <b>직접 결박된 새 근거 뉴스</b>가 '
-                '없어 맞춤 대응법을 준비하지 못했습니다. 근거가 잡히면 바로 알려드릴게요.</div></div></div>')
+                '없어 맞춤 방향을 준비하지 못했습니다. 근거가 잡히면 바로 알려드릴게요.</div></div></div>')
+    sub = ('<p class="ap-sub">매주 제안하는 커리어 방향이에요. 이 방향을 <b>실제 내 이력서 결과물</b>로 '
+           '만들고 싶다면 아래 재설계 패키지를 활용하세요.</p>')
     rows = []
     for i, a in enumerate(actions):
-        locked = i >= 1                       # 첫 1개만 공개, 2·3번 잠금
+        locked = i >= 1                       # 1번=상세 공개, 2·3번=방향만(맛보기) + 패키지로 연결
         tag = {"defend": "방어", "pivot": "전환"}.get(a.get("strategy_type"), "")
         tag_cls = "tag-defend" if a.get("strategy_type") == "defend" else "tag-pivot"
+        badge = '' if locked else '<span class="ap-free">이번 주 핵심 방향</span>'
         head = (f'<div class="ap-h"><span class="ap-tag {tag_cls}">{tag}</span>'
-                f'{_e(a.get("title_ko", ""))}</div>')
+                f'{_e(a.get("title_ko", ""))}{badge}</div>')
         if locked:
-            body = '<div class="ap-lock">🔒 잠금 — 대응법 보기</div>'
+            # '텍스트 해제'가 아님 — 방향(제목)은 보이고, 파는 건 '이 방향을 내 이력서 결과물로'(텍스트 X)
+            # 1인 MVP 정직: '전문가' 과장 대신 '운영자가 직접 검토'(Codex fix)
+            body = ('<div class="ap-lock">🔒<div>이 방향을 <b>내 이력서 요약·성과 불릿 초안</b>으로 바꾸는 건 '
+                    '재설계 패키지에서 — 운영자가 직접 검토해 반영해요(결과물).</div></div>')
         else:
             steps = a.get("action_steps", [])
             step0 = _e(steps[0]) if steps else ""
             meta = f'{_e(a.get("difficulty", ""))} · 주 {_e(a.get("time_hours", ""))}h · {_e(a.get("payoff_ko", ""))}'
             body = f'<div class="ap-step">{step0}</div><div class="ap-meta">{meta}</div>'
         rows.append(f'<div class="ap-item{" locked" if locked else ""}">{head}{body}</div>')
-    return ('<div class="ap-section"><h2 class="section-title">🧭 이번 주 생존 액션플랜</h2>'
-            + "".join(rows) + "</div>")
+    return ('<div class="ap-section"><h2 class="section-title">🧭 이번 주 액션플랜</h2>'
+            + sub + "".join(rows) + "</div>")
 
 
 _LANDING_CSS = """
@@ -355,10 +365,10 @@ def render_html(job: dict, strat: dict | None = None, action_plan: dict | None =
     ap_html = _action_plan_html(action_plan)
     # 유료 CTA는 근거 결박된(guardrail_ok) 플랜이 있을 때만 — 근거 없는 조언 판매 금지
     # 정직성: 검증 못 한 사회증명("상위 5%" 등) 금지. 가치(결과물 남는 패키지)로만 소구.
-    grounded = bool((action_plan or {}).get("guardrail_ok", True) and (action_plan or {}).get("actions"))
+    grounded = bool((action_plan or {}).get("guardrail_ok", False) and (action_plan or {}).get("actions"))
     cta_html = (f'''<div class="cta-card"><div class="cta-icon">🛡️</div>
-    <h3 class="cta-title">'{_e(head_task)}' 압력, 이력서부터 점검하세요</h3>
-    <p class="cta-text">데이터로 본 '덜 대체되는 역량' 중심으로<br>이력서를 재설계 — 손에 남는 결과물</p>
+    <h3 class="cta-title">위 방향, 내 이력서로 만들까요?</h3>
+    <p class="cta-text">제시된 방향을 데이터 근거로 <b>내 이력서에 직접 반영</b> —<br>전문가가 다듬는 손에 남는 결과물</p>
     <a href="/offer?job={_e(job.get('job_id',''))}" class="cta-btn">{OFFER_NAME} 보기 →</a></div>''' if grounded else '')
     # 공유 페이로드(바이럴 #1 레버). json.dumps→유효 JS 객체. </script 브레이크아웃 방어로 <\/ 치환.
     _share = json.dumps({
@@ -439,13 +449,26 @@ OFFER_WEEKLY_CAP = 5             # 사람이 직접 검토하므로 주당 실�
 PRESALE_PRICE = OFFER_PRICE      # 하위호환(interest price_shown 라벨)
 
 
-def offer_html(job: dict, payment_url: str | None = None) -> str:
-    """AI-Proof 커리어 재설계 패키지 — 런칭=지불주체 스모크테스트. '결과물이 손에 남는' 1회성 패키지.
+def offer_html(job: dict, payment_url: str | None = None, grounded: bool = True) -> str:
+    """AI 시대 커리어 재설계 패키지 — 런칭=지불주체 스모크테스트. '결과물이 손에 남는' 1회성 패키지.
     위협지수(무료 미끼) → 결과물(이력서 재설계)이 유료 정점. 주간 텍스트 구독(commodity) 폐기.
-    PAYMENT_URL(env) 연결 시 실결제 버튼+환불 고지, 미연결 시 사전신청(리드) 수집."""
+    PAYMENT_URL(env) 연결 시 실결제 버튼+환불 고지, 미연결 시 사전신청(리드) 수집.
+    grounded=False(직무에 결박된 근거 없음) → 결제/판매 대신 정직 안내(제품레벨 무근거 판매 금지, Codex fix)."""
     jid = _e(job.get("job_id", ""))
     name = _e(job.get("job_name_ko", ""))
     head_task = _e((job.get("headline_task") or {}).get("name_ko") or "핵심 업무")
+    if not grounded:
+        return f"""<!doctype html><html lang="ko"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+{_FAVICON}<title>{OFFER_NAME} · {name}</title>
+<style>{_CSS}</style></head><body><div class="app-container">
+  <a href="/report?job={jid}" style="display:block;text-align:center;color:var(--text-secondary);font-size:14px;margin:4px 0 16px;text-decoration:none">← 내 리포트로</a>
+  <div class="hero-card"><div class="hero-emoji">🧭</div>
+    <h1 class="hero-title">맞춤 패키지를 준비 중이에요</h1>
+    <p class="hero-subtitle">'{name}' 직무에 <b>직접 결박된 새 근거</b>가 아직 충분치 않아,<br>지금은 재설계 패키지를 안내하지 않습니다.</p>
+  </div>
+  <p class="footer-text">※ 근거 없는 맞춤 처방·패키지는 판매하지 않습니다(정직성 원칙). 직무에 결박된 근거가 잡히면 리포트에서 바로 안내드릴게요.</p>
+</div></body></html>"""
     safe_payment_url = _safe_url(payment_url) if payment_url else "#"
     real = safe_payment_url != "#"     # 잘못된 URL(javascript: 등)이면 실결제 모드로 오인 금지(Codex fix)
     cap_line = (f'<div class="of-cap">🪑 사람이 직접 검토·작성하므로 <b>초기에는 주 최대 {OFFER_WEEKLY_CAP}명까지 수동 검토</b>합니다.'

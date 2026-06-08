@@ -286,7 +286,13 @@ class Handler(BaseHTTPRequestHandler):
             if jid not in JOBS:
                 return self._not_found()
             res = _cached_scores().get(jid)
-            return self._send(200, report.offer_html(res, PAYMENT_URL or None).encode("utf-8"),
+            # 무근거 판매 금지(제품레벨) — 리포트 CTA와 동일 기준으로 grounded 판정(Codex fix).
+            plan = store.get_actionplan(jid)
+            if plan is None:
+                import actionplan
+                plan = actionplan.make_action_plan(res, use_gemini=False)
+            grounded = bool(plan.get("guardrail_ok") and plan.get("actions"))
+            return self._send(200, report.offer_html(res, PAYMENT_URL or None, grounded=grounded).encode("utf-8"),
                               "text/html; charset=utf-8")
         if parts.path == "/payment/success":
             # PG 결제 후 클라이언트 리다이렉트. 쿼리는 누구나 조작 가능 → 아무것도 저장하지 않는다
