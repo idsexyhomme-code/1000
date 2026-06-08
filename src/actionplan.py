@@ -1,8 +1,9 @@
 """
-커리어 시그널 — 생존 액션플랜 엔진 (유료 '상위 5% 대응법' 실체) (R4b)
+커리어 시그널 — 직무 대응 액션플랜 엔진 (근거 결박 '이번 주 방향' 제시) (R4b)
 
 한 직무 score 결과(scoring.ScoringEngine.score()[job_id]) → '이번 주에 실제로 할 일'
-정확히 3가지를 처방한다. 경고에서 끝내지 않고 불안→건설적 행동으로 전환하는 게 목적.
+정확히 3가지를 제안한다. 경고에서 끝내지 않고 불안→통제감 있는 건설적 행동으로 전환하는 게 목적.
+(가짜 위계·배타성 프레이밍 금지 — 구체성은 '근거 결박'에서 나온다.)
 
 설계(notify.make_push와 동일 패턴):
   Gemini 3.1 Pro 실호출(responseMimeType=application/json)
@@ -136,9 +137,10 @@ _SCHEMA_SNIPPET = """\
 }"""
 
 _PROMPT = """\
-너는 '커리어 시그널'의 생존 액션플랜 엔진이다. 한 직무의 AI 압력 스냅샷(고압력 업무 + 근거뉴스)을 받아,
-사용자가 '이번 주에 실제로 할 일' 정확히 3가지를 처방한다. 이것은 유료 '상위 5% 대응법'의 실체이므로,
-남들이 모를 만큼 구체적이어야 한다.
+너는 '커리어 시그널'의 직무 대응 액션플랜 엔진이다. 한 직무의 AI 압력 스냅샷(고압력 업무 + 근거뉴스)을
+바탕으로, 사용자가 주도적으로 통제할 수 있는 '이번 주에 실제로 할 일' 정확히 3가지를 제안한다.
+막연한 조언을 배제하고, 입력된 실제 고압력 업무와 뉴스 근거에 명확히 연결하여 즉시 업무에 적용할 수 있을 만큼
+구체적으로 작성하라. (구체성은 입력된 근거와 업무 연결에서 나온다.)
 
 [절대 규칙 — 위반 시 출력 전체 무효]
 1) 모든 처방은 아래 [고압력 업무]와 [근거뉴스] 안에 실재하는 것에만 결박하라. 입력에 없는 업무·없는 근거·없는 툴 효과를 지어내지 마라.
@@ -270,8 +272,8 @@ def _validate_action(action: dict, job_result: dict) -> dict | None:
         "why_now": {
             "source_driver_index": di,
             "evidence_title": drv.get("title", ""),         # driver 값으로 강제 결박
-            "evidence_reason_ko": (str(why.get("evidence_reason_ko", "")).strip()
-                                   or drv.get("reason_ko", "")),
+            # 근거(이유)는 검증된 driver 값으로 강제 — 모델 부풀림 차단(Codex). 조언(title/steps)만 모델 몫.
+            "evidence_reason_ko": drv.get("reason_ko", ""),
             "source_tier": int(drv.get("source_tier", 3)) if drv.get("source_tier") in (1, 2, 3) else 3,
             "evidence_url": drv.get("url", ""),
         },
@@ -384,8 +386,9 @@ def _fallback_action(task: dict, strategy: str, job_result: dict) -> dict:
 
 
 def fallback_plan(job_result: dict) -> dict:
-    """Gemini 없이도 동작하는 결정적 폴백 — 동일 스키마, 항상 guardrail_ok=True.
-    고압력 업무를 defend로, 3개 미달이면 pivot으로 보충(일반론화 방지)."""
+    """Gemini 없이도 동작하는 결정적 폴백 — 동일 스키마. guardrail_ok는 근거 결박 여부에 따라
+    설정(근거뉴스 있으면 True, 무근거면 False — 무근거 조언 판매 금지). 고압력 업무를 defend로,
+    3개 미달이면 pivot으로 보충(일반론화 방지)."""
     hi = _high_pressure_tasks(job_result)
     actions: list[dict] = []
     seen: set = set()
@@ -450,7 +453,7 @@ def _assemble(job_result: dict, actions: list[dict], source: str, guardrail_ok: 
 
 # ── 공개 API ──────────────────────────────────────────────────────────────
 def make_action_plan(job_result: dict, use_gemini: bool = True) -> dict:
-    """한 직무 score 결과 → 이번 주 생존 액션 3가지 (SurvivalActionPlan).
+    """한 직무 score 결과 → 이번 주 대응 액션 3가지 (근거 결박 방향).
 
     notify.make_push와 동일: Gemini 성공+가드레일통과=gemini, 아니면 결정적 폴백.
     반환 스키마: job_id, job_name_ko, as_of, headline_weather, actions[3],
