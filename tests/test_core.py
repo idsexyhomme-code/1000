@@ -428,6 +428,59 @@ def test_payment_amount_validation():
         server.PAYMENT_EXPECTED_AMOUNT = old
 
 
+# ── 캘리브레이션 어댑터 (R7 — 손추정→실데이터, 정직성 불가침) ──────────────
+def test_calibrate_norm_soc():
+    import calibrate
+    assert calibrate._norm_soc("27-4032.00") == "27-4032"
+    assert calibrate._norm_soc("274032") == "27-4032"
+    assert calibrate._norm_soc(" 15-1252.00 ") == "15-1252"
+
+
+def test_calibrate_percentile_monotonic():
+    import calibrate
+    vals = [0.0, 1.0, 2.0, 3.0]
+    assert calibrate._percentile(3.0, vals) > calibrate._percentile(0.0, vals)
+    assert 0 <= calibrate._percentile(1.0, vals) <= 100
+
+
+def test_calibrate_anchor_only_with_data_and_no_overclaim():
+    import calibrate
+    job = {"job_id": "x", "baseline": {"index": 50, "ci": 10, "calibrated": False, "note": "손추정"},
+           "tasks": [{"task_id": "t", "name_ko": "t", "weight": 1.0, "baseline": 40, "ci": 10}]}
+    exposure = {"27-4032": 2.0, "10-0000": 0.0}
+    assert calibrate.calibrate_job(job, "99-9999", exposure) is None      # SOC 없음 → 앵커 안 함
+    out = calibrate.calibrate_job(job, "27-4032", exposure, confidence="high", citation="테스트")
+    assert isinstance(out, dict)
+    b = out["baseline"]
+    assert b["calibrated"] is False                                       # ★과대표기 금지: 표시점수 미반영→false 유지
+    a = b["index_anchor"]
+    assert a["soc"] == "27-4032" and "percentile" in a
+    assert "raw_exposure" not in a and "raw" not in a                     # 라이선스: 외부 raw 점수 미저장
+    assert out["tasks"][0]["baseline"] == 40                              # 태스크 baseline 불변(손추정)
+    assert "calibration" not in job["baseline"] and "index_anchor" not in job["baseline"]  # 원본 비파괴
+
+
+def test_calibrate_medium_default_holds():
+    import calibrate
+    job = {"job_id": "x", "baseline": {"index": 50, "ci": 8, "calibrated": False, "note": "손추정"}, "tasks": []}
+    exp = {"11-1111": 1.0, "22-2222": 0.0}
+    assert calibrate.calibrate_job(job, "11-1111", exp, confidence="medium") == "skip_medium"   # 기본 보류
+    ok = calibrate.calibrate_job(job, "11-1111", exp, confidence="medium", apply_medium=True)
+    assert isinstance(ok, dict) and ok["baseline"]["index_anchor"]["soc_confidence"] == "medium"
+
+
+def test_calibrate_load_exposure_autodetect(tmp_csv=None):
+    import calibrate, tempfile, os as _os
+    p = tempfile.NamedTemporaryFile(suffix=".csv", delete=False, mode="w", encoding="utf-8")
+    p.write("SOC,AIOE\n27-4032.00,1.85\n15-1252.00,1.2\n"); p.close()
+    try:
+        tab = calibrate.load_exposure(p.name)
+        assert tab["27-4032"] == 1.85 and tab["15-1252"] == 1.2          # SOC/점수 컬럼 자동탐지+정규화
+        assert calibrate.load_exposure("/no/such/file.csv") == {}        # 없는 파일 → {}(정직 no-op)
+    finally:
+        _os.unlink(p.name)
+
+
 # ── runner ────────────────────────────────────────────────────────────
 def run():
     tests = sorted((v for k, v in globals().items()
