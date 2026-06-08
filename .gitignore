@@ -43,3 +43,9 @@ data/notified.json
 data/events_archive/
 data/interest.jsonl
 data/payments.jsonl
+# PII 파생물(CSV export·백업) 커밋 방지 — interest/payments 원본 + 모든 csv/백업
+*.csv
+*.bak
+data/*.csv
+data/*.backup
+data/**/*.jsonl.bak

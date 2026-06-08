@@ -157,7 +157,7 @@ def _share_text(job_id: str) -> str:
     head = f"{strat['type_name']} {strat.get('emoji', '🧭')}\n" if strat.get("type_name") else ""
     link = CHANNEL_URL or "(채널 링크는 배포 후 제공)"
     return (f"📡 내 직무 AI 압력 리포트\n{head}{name} 압력지수 {res.get('index', '-')}({res.get('weather', '')})\n"
-            f"너의 직업은 안전할까? 👉 {link}")
+            f"내 직무는 AI에 얼마나 영향받을까? 업무별로 확인 👉 {link}")
 
 
 def kakao_text(text: str, quick_replies: list[str] | None = None) -> dict:

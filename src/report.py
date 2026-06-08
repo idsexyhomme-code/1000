@@ -514,7 +514,7 @@ def offer_html(job: dict, payment_url: str | None = None, grounded: bool = True)
     <ul class="of-list">
       <li><span class="of-ic">📊</span><div><b>데이터 기반 직무 진단</b> — 실제 AI 뉴스·근거에 기반해 내 직무의 '위험 업무/안전 업무'를 분류한 리포트.</div></li>
       <li><span class="of-ic">✨</span><div><b>사람 고유 역량 발굴</b> — AI가 잘하는 단순반복은 줄이고, 문제해결·기획·도메인 강점을 강조하도록 이력서 재배치 가이드(절대적 방어 보장이 아니라 상대적 강조점 재배치).</div></li>
-      <li><span class="of-ic">📝</span><div><b>이력서 핵심 문장 초안</b> — 커리어 디렉터가 직접 다듬은 요약(Summary)·성과 불릿 초안 + 적용 가이드.</div></li>
+      <li><span class="of-ic">📝</span><div><b>이력서 핵심 문장 초안</b> — 운영자가 직접 다듬은 요약(Summary)·성과 불릿 초안 + 적용 가이드.</div></li>
       <li><span class="of-ic">🧭</span><div><b>1~3년 커리어 디펜스 플랜</b> — 추가로 쌓으면 좋은 권장 스킬셋.</div></li>
     </ul>
     <div class="of-kicker">진행 과정</div>
@@ -524,7 +524,7 @@ def offer_html(job: dict, payment_url: str | None = None, grounded: bool = True)
       <li>1:1 서면 인터뷰 — 이력서에 누락된 '쉽게 대체되지 않는 경험' 발굴</li>
       <li>최종 패키지 전달 + 적용 가이드 (영업일 {OFFER_DELIVERY_DAYS}일 내)</li>
     </ol>
-    <div class="of-human">🤝 <b>AI가 어디까지 하나:</b> 직무 압력 데이터 수집·1차 분류는 AI가, <b>당신의 고유 경험 발굴과 이력서 최종 문장은 커리어 디렉터가 직접 검토·작성</b>합니다. 'AI가 다 써준다'가 아닙니다.</div>
+    <div class="of-human">🤝 <b>AI가 어디까지 하나:</b> 직무 압력 데이터 수집·1차 분류는 AI가, <b>당신의 고유 경험 발굴과 이력서 최종 문장은 운영자가 직접 검토·작성</b>합니다. 'AI가 다 써준다'가 아닙니다.</div>
     {cap_line}
     {action}
   </div>
