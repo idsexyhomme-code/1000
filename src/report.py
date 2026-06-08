@@ -524,6 +524,23 @@ function ofSubmit(e){{e.preventDefault();
 </body></html>"""
 
 
+def payment_pending_html(job_id: str = "") -> str:
+    """결제 success 리다이렉트 랜딩 — 정직성: 이 페이지는 결제 '접수' 확인일 뿐,
+    결제 완료를 자동 확정하지 않는다(완료는 서명검증된 웹훅으로만). 사용자 오인 방지."""
+    back = f"/report?job={_e(job_id)}" if job_id else "/"
+    return f"""<!doctype html><html lang="ko"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+{_FAVICON}<title>결제 접수 · 커리어 시그널</title>
+<style>{_CSS}</style></head><body><div class="app-container">
+  <div class="hero-card"><div class="hero-emoji">🧾</div>
+    <h1 class="hero-title">결제 요청이 접수되었어요</h1>
+    <p class="hero-subtitle">결제 완료는 <b>영업일 내 확인</b> 후,<br>입력하신 연락처로 진행 안내를 드립니다.</p>
+  </div>
+  <p class="footer-text">※ 이 페이지는 결제 <b>접수</b> 확인이며, 결제 완료 자체를 자동 확정하지는 않습니다. 결제가 정상 처리되지 않았다면 환불·재시도 안내를 드립니다. 문의는 신청 시 연락처로 회신 가능합니다.</p>
+  <a href="{back}" style="display:block;text-align:center;background:var(--bg-elevate);color:var(--text-primary);padding:13px;border-radius:14px;margin:8px 0 18px;text-decoration:none;font-weight:600">← 내 리포트로</a>
+</div></body></html>"""
+
+
 if __name__ == "__main__":
     import sys
     sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))

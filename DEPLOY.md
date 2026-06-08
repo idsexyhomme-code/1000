@@ -19,7 +19,10 @@
 | `HOST` | 바인딩 주소(기본 127.0.0.1) | 선택 |
 | `REPORT_BASE_URL` | 카카오 봇 '리포트 보기' 링크용(예: `https://api.example.com`) | 배포 시 ✅ |
 | `CHANNEL_URL` | 카카오 채널 추가 링크(공유 메시지용) | 배포 시 ✅ |
-| `PAYMENT_URL` | 설정 시 `/offer`가 **실결제 버튼**으로 전환(예: 토스페이먼츠/스트라이프 결제링크). 미설정 시 사전예약 리드 수집 | 결제 테스트 시 ✅ |
+| `PAYMENT_URL` | 설정 시 `/offer`가 **실결제 버튼**으로 전환(예: 토스페이먼츠 결제링크). 미설정 시 사전신청 리드 수집 | 결제 테스트 시 ✅ |
+| `PAYMENT_WEBHOOK_SECRET` | PG 웹훅 HMAC-SHA256 서명검증 시크릿. **이게 없으면 `paid`(진짜 지불주체)로 절대 확정 안 함**(`/webhook/payment`→501) | 실결제 측정 시 ✅ |
+| `PAYMENT_SIG_HEADER` | PG가 보내는 서명 헤더명(기본 `X-Signature`. 배포 시 실제 PG에 맞춤) | 선택 |
+| `PAYMENT_EXPECTED_AMOUNT` | 결제 인정 금액(기본 99000). 서명검증돼도 이 금액과 다르면 paid로 안 셈(무료/타상품 이벤트 차단) | 선택 |
 
 ```bash
 export GEMINI_API_KEY="..."          # 코드에 절대 박지 말 것
@@ -47,9 +50,10 @@ curl "localhost:8000/report?job=video-editor" > /tmp/r.html && open /tmp/r.html
 4. **측정** (§2.6) — `python3 src/interest.py`. ※리드=관심 신호, **지불 의사 아님**.
 
 **2단계 — 실제 결제 검증 (지불주체 진짜 증명, 벽 높음):**
-- ⚠️ **현재 `PAYMENT_URL`은 외부 결제링크로 보내기만 한다 — 결제 성공을 앱이 모른다.** 즉 이 상태로는 "결제 이벤트로 WTP 측정"이 **아직 구현 안 됨**. 결제완료 콜백/웹훅(`/payment/success`, `/webhook/payment`) + `payments` 저장이 있어야 `paid_customers`를 지표화 가능 (= 다음 빌드 TODO).
+- ✅ **결제 검증 구현됨(P2):** `/webhook/payment`(PG 서버→서버, HMAC-SHA256 서명검증) + `/payment/success`(클라이언트 리다이렉트 '접수 확인' 페이지, 저장 안 함) + `payments` 저장 + `/health`의 `paid_customers`. **`paid`는 `PAYMENT_WEBHOOK_SECRET` 서명검증 + 금액일치 통과 시에만** 집계(시크릿 없으면 501, success URL 조작으로 못 부풀림).
+  - **PG 연결 절차:** ① PG 콘솔에서 웹훅 URL을 `https://api.example.com/webhook/payment`로 등록 ② 서명 시크릿을 `PAYMENT_WEBHOOK_SECRET`에, 서명 헤더명을 `PAYMENT_SIG_HEADER`에 설정 ③ `_classify_pay_status`의 terminal-paid 값(기본 `done/paid/completed`)을 실제 PG의 '결제완료' 이벤트 값에 맞춰 조정 ④ 결제 성공 리다이렉트를 `/payment/success?job=ID`로.
+  - ⚠️ 서명 스킴이 단순 HMAC(raw body)이 아닌 PG(예: 토스의 paymentKey confirm API 방식)면, 해당 PG에 맞춰 `_payment_sig_ok`/검증 로직을 교체해야 함.
 - ⚠️ **국내 PG 현실:** 토스페이먼츠 등은 **사업자등록 + 홈페이지/상품·환불·해지 고지 + 카드사 심사(최대 ~14일)** 필요. 즉시 발급 아님. **Stripe는 한국 사업자 미지원**(기본 경로에서 제외).
-- 그 전까지의 차선책: 결제링크가 준비되면 `PAYMENT_URL`로 1차 '카드 도달률'만이라도 측정(완료율은 PG 대시보드에서 수동 대조).
 
 **통과/실패 기준:** 30일 내 실제 결제(또는 강한 리드→결제 전환)가 안 나오면 B2C 유료는 접고 B2B/정부 경로로(POSITIONING.md §5.5). 코드 추가는 그 전까지 동결.
 
@@ -98,7 +102,7 @@ curl localhost:8000/health       # {"presale_leads": N} 빠른 확인
 ## 7. 출시 전 체크
 - [ ] **(PII 게이트·먼저)** 개인정보처리방침·이용약관·삭제/문의 채널 공개 → 그 후에만 `/offer` 리드 수집 ON
 - [ ] **(런칭 1단계)** 호스팅 + TLS + 도메인 + `INTEREST_SALT` → `/`,`/report`,`/offer` 접속 확인 (카카오 없이 가능)
-- [ ] **(런칭 2단계)** 사업자등록 + PG 심사(토스 ~14일) → 결제 웹훅/성공콜백 구현(TODO) → `PAYMENT_URL` → 실결제 측정
+- [ ] **(런칭 2단계)** 사업자등록 + PG 심사(토스 ~14일) → `PAYMENT_URL`+`PAYMENT_WEBHOOK_SECRET` 설정 → PG 웹훅을 `/webhook/payment`에 등록(서명검증 구현됨 ✅) → 실결제 `paid_customers` 측정
 - [ ] `WEBHOOK_TOKEN` 설정 + reverse proxy TLS
 - [ ] 베이스라인 캘리브레이션(현재 손추정 → O*NET·워크넷 실데이터로 — 신뢰성 핵심, R7)
 - [x] 시드 직업 확대 (현재 10개 직군) · 추가 확장 가능

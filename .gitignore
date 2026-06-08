@@ -42,3 +42,4 @@ data/actionplan_cache.json
 data/notified.json
 data/events_archive/
 data/interest.jsonl
+data/payments.jsonl

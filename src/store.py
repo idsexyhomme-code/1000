@@ -238,6 +238,61 @@ def interest_count() -> int:
     return n
 
 
+# ── 결제 검증 (진짜 지불주체 = 서명검증된 웹훅으로만 확정) ──────────────
+# ★정직성/보안: success 리다이렉트(클라이언트 조작 가능)는 'reported'까지만. 'paid'는
+# 서명검증된 웹훅(또는 PG confirm API)으로만. 솔트/시크릿 없으면 paid로 절대 세지 않음.
+PAYMENTS_FILE = os.path.join(_DATA, "payments.jsonl")    # 결제 이벤트 append-only → .gitignore
+_PAYMENTS_LOCK = threading.Lock()
+_PSTATUS_RANK = {"reported": 0, "failed": 1, "paid": 2, "refunded": 3}
+
+
+def save_payment(order_id: str, job: str, amount, status: str, extra: dict | None = None) -> None:
+    """결제 이벤트 1건 적재(append-only). 상태: reported/paid/failed/refunded."""
+    _ensure()
+    rec = {"ts": datetime.now(timezone.utc).isoformat(), "order_id": str(order_id)[:80],
+           "job": str(job)[:60], "amount": amount, "status": status}
+    if extra:                          # core 필드(status/order_id 등)는 extra가 덮지 못하게(footgun 차단)
+        for k, v in extra.items():
+            rec.setdefault(k, v)
+    with _PAYMENTS_LOCK:
+        with open(PAYMENTS_FILE, "a", encoding="utf-8") as f:
+            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+
+
+def _reduce_payments() -> dict:
+    """order_id별 최종 상태로 축약(상태 랭크 우선 — paid는 reported로 덮이지 않고, refunded가 최우선)."""
+    best: dict[str, dict] = {}
+    if not os.path.exists(PAYMENTS_FILE):
+        return best
+    with _PAYMENTS_LOCK:
+        for ln in open(PAYMENTS_FILE, encoding="utf-8"):
+            if not ln.strip():
+                continue
+            try:
+                e = json.loads(ln)
+            except Exception:
+                continue
+            oid = e.get("order_id")
+            if not oid:
+                continue
+            cur = best.get(oid)
+            if cur is None or _PSTATUS_RANK.get(e.get("status"), -1) >= _PSTATUS_RANK.get(cur.get("status"), -1):
+                best[oid] = e
+    return best
+
+
+def paid_count() -> int:
+    """진짜 지불주체 수 = 최종상태 'paid'인 주문 수 (reported/failed는 제외)."""
+    return sum(1 for e in _reduce_payments().values() if e.get("status") == "paid")
+
+
+def payment_status_counts() -> dict:
+    c: dict[str, int] = {}
+    for e in _reduce_payments().values():
+        c[e.get("status", "?")] = c.get(e.get("status", "?"), 0) + 1
+    return c
+
+
 NOTIFIED_FILE = os.path.join(_DATA, "notified.json")  # 직무별 마지막 알림 스냅샷 ts (중복 알림 방지)
 
 

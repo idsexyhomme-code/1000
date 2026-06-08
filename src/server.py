@@ -52,6 +52,9 @@ WEBHOOK_TOKEN = os.environ.get("WEBHOOK_TOKEN", "")  # 설정 시 /webhook은 ?t
 REPORT_BASE_URL = os.environ.get("REPORT_BASE_URL", "")  # 예: https://api.example.com (리포트 링크용)
 CHANNEL_URL = os.environ.get("CHANNEL_URL", "")          # 카카오 채널 추가 링크(공유 바이럴용)
 PAYMENT_URL = os.environ.get("PAYMENT_URL", "")          # 설정 시 /offer가 실결제 버튼, 미설정 시 사전예약 수집
+# 결제 웹훅 서명검증 — 이 시크릿 없으면 'paid'(진짜 지불주체)로 절대 확정하지 않음(정직성 불가침).
+PAYMENT_WEBHOOK_SECRET = os.environ.get("PAYMENT_WEBHOOK_SECRET", "")
+PAYMENT_SIG_HEADER = os.environ.get("PAYMENT_SIG_HEADER", "X-Signature")  # PG가 보내는 HMAC 서명 헤더명(배포 시 PG에 맞춤)
 INTEREST_SALT = os.environ.get("INTEREST_SALT", "") or WEBHOOK_TOKEN  # 리드 IP HMAC 솔트(없으면 IP 미저장)
 RATE_LIMIT = int(os.environ.get("RATE_LIMIT", "60"))  # IP당 윈도우 요청 수
 RATE_WINDOW = 60.0
@@ -69,6 +72,47 @@ def _valid_contact(c: str) -> bool:
         local, _, dom = c.partition("@")
         return bool(local) and "." in dom and not dom.startswith(".")
     return len(c) >= 3                # 카카오 오픈채팅 ID류
+
+
+# 결제 상태 매핑 — terminal-paid 이벤트만 좁게 인정(Codex fix: approved/authorized=승인≠캡처 제외).
+# 배포 시 실제 PG의 '결제완료' 이벤트 값에 맞춰 조정(토스=DONE). 모르는 값=failed(보수적).
+_PAY_SUCCESS = {"done", "paid", "completed"}
+_PAY_REFUND = {"canceled", "cancelled", "refunded", "partial_canceled", "aborted", "chargeback"}
+# 서명검증을 통과해도 이 금액과 다르면 paid로 인정하지 않음(무료/테스트/타상품 이벤트 차단).
+PAYMENT_EXPECTED_AMOUNT = int(os.environ.get("PAYMENT_EXPECTED_AMOUNT", "99000") or 0)
+
+
+def _classify_pay_status(s: str) -> str:
+    s = (s or "").strip().lower()
+    if s in _PAY_REFUND:
+        return "refunded"
+    if s in _PAY_SUCCESS:
+        return "paid"
+    return "failed"
+
+
+def _finalize_pay_status(status: str, amount) -> str:
+    """서명검증 후 최종 상태 — 'paid'는 금액 검증까지 통과해야 인정(0/음수/기대불일치=failed).
+    서명된 이벤트라도 금액이 우리 상품가와 다르면 진짜 지불주체로 세지 않는다(정직성)."""
+    if status != "paid":
+        return status
+    if isinstance(amount, bool) or not isinstance(amount, (int, float)) or amount <= 0:
+        return "failed"
+    if PAYMENT_EXPECTED_AMOUNT and int(amount) != PAYMENT_EXPECTED_AMOUNT:
+        return "failed"
+    return "paid"
+
+
+def _payment_sig_ok(raw: bytes, sig: str) -> bool:
+    """PG 웹훅 HMAC-SHA256 서명검증. 시크릿 미설정 or 서명 불일치면 False(=paid 확정 불가).
+    상수시간 비교로 타이밍 공격 방지. 'paid'는 오직 이게 True일 때만."""
+    if not PAYMENT_WEBHOOK_SECRET or not sig:
+        return False
+    sig = sig.strip().lower()
+    if not sig or any(c not in "0123456789abcdef" for c in sig):   # 비-hex 헤더 → 예외 없이 거부
+        return False
+    expected = hmac.new(PAYMENT_WEBHOOK_SECRET.encode(), raw, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(sig, expected)
 
 
 def _rate_ok(ip: str) -> bool:
@@ -206,10 +250,11 @@ class Handler(BaseHTTPRequestHandler):
             return self._send(200, report.landing_html(JOBS).encode("utf-8"),
                               "text/html; charset=utf-8")
         if parts.path == "/health":
-            # presale_leads = 사전예약 리드 수(무료 연락처, 중복제거됨). ★실제 결제(WTP)는
-            # PAYMENT_URL 연결 후 결제이벤트로 측정 — 리드≠지불. 혼동 금지.
+            # presale_leads = 사전예약 리드 수(무료 연락처, 중복제거). ★리드≠지불.
+            # paid_customers = 서명검증된 웹훅으로 'paid' 확정된 주문 수(=진짜 WTP). reported는 제외.
             return self._json(200, {"ok": True, "jobs": list(JOBS),
-                                    "presale_leads": store.interest_count()})
+                                    "presale_leads": store.interest_count(),
+                                    "paid_customers": store.paid_count()})
         if parts.path == "/report":
             q = parse_qs(parts.query)
             jid = (q.get("job") or [None])[0]
@@ -242,6 +287,14 @@ class Handler(BaseHTTPRequestHandler):
                 return self._not_found()
             res = _cached_scores().get(jid)
             return self._send(200, report.offer_html(res, PAYMENT_URL or None).encode("utf-8"),
+                              "text/html; charset=utf-8")
+        if parts.path == "/payment/success":
+            # PG 결제 후 클라이언트 리다이렉트. 쿼리는 누구나 조작 가능 → 아무것도 저장하지 않는다
+            # (Codex fix: 공개 append-only DoS 차단 + 조작 가능한 'reported'는 신뢰 불가 노이즈).
+            # 진짜 'paid'는 오직 서명검증된 /webhook/payment 로만. 페이지는 '접수 확인'으로 정직 표현.
+            q = parse_qs(parts.query)
+            job = (q.get("job") or [""])[0][:60]
+            return self._send(200, report.payment_pending_html(job if job in JOBS else "").encode("utf-8"),
                               "text/html; charset=utf-8")
         self._not_found()
 
@@ -293,6 +346,33 @@ class Handler(BaseHTTPRequestHandler):
                 "iph": iph,
             })
             return self._json(200, {"ok": True})
+        if parts.path == "/webhook/payment":
+            # PG 서버→서버 웹훅. 'paid' 확정은 오직 여기서, 서명검증 통과 시에만(정직성 불가침).
+            if not PAYMENT_WEBHOOK_SECRET:
+                # 시크릿 미설정 → 결제 완료를 확정할 방법이 없음 → 501(절대 paid로 안 셈).
+                return self._json(501, {"ok": False, "error": "payment webhook not configured"})
+            sig = self.headers.get(PAYMENT_SIG_HEADER, "")
+            if not _payment_sig_ok(raw, sig):
+                return self._json(401, {"ok": False, "error": "bad signature"})
+            try:
+                body = json.loads(raw or b"{}")
+            except Exception:
+                return self._json(400, {"ok": False})
+            if not isinstance(body, dict):
+                return self._json(400, {"ok": False})
+            order_id = str(body.get("orderId") or body.get("order_id") or "")[:80]
+            if not order_id:
+                return self._json(400, {"ok": False, "error": "no order_id"})
+            amount = body.get("amount")
+            if isinstance(amount, bool) or not isinstance(amount, (int, float)):
+                amount = None
+            # 금액 검증까지 통과해야 paid(서명O라도 금액 0/음수/기대불일치면 failed로 강등 — 정직성).
+            status = _finalize_pay_status(_classify_pay_status(str(body.get("status", ""))), amount)
+            job = str(body.get("job") or body.get("orderName") or "")[:60]
+            # 멱등: append-only + _reduce_payments가 order_id별 상태랭크로 축약 → 웹훅 재전송 안전.
+            store.save_payment(order_id, job if job in JOBS else "", amount, status,
+                               extra={"src": "webhook"})
+            return self._json(200, {"ok": True, "status": status})
         self._send(404, b"not found", "text/plain; charset=utf-8")
 
     def log_message(self, *a):  # 조용히

@@ -351,6 +351,83 @@ def test_gemini_key_required_fast_fail():
             os.environ["GEMINI_API_KEY"] = old
 
 
+# ── 결제 검증 (Phase 5 — 진짜 지불주체는 서명검증 웹훅으로만) ──────────────
+def _with_temp_payments(fn):
+    """store.PAYMENTS_FILE을 임시 경로로 격리하고 실행(실데이터 오염 방지)."""
+    import tempfile
+    old = store.PAYMENTS_FILE
+    tf = tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False)
+    tf.close()
+    store.PAYMENTS_FILE = tf.name
+    try:
+        fn()
+    finally:
+        store.PAYMENTS_FILE = old
+        os.unlink(tf.name)
+
+
+def test_payment_reported_never_counts_as_paid():
+    def body():
+        store.save_payment("o1", "video-editor", 99000, "reported", extra={"src": "redirect"})
+        assert store.paid_count() == 0                       # 클라이언트 리다이렉트(reported)=지불주체 아님
+        store.save_payment("o2", "video-editor", 99000, "paid", extra={"src": "webhook"})
+        assert store.paid_count() == 1                       # 서명검증 webhook(paid)만 카운트
+    _with_temp_payments(body)
+
+
+def test_payment_refund_overrides_paid():
+    def body():
+        store.save_payment("o1", "x", 99000, "paid")
+        assert store.paid_count() == 1
+        store.save_payment("o1", "x", 99000, "refunded")     # 같은 주문 환불 → 최종 refunded
+        assert store.paid_count() == 0                       # 환불은 지불주체에서 제외
+        assert store.payment_status_counts().get("refunded") == 1
+    _with_temp_payments(body)
+
+
+def test_payment_signature_gate():
+    import hashlib
+    import hmac
+    raw = b'{"orderId":"o1","status":"DONE","amount":99000}'
+    old = server.PAYMENT_WEBHOOK_SECRET
+    try:
+        server.PAYMENT_WEBHOOK_SECRET = ""                   # 시크릿 없으면 절대 통과 금지
+        assert server._payment_sig_ok(raw, "anything") is False
+        server.PAYMENT_WEBHOOK_SECRET = "s3cr3t"
+        good = hmac.new(b"s3cr3t", raw, hashlib.sha256).hexdigest()
+        assert server._payment_sig_ok(raw, good) is True     # 올바른 HMAC만 통과
+        assert server._payment_sig_ok(raw, good[:-1] + "0") is False  # 위조 서명 거부
+        assert server._payment_sig_ok(raw + b"x", good) is False      # 본문 변조 거부
+    finally:
+        server.PAYMENT_WEBHOOK_SECRET = old
+
+
+def test_payment_status_classify():
+    assert server._classify_pay_status("DONE") == "paid"
+    assert server._classify_pay_status("PAID") == "paid"
+    assert server._classify_pay_status("CANCELED") == "refunded"
+    assert server._classify_pay_status("APPROVED") == "failed"   # 승인≠캡처 → paid 아님(좁힘)
+    assert server._classify_pay_status("foobar") == "failed"     # 모르는 값=보수적 failed
+    assert server._classify_pay_status("") == "failed"
+
+
+def test_payment_amount_validation():
+    old = server.PAYMENT_EXPECTED_AMOUNT
+    try:
+        server.PAYMENT_EXPECTED_AMOUNT = 99000
+        assert server._finalize_pay_status("paid", 99000) == "paid"
+        assert server._finalize_pay_status("paid", 0) == "failed"      # 0원
+        assert server._finalize_pay_status("paid", -5) == "failed"     # 음수
+        assert server._finalize_pay_status("paid", None) == "failed"   # 누락
+        assert server._finalize_pay_status("paid", True) == "failed"   # bool 차단
+        assert server._finalize_pay_status("paid", 50000) == "failed"  # 기대금액 불일치
+        assert server._finalize_pay_status("refunded", 99000) == "refunded"  # paid 외엔 그대로
+        server.PAYMENT_EXPECTED_AMOUNT = 0
+        assert server._finalize_pay_status("paid", 12345) == "paid"    # 기대금액 미설정+양수→통과
+    finally:
+        server.PAYMENT_EXPECTED_AMOUNT = old
+
+
 # ── runner ────────────────────────────────────────────────────────────
 def run():
     tests = sorted((v for k, v in globals().items()
