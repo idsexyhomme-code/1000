@@ -88,6 +88,16 @@ curl -X POST https://<공개URL>/api/quiz -d '{"job":"junior-developer","rep":2,
 전체 생성(구독자 → 발송대기열 data/wr_outbox.jsonl): `python3 src/workradar_weekly.py`
 매주 자동 실행은 별도 launchd(StartCalendarInterval) 또는 cron으로. 실제 발송은 이메일 provider(Resend/SMTP) 연결 후. (다음 단계)
 
+## 7. 라이브 신호 자동수집 (직군별 근거 자동 갱신)
+실제 공개 RSS(구글 뉴스)에서 AI 헤드라인을 가져와 직군별로 분류·캐시(`data/wr_signals.json`).
+결과의 '왜 이 압력인가' 근거와 주간리포트가 이걸 우선 사용(없으면 큐레이션 폴백).
+```
+python3 src/workradar_signals.py        # 수집→캐시 갱신
+python3 src/workradar_signals.py --dry  # 네트워크만(저장 안 함)
+```
+하루 1회 자동: launchd `StartCalendarInterval`(예: 매일 07:00) 또는 cron.
+정직성: 저장되는 head/url은 실제 헤드라인·실제 출처. 매칭 애매하면 버림. PII 아님이지만 런타임 캐시라 .gitignore.
+
 ## 운영 지표 한눈에
 ```
 curl localhost:8000/api/wr/health    # 퀴즈 완료수 · 구독자수 · 분기/직업 분포

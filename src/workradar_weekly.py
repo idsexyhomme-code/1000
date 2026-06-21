@@ -87,7 +87,8 @@ def build_digest(sub: dict, now: datetime | None = None) -> dict | None:
     job = workradar.JOBS[job_id]
     branch_id = sub.get("branch", "")
     br = workradar.BRANCHES.get(branch_id)
-    sig = SIGNALS.get(job_id, {})
+    # 직업별 큐레이션 신호 우선, 없으면 자동수집/직군 근거(get_evidence)로 폴백 → 항상 신호 존재
+    sig = SIGNALS.get(job_id) or workradar.get_evidence(job_id)
     bd = workradar.band(job["base"])
     wk = now.strftime("%b %d")
 

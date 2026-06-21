@@ -5,6 +5,7 @@ stdlib assert 기반(pytest 불필요), 전부 오프라인(Gemini 호출 없음
 자율 루프가 코드를 계속 수정해도 회귀를 잡는 안전망.
 실행: python3 tests/test_core.py   (실패 시 exit 1)
 """
+import json
 import os
 import shutil
 import sys
@@ -1692,6 +1693,37 @@ def test_wr_evidence_and_percentile():
     hi = workradar.compute_result("copywriter", [0, 1], 0, 0)["more_exposed_than"]
     lo = workradar.compute_result("electrician", [3, 4], 0, 0)["more_exposed_than"]
     assert 0 <= lo < hi <= 100
+
+
+def test_wr_signals_classify_and_fallback():
+    import workradar_signals as wsig
+    import tempfile
+    assert wsig.classify_family("OpenAI ships new coding agent for developers") == "tech"
+    assert wsig.classify_family("AI image generation reshapes design") == "creative"
+    assert wsig.classify_family("totally unrelated weather news") is None
+    # fresh_family_signal: 신선 캐시→auto, 오래됨/없음→None(폴백)
+    orig = workradar.SIGNAL_CACHE
+    fd, p = tempfile.mkstemp(suffix=".json")
+    os.close(fd)
+    try:
+        fresh = {"tech": {"head": "Real headline", "url": "https://x.com/a",
+                          "ts": datetime.now(timezone.utc).isoformat()}}
+        open(p, "w").write(json.dumps(fresh))
+        workradar.SIGNAL_CACHE = p
+        s = workradar.fresh_family_signal("tech")
+        assert s and s["auto"] and s["head"] == "Real headline" and s["url"] == "https://x.com/a"
+        assert workradar.fresh_family_signal("legal") is None        # 없는 직군→None
+        old = {"tech": {"head": "Old", "url": "https://x.com/o",
+                        "ts": (datetime.now(timezone.utc) - timedelta(days=40)).isoformat()}}
+        open(p, "w").write(json.dumps(old))
+        assert workradar.fresh_family_signal("tech") is None          # 오래됨→None
+        # get_evidence는 캐시 없을 때 큐레이션 폴백(항상 근거)
+        workradar.SIGNAL_CACHE = "/no/such/cache.json"
+        ev = workradar.get_evidence("junior-developer")
+        assert ev["head"] and ev["url"] and not ev.get("auto")
+    finally:
+        os.unlink(p)
+        workradar.SIGNAL_CACHE = orig
 
 
 def test_wr_services_personalized_by_branch():

@@ -206,6 +206,35 @@ def job_family(job_id: str) -> str:
     return "general"
 
 
+# 라이브 신호 캐시(자동수집 — workradar_signals.py가 채움). 실제 헤드라인+출처만, 없으면 큐레이션 폴백.
+SIGNAL_CACHE = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                            "data", "wr_signals.json")
+
+
+def fresh_family_signal(family: str, max_age_days: int = 21) -> dict | None:
+    """자동수집 캐시에서 해당 직군의 신선한 실제 헤드라인. 없거나 오래되면 None → 폴백."""
+    try:
+        with open(SIGNAL_CACHE, encoding="utf-8") as f:
+            cache = json.load(f)
+        item = cache.get(family)
+        if not item or not item.get("head") or not item.get("url"):
+            return None
+        ts = datetime.fromisoformat(item["ts"])
+        if (datetime.now(timezone.utc) - ts).days > max_age_days:
+            return None
+        return {"head": item["head"],
+                "why": FAMILY_SIGNALS.get(family, FAMILY_SIGNALS["general"])["why"],
+                "url": item["url"], "auto": True}
+    except Exception:
+        return None
+
+
+def get_evidence(job_id: str) -> dict:
+    """직업의 '왜 이 압력인가' 근거 — 자동수집 신선신호 우선, 없으면 큐레이션 폴백(항상 근거)."""
+    fam = job_family(job_id)
+    return fresh_family_signal(fam) or FAMILY_SIGNALS.get(fam, FAMILY_SIGNALS["general"])
+
+
 def exposure_percentile(score: float) -> int:
     """이 점수가 추적 직업들의 몇 %보다 노출(압력)이 높은지. 우리 데이터셋 기준(directional)."""
     bases = [j["base"] for j in JOBS.values()]
@@ -289,7 +318,7 @@ def compute_result(job_id: str, tasks, feel: int, inst: int,
         "selected": [[s[0], s[1]] for s in sel],
         "tasks": full, "selected_idx": idx,
         "exp": exp, "ai": ai, "factors": factors, "services": services,
-        "evidence": FAMILY_SIGNALS.get(job_family(job_id), FAMILY_SIGNALS["general"]),
+        "evidence": get_evidence(job_id),
         "more_exposed_than": exposure_percentile(score),
     }
 
