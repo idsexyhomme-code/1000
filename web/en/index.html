@@ -110,6 +110,7 @@ background:radial-gradient(circle,rgba(245,158,11,.12),transparent 70%);border:1
   <div class="dots"><div class="dot on"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
   <div class="qnum">Question 1 of 4</div>
   <div class="q">What do you do?</div>
+  <input id="jobSearch" type="text" placeholder="🔍 Search 100+ jobs…" oninput="buildJobGrid(this.value)" style="width:100%;background:#0b0b0d;border:1px solid #3f3f46;border-radius:12px;padding:13px 14px;color:#fafafa;font-size:15px;margin-bottom:14px">
   <div class="grid" id="jobGrid"></div>
 </div>
 
@@ -174,7 +175,8 @@ background:radial-gradient(circle,rgba(245,158,11,.12),transparent 70%);border:1
 
 <script>
 /* ---------- DATA ---------- */
-var JOBS={
+var JOBS={};
+var JOBS_FALLBACK={
  "junior-developer":{name:"Junior Developer",emoji:"💻",base:64,
    hi:[["Boilerplate / CRUD",84],["Unit tests",78],["Simple bug fixes",70]],
    lo:[["System design",30],["Hard debugging",26]]},
@@ -218,6 +220,14 @@ var JOBS={
    hi:[["Spreadsheet models",80],["Report writing",74],["Data pulls",72]],
    lo:[["Investment judgment",34],["Client relationships",28]]}
 };
+/* 단일 진실원본 jobs.json(100+) 로드, 실패 시 위 폴백 */
+function loadJobs(cb){fetch('jobs.json').then(function(r){return r.json();}).then(function(d){JOBS=(d&&Object.keys(d).length)?d:JOBS_FALLBACK;cb();}).catch(function(){JOBS=JOBS_FALLBACK;cb();});}
+var SERVICE_TMPL={
+ defend:[["AI-augmented workflow kit","A repeatable workflow that puts AI on your {top} first-pass while you own the call."],["Defensibility resume rewrite","Your {job} resume rebuilt around the judgment AI can't replace."],["90-day defend plan","Week-by-week moves to become the one who directs the AI."]],
+ pivot:[["Pivot map","Which high-value tasks to grow (from {low}) and which to drop ({top})."],["Portfolio proof pieces","3 work samples that prove you do the AI-proof part of {job}."],["Skill-shift plan","A 60-day plan to move your week off {top}."]],
+ reskill:[["Adjacent-role shortlist","3 roles that reuse your {job} skills but face less AI pressure."],["Skills-gap map","What you already have vs what each target role needs."],["Transition timeline","A realistic month-by-month path to the switch."]],
+ independent:[["Productized offer","Your {low} packaged into a sellable service + pricing."],["First-5-clients map","Where your first paying clients actually are."],["Solo launch kit","Landing copy + outreach to start this month."]],
+ founder:[["Pain to product brief","The {top} friction in {job} turned into a product hypothesis."],["30-day MVP scope","The smallest version you could sell within a month."],["First-users plan","Who to talk to and what to ship first."]]};
 var BRANCHES={
  defend:{em:"🛡️",name:"The Defender",line:"You stay — and out-level the AI in your own role.",
    why:"Your tasks face pressure, but your field still rewards human judgment. The move isn't to run — it's to become the person who directs the AI instead of competing with it.",
@@ -270,12 +280,15 @@ function show(id){document.querySelectorAll('.screen').forEach(function(s){s.cla
  var el=document.getElementById(id);el.classList.add('active');window.scrollTo(0,0);}
 function start(){show('s-job');}
 
-/* build job grid */
-(function(){var g=document.getElementById('jobGrid');var h='';
- for(var k in JOBS){h+='<button class="opt" onclick="pickJob(\''+k+'\')"><span class="em">'+JOBS[k].emoji+'</span><span class="ot">'+JOBS[k].name+'</span></button>';}
- g.innerHTML=h;
+/* build job grid (jobs.json 로드 후, 검색 필터 지원) */
+function buildJobGrid(filter){var g=document.getElementById('jobGrid');if(!g)return;var h='',f=(filter||'').toLowerCase();
+ for(var k in JOBS){if(f&&JOBS[k].name.toLowerCase().indexOf(f)<0)continue;
+   h+='<button class="opt" onclick="pickJob(\''+k+'\')"><span class="em">'+JOBS[k].emoji+'</span><span class="ot">'+JOBS[k].name+'</span></button>';}
+ g.innerHTML=h||'<p style="grid-column:1/-1;text-align:center;color:#a1a1aa;font-size:14px;padding:20px 0">No match — try another word</p>';}
+(function(){
  function fill(id,arr,key){var c=document.getElementById(id),o='';for(var i=0;i<arr.length;i++){o+='<button class="opt" onclick="pick(\''+key+'\','+arr[i][3]+')"><span class="em">'+arr[i][0]+'</span><span><span class="ot">'+arr[i][1]+'</span><span class="od">'+arr[i][2]+'</span></span></button>';}c.innerHTML=o;}
  fill('feelOpts',FEEL,'feel');fill('instOpts',INST,'inst');fill('expOpts',EXP,'exp');fill('aiOpts',AITOOL,'ai');
+ loadJobs(function(){buildJobGrid('');});
 })();
 /* 진행 점·문항번호 자동 세팅 (6단계) */
 (function(){var steps=['s-job','s-tasks','s-exp','s-ai','s-feel','s-inst'];
@@ -329,6 +342,8 @@ function renderResult(){
  var top=sel.slice().sort(function(a,b){return b[1]-a[1];})[0][0];
  var low=tasks.slice().sort(function(a,b){return a[1]-b[1];})[0][0];
  var move=MOVE_TMPL[bid].split('{top}').join(top).split('{low}').join(low);
+ var svc=SERVICE_TMPL[bid].map(function(s){return [s[0],s[1].split('{top}').join(top).split('{low}').join(low).split('{job}').join(j.name)];});
+ var svchtml='';for(var si=0;si<svc.length;si++){svchtml+='<div class="move" style="margin-top:10px"><div style="font-size:14px;font-weight:700">'+(si+1)+'. '+svc[si][0]+'</div><div style="font-size:12.5px;color:#a1a1aa;margin-top:4px;line-height:1.5">'+svc[si][1]+'</div></div>';}
  var fac=[['Your tasks',Math.round(taskAvg()),true]];
  if(st.exp!==null&&EXP_ADJ[st.exp])fac.push([EXP[st.exp][1],EXP_ADJ[st.exp],false]);
  if(st.ai!==null&&AI_ADJ[st.ai])fac.push([AITOOL[st.ai][1],AI_ADJ[st.ai],false]);
@@ -358,6 +373,9 @@ function renderResult(){
  +'<div class="sec-t">Your path</div>'
  +'<div class="path"><h3>'+br.em+' '+br.name+'</h3><p>'+br.why+'</p>'
  +'<div class="move"><span class="ml">DO THIS WEEK · FREE</span><p>'+move+'</p></div></div>'
+ +'<div class="sec-t">Services for your situation</div>'
+ +'<p style="font-size:12px;color:#8b8b94;margin:-6px 4px 6px">Not one-size — these 3 match your '+br.name.replace("The ","")+' path. The free move above is yours now; these are the pilot.</p>'
+ +svchtml
  +'<div class="sec-t">Your tasks by AI pressure (▸ = what you picked)</div><div class="tasks">'+trh+'</div>'
  +'<div class="lock"><div class="li">🔒</div><h4>Your full '+br.name.replace("The ","")+' roadmap</h4><p>'+br.lock+'</p>'
  +'<a class="cta" href="mailto:idsexyhomme@gmail.com?subject=WorkRadar%20pilot%20-%20'+encodeURIComponent(j.name+' / '+br.name)+'&body=I%20want%20my%20full%20roadmap%20(%2429%20pilot).">Get my roadmap · $29 pilot →</a>'

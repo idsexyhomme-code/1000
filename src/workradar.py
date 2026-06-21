@@ -15,9 +15,11 @@ import re
 import threading
 from datetime import datetime, timezone
 
-# ── 직업별 task 프로필 (프론트 JOBS와 일치 유지) ──────────────────────────────
-# base = 직업 단위 AI 압력 참고지표(손추정). hi/lo = task별 [라벨, 점수].
-JOBS: dict[str, dict] = {
+# ── 직업별 task 프로필 ─────────────────────────────────────────────────────
+# ★단일 진실원본 = web/en/jobs.json (프론트·백엔드가 같은 파일을 읽어 드리프트 0).
+# base = 직업 단위 AI 압력 참고지표(손추정·directional). hi/lo = task별 [라벨, 점수].
+# 아래는 jobs.json 로드 실패 시 폴백(최소셋).
+_FALLBACK_JOBS: dict[str, dict] = {
     "junior-developer": {"name": "Junior Developer", "emoji": "💻", "base": 64,
         "hi": [["Boilerplate / CRUD", 84], ["Unit tests", 78], ["Simple bug fixes", 70]],
         "lo": [["System design", 30], ["Hard debugging", 26]]},
@@ -62,6 +64,32 @@ JOBS: dict[str, dict] = {
         "lo": [["Investment judgment", 34], ["Client relationships", 28]]},
 }
 
+_JOBS_JSON = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+                          "web", "en", "jobs.json")
+
+
+def _valid_job(v) -> bool:
+    return (isinstance(v, dict) and isinstance(v.get("name"), str)
+            and isinstance(v.get("base"), (int, float))
+            and isinstance(v.get("hi"), list) and isinstance(v.get("lo"), list)
+            and (v["hi"] or v["lo"]))
+
+
+def load_jobs() -> dict:
+    """jobs.json 로드(검증 통과 항목만). 실패 시 폴백."""
+    try:
+        with open(_JOBS_JSON, encoding="utf-8") as f:
+            data = json.load(f)
+        clean = {k: v for k, v in data.items() if _valid_job(v)}
+        if clean:
+            return clean
+    except Exception:
+        pass
+    return _FALLBACK_JOBS
+
+
+JOBS: dict[str, dict] = load_jobs()
+
 # ── 5갈래 = AI Risk Type = 커리어 의사결정 분기 ───────────────────────────────
 BRANCHES: dict[str, dict] = {
     "defend": {"em": "🛡️", "name": "The Defender",
@@ -89,6 +117,31 @@ MOVE_TMPL: dict[str, str] = {
     "reskill": "You spend your week on {top}, which AI is coming for. List 3 adjacent roles that lean on {low}-style judgment instead.",
     "independent": "People already trust your {low}. Package that as your first solo offer.",
     "founder": "The {top} grind you repeat every week? That friction is a product — write it down.",
+}
+
+# 분기(상황)별 '우리가 해줄 수 있는 서비스' — 한 직업에 하나가 아니라 상황마다 다른 여러 개.
+# {top}=가장 노출된 내 업무 / {low}=가장 안전한 내 업무 / {job}=직업명.
+BRANCH_SERVICES: dict[str, list] = {
+    "defend": [
+        {"t": "AI-augmented workflow kit", "d": "A repeatable workflow that puts AI on your {top} first-pass while you own the call."},
+        {"t": "Defensibility resume rewrite", "d": "Your {job} resume rebuilt around the judgment AI can't replace."},
+        {"t": "90-day defend plan", "d": "Week-by-week moves to become the one who directs the AI."}],
+    "pivot": [
+        {"t": "Pivot map", "d": "Which high-value tasks to grow (from {low}) and which to drop ({top})."},
+        {"t": "Portfolio proof pieces", "d": "3 work samples that prove you do the AI-proof part of {job}."},
+        {"t": "Skill-shift plan", "d": "A 60-day plan to move your week off {top}."}],
+    "reskill": [
+        {"t": "Adjacent-role shortlist", "d": "3 roles that reuse your {job} skills but face less AI pressure."},
+        {"t": "Skills-gap map", "d": "What you already have vs what each target role needs."},
+        {"t": "Transition timeline", "d": "A realistic month-by-month path to the switch."}],
+    "independent": [
+        {"t": "Productized offer", "d": "Your {low} packaged into a sellable service + pricing."},
+        {"t": "First-5-clients map", "d": "Where your first paying clients actually are."},
+        {"t": "Solo launch kit", "d": "Landing copy + outreach to start this month."}],
+    "founder": [
+        {"t": "Pain to product brief", "d": "The {top} friction in {job} turned into a product hypothesis."},
+        {"t": "30-day MVP scope", "d": "The smallest version you could sell within a month."},
+        {"t": "First-users plan", "d": "Who to talk to and what to ship first."}],
 }
 
 REP_RANGE = FEEL_RANGE = INST_RANGE = (0, 1, 2)
@@ -170,6 +223,9 @@ def compute_result(job_id: str, tasks, feel: int, inst: int,
     top = max(sel, key=lambda s: s[1])[0]          # 본인이 고른 것 중 최고압력 = 가장 노출된 업무
     low = min(full, key=lambda s: s[1])[0]         # 직업 전체 최저압력 = 가장 안전한 레버
     move = MOVE_TMPL[branch_id].format(top=top, low=low)
+    # 상황별 다중 서비스(한 직업에 하나가 아님) — 내 업무/직업으로 개인화
+    services = [{"t": s["t"], "d": s["d"].format(top=top, low=low, job=job["name"])}
+                for s in BRANCH_SERVICES[branch_id]]
     bd = band(score)
     # 점수 분해(투명성) — 무엇이 점수를 움직였는지. 블랙박스 아님 = 신뢰.
     factors = [{"label": "Your tasks", "value": round(task_avg)}]
@@ -185,7 +241,7 @@ def compute_result(job_id: str, tasks, feel: int, inst: int,
         "rep": rep, "top_task": top, "low_task": low,
         "selected": [[s[0], s[1]] for s in sel],
         "tasks": full, "selected_idx": idx,
-        "exp": exp, "ai": ai, "factors": factors,
+        "exp": exp, "ai": ai, "factors": factors, "services": services,
     }
 
 
