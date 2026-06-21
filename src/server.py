@@ -545,6 +545,13 @@ class Handler(BaseHTTPRequestHandler):
             grounded = bool(plan.get("guardrail_ok") and plan.get("actions"))
             return self._send(200, report.offer_html(res, PAYMENT_URL or None, grounded=grounded).encode("utf-8"),
                               "text/html; charset=utf-8")
+        if parts.path == "/api/leaderboard":  # 게임 글로벌 랭킹(공개)
+            q = parse_qs(parts.query)
+            try:
+                n = min(100, max(1, int((q.get("n") or ["20"])[0])))
+            except ValueError:
+                n = 20
+            return self._json_cors(200, {"ok": True, "top": workradar.top_scores(n)})
         if parts.path == "/api/wr/health":   # WorkRadar US 운영 지표(공개·자체 애널리틱스)
             hits = workradar.hit_count()
             quiz = workradar.quiz_count()
@@ -620,6 +627,20 @@ class Handler(BaseHTTPRequestHandler):
             workradar.append_hit(str(body.get("path", "")), str(body.get("ref", "")),
                                  iph=_ip_hmac(self.client_address[0]))
             return self._json_cors(200, {"ok": True})
+        if parts.path == "/api/score":    # 게임 점수 제출 → 랭킹
+            try:
+                body = json.loads(raw or b"{}")
+            except Exception:
+                return self._json_cors(400, {"ok": False})
+            if not isinstance(body, dict):
+                return self._json_cors(400, {"ok": False})
+            ok = workradar.append_score(body.get("name"), body.get("streak"),
+                                        iph=_ip_hmac(self.client_address[0]))
+            if not ok:
+                return self._json_cors(400, {"ok": False, "error": "invalid score"})
+            rk = workradar.score_rank(body.get("streak"))
+            return self._json_cors(200, {"ok": True, "rank": rk["rank"], "total": rk["total"],
+                                         "top": workradar.top_scores(10)})
         if parts.path == "/api/quiz":     # WorkRadar US: 퀴즈 결과 계산 + 완료 로깅(PII 없음)
             try:
                 body = json.loads(raw or b"{}")

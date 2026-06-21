@@ -358,6 +358,56 @@ def append_quiz_result(res: dict, iph: str = "") -> None:
             f.write(json.dumps(rec, ensure_ascii=False) + "\n")
 
 
+SCORES_FILE = os.path.join(_DATA, "wr_scores.jsonl")      # 게임 글로벌 랭킹(핸들+스트릭)
+_SCORES_LOCK = threading.Lock()
+
+
+def append_score(name, streak, iph: str = "") -> bool:
+    """게임 점수 1건 적재. name 정제(20자·제어문자/태그 제거), streak 정수 0~1000 cap(어뷰즈 방지)."""
+    name = re.sub(r"[\x00-\x1f<>]", "", str(name or "")).strip()[:20] or "anon"
+    try:
+        streak = int(streak)
+    except (TypeError, ValueError):
+        return False
+    if isinstance(streak, bool) or streak < 0 or streak > 1000:
+        return False
+    _ensure()
+    rec = {"ts": datetime.now(timezone.utc).isoformat(), "name": name, "streak": streak, "iph": iph}
+    with _SCORES_LOCK:
+        with open(SCORES_FILE, "a", encoding="utf-8") as f:
+            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    return True
+
+
+def top_scores(n: int = 20) -> list:
+    """이름별 최고 스트릭 상위 n (동점은 먼저 달성 우선)."""
+    best: dict = {}
+    if os.path.exists(SCORES_FILE):
+        with _SCORES_LOCK:
+            for ln in open(SCORES_FILE, encoding="utf-8"):
+                if not ln.strip():
+                    continue
+                try:
+                    r = json.loads(ln)
+                except Exception:
+                    continue
+                nm = r.get("name", "anon")
+                if r.get("streak", 0) > best.get(nm, {"streak": -1})["streak"]:
+                    best[nm] = {"name": nm, "streak": r.get("streak", 0), "ts": r.get("ts", "")}
+    return sorted(best.values(), key=lambda x: (-x["streak"], x["ts"]))[:n]
+
+
+def score_rank(streak) -> dict:
+    """주어진 스트릭이 전체에서 몇 위/총 몇 명인지(이름별 best 기준)."""
+    try:
+        streak = int(streak)
+    except (TypeError, ValueError):
+        streak = 0
+    allscores = top_scores(100000)
+    better = sum(1 for s in allscores if s["streak"] > streak)
+    return {"rank": better + 1, "total": len(allscores) + 1}
+
+
 def append_hit(path: str = "", ref: str = "", iph: str = "") -> None:
     """페이지뷰 1건 적재 — 자체 애널리틱스(외부서비스 불필요). PII 없음."""
     _ensure()

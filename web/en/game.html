@@ -62,6 +62,14 @@ body{background:#000;color:#fafafa;font-family:-apple-system,BlinkMacSystemFont,
   <h2 id="ovTitle">Game over</h2>
   <div class="sc">🔥 <span id="ovScore">0</span></div>
   <div class="best">Best streak: <span id="ovBest">0</span></div>
+  <div id="subBox" style="width:100%;max-width:300px;margin-bottom:14px">
+    <input id="lbName" maxlength="20" placeholder="Your name for the ranking" style="width:100%;background:#0b0b0d;border:1px solid #3f3f46;border-radius:12px;padding:13px 14px;color:#fafafa;font-size:15px;margin-bottom:9px;text-align:center">
+    <button class="share" style="margin-bottom:0" onclick="submitScore()">👑 Claim my rank</button>
+  </div>
+  <div id="rankBox" style="display:none;width:100%;max-width:320px">
+    <div id="myRank" style="font-size:17px;font-weight:800;margin-bottom:12px"></div>
+    <div id="lbList" style="text-align:left;margin-bottom:16px"></div>
+  </div>
   <button class="share" onclick="shareGame()">📲 Share my streak</button>
   <button class="again" onclick="newGame()">↺ Play again</button>
   <a class="quiz" href="index.html">Find YOUR AI Risk Type →</a>
@@ -104,7 +112,31 @@ function gameOver(){
  else if(streak>=8){t.textContent='Sharp eye!';e.textContent='🎯';}
  else if(streak>=3){t.textContent='Not bad!';e.textContent='🔥';}
  else{t.textContent='Ouch.';e.textContent='💀';}
+ document.getElementById('subBox').style.display='block';
+ document.getElementById('rankBox').style.display='none';
+ document.getElementById('lbName').value=localStorage.getItem('wr_name')||'';
  document.getElementById('over').classList.add('show');
+}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+function submitScore(){
+ if(!API_BASE){alert('Leaderboard is offline right now.');return;}
+ var nm=(document.getElementById('lbName').value||'').trim();
+ if(nm.length<1){alert('Enter a name first');return;}
+ localStorage.setItem('wr_name',nm);
+ fetch(API_BASE+'/api/score',{method:'POST',headers:{'Content-Type':'application/json','ngrok-skip-browser-warning':'1'},body:JSON.stringify({name:nm,streak:streak})})
+  .then(function(r){return r.json();}).then(function(d){if(!d.ok)throw 0;
+   document.getElementById('subBox').style.display='none';
+   var crown=d.rank===1?' 👑':'';
+   document.getElementById('myRank').innerHTML="You're #"+d.rank+" of "+d.total+crown+(d.rank===1?" — top of the world!":"");
+   renderBoard(d.top,nm);
+   document.getElementById('rankBox').style.display='block';
+  }).catch(function(){alert('Could not submit — try again.');});
+}
+function renderBoard(top,me){var h='';
+ for(var i=0;i<top.length;i++){var medal=i===0?'👑':i===1?'🥈':i===2?'🥉':(i+1)+'.';
+  var mine=top[i].name===me?'background:rgba(245,158,11,.14);':'';
+  h+='<div style="display:flex;justify-content:space-between;padding:9px 12px;border-radius:10px;'+mine+'font-size:14.5px"><span><b style="color:#fbbf24;margin-right:9px">'+medal+'</b>'+esc(top[i].name)+'</span><b>🔥 '+top[i].streak+'</b></div>';}
+ document.getElementById('lbList').innerHTML=h;
 }
 function newGame(){streak=0;document.getElementById('streak').textContent=0;document.getElementById('over').classList.remove('show');next(false);}
 function shareGame(){

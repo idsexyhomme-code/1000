@@ -1695,6 +1695,31 @@ def test_wr_evidence_and_percentile():
     assert 0 <= lo < hi <= 100
 
 
+def test_wr_game_leaderboard():
+    import tempfile
+    orig = workradar.SCORES_FILE
+    fd, p = tempfile.mkstemp(suffix=".jsonl")
+    os.close(fd)
+    os.unlink(p)
+    workradar.SCORES_FILE = p
+    try:
+        assert workradar.append_score("Alice", 12)
+        assert workradar.append_score("Bob", 7)
+        assert workradar.append_score("Alice", 20)        # 이름별 best 유지
+        assert not workradar.append_score("X", 9999)       # 어뷰즈 cap
+        assert not workradar.append_score("Y", "abc")      # 무효
+        top = workradar.top_scores(10)
+        assert len(top) == 2 and top[0]["name"] == "Alice" and top[0]["streak"] == 20  # 👑
+        assert workradar.score_rank(8)["rank"] == 2        # Alice20보다 아래 = 2위
+        # 이름 정제(태그/제어문자 제거)
+        workradar.append_score("<b>hax", 3)
+        assert all("<" not in s["name"] for s in workradar.top_scores(10))
+    finally:
+        if os.path.exists(p):
+            os.unlink(p)
+        workradar.SCORES_FILE = orig
+
+
 def test_wr_self_analytics_hits():
     import tempfile
     orig = workradar.HITS_FILE

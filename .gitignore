@@ -60,3 +60,4 @@ data/wr_quiz.jsonl
 data/wr_outbox.jsonl
 data/wr_signals.json
 data/wr_hits.jsonl
+data/wr_scores.jsonl
