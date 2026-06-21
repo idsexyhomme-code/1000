@@ -425,11 +425,13 @@ function renderResult(){
  +'<div id="subDone" style="display:none;text-align:center;font-weight:700;color:#34d399">✓ You\'re in. First signal lands within a week.</div>'
  +'</div>'
  +'<button class="share" onclick="wrShare()">📲 Share my AI Risk Type</button>'
+ +'<button class="share" style="background:#27272a;color:#fafafa;margin-top:0" onclick="downloadCard()">🖼️ Download my card (for Stories)</button>'
  +'<a class="retake" onclick="location.reload()">↺ Retake the test</a>'
  +'<p class="foot">※ WorkRadar is a <b>directional reference indicator</b> from public AI news using a fixed method — not a prediction, not a verdict on any person or company. <b>Preview:</b> figures illustrate the method; the full product scores your exact tasks live with linked sources.</p>';
  var r=document.getElementById('s-result');r.innerHTML=html;show('s-result');
  if(API_BASE){try{fetch(API_BASE+'/api/quiz',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({job:st.job,tasks:st.tasks,exp:st.exp,ai:st.ai,feel:st.feel,inst:st.inst})}).catch(function(){});}catch(e){}}
  window._share={t:"[The "+br.name.replace("The ","")+" "+br.em+"] "+br.line+"\nI'm a "+j.name+" — AI pressure "+score+" ("+bd[0]+"), more exposed than "+pct+"% of jobs. What's your AI Risk Type?"};
+ window._card={em:br.em,type:br.name,job:j.name,score:score,band:bd[0],color:bd[1],pct:pct,line:br.line};
  // animate
  setTimeout(function(){
    document.querySelectorAll('.tbar').forEach(function(b){b.style.width=b.getAttribute('data-w')+'%';});
@@ -453,6 +455,25 @@ function subscribe(){
    .then(function(r){if(!r.ok)throw 0;done();}).catch(function(){window.location.href=fb;done();});}
  else{window.location.href=fb;done();}
 }
+function downloadCard(){var c=window._card;if(!c)return;
+ var W=1080,H=1080,cv=document.createElement('canvas');cv.width=W;cv.height=H;var x=cv.getContext('2d');
+ var g=x.createLinearGradient(0,0,W,H);g.addColorStop(0,'#18181b');g.addColorStop(1,'#09090b');x.fillStyle=g;x.fillRect(0,0,W,H);
+ x.fillStyle=c.color;x.fillRect(0,0,W,12);
+ x.textAlign='center';
+ x.fillStyle='#a1a1aa';x.font='600 34px -apple-system,sans-serif';x.fillText("WHAT'S YOUR AI RISK TYPE?",W/2,140);
+ x.font='200px sans-serif';x.fillText(c.em,W/2,360);
+ x.fillStyle='#fafafa';x.font='800 84px -apple-system,sans-serif';x.fillText(c.type,W/2,470);
+ x.fillStyle='#a1a1aa';x.font='38px -apple-system,sans-serif';
+ var line=c.line.length>52?c.line.slice(0,52)+'…':c.line;x.fillText(line,W/2,535);
+ // score circle
+ x.beginPath();x.arc(W/2,720,150,0,Math.PI*2);x.lineWidth=22;x.strokeStyle='#27272a';x.stroke();
+ x.beginPath();x.arc(W/2,720,150,-Math.PI/2,-Math.PI/2+Math.PI*2*(c.score/100));x.strokeStyle=c.color;x.stroke();
+ x.fillStyle='#fafafa';x.font='800 120px -apple-system,sans-serif';x.fillText(c.score,W/2,745);
+ x.fillStyle=c.color;x.font='700 36px -apple-system,sans-serif';x.fillText(c.band.toUpperCase(),W/2,800);
+ x.fillStyle='#fafafa';x.font='600 40px -apple-system,sans-serif';x.fillText(c.job,W/2,920);
+ x.fillStyle='#fb7185';x.font='700 34px -apple-system,sans-serif';x.fillText('More AI-exposed than '+c.pct+'% of jobs',W/2,975);
+ x.fillStyle='#71717a';x.font='30px -apple-system,sans-serif';x.fillText('📡 WorkRadar · idsexyhomme-code.github.io/1000/web/en',W/2,1040);
+ var a=document.createElement('a');a.download='my-ai-risk-type.png';a.href=cv.toDataURL('image/png');a.click();}
 function wrShare(){var d={title:"WorkRadar",text:window._share.t,url:"https://idsexyhomme-code.github.io/1000/web/en/"};
  if(navigator.share){navigator.share(d).catch(function(){});}
  else if(navigator.clipboard){navigator.clipboard.writeText(d.text+" "+d.url);alert("Copied your share link!");}
