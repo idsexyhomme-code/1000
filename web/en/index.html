@@ -2,50 +2,296 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta property="og:type" content="website"><meta property="og:site_name" content="WorkRadar">
 <meta property="og:title" content="What's your AI Risk Type?">
-<meta property="og:description" content="See which of your tasks are under AI pressure — with the evidence. Free.">
+<meta property="og:description" content="30-second test: see which of your tasks AI is coming for — and your survival path. Free.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='88'%3E%F0%9F%93%A1%3C/text%3E%3C/svg%3E"><title>WorkRadar — What's your AI Risk Type?</title>
 <style>
 :root{--bg-base:#09090b;--bg-surface:#18181b;--bg-elevate:#27272a;--border-color:#3f3f46;
 --text-primary:#fafafa;--text-secondary:#a1a1aa;--text-tertiary:#8b8b94;
 --color-clear:#3b82f6;--color-pcloudy:#8b5cf6;--color-cloudy:#f59e0b;--color-typhoon:#e11d48;}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
-body{background:#000;color:var(--text-primary);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Roboto,Helvetica,Arial,sans-serif;display:flex;justify-content:center;line-height:1.5;}
-.app-container{width:100%;max-width:460px;background:var(--bg-base);min-height:100vh;padding:24px 20px 48px;}
-.hero-card{background:linear-gradient(145deg,#18181b,#131316);border:1px solid var(--bg-elevate);border-radius:24px;padding:36px 22px 28px;text-align:center;margin-bottom:22px;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 8px 24px rgba(0,0,0,.4);}
-.hero-emoji{font-size:48px;margin-bottom:16px;line-height:1;}
-.hero-title{font-size:27px;font-weight:800;margin-bottom:10px;letter-spacing:-.5px;}
-.hero-subtitle{font-size:15.5px;color:var(--text-secondary);letter-spacing:-.2px;}
-.stat-row{display:flex;gap:10px;margin-bottom:24px;}
-.stat-card{flex:1;background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:14px;padding:14px 10px;text-align:center;}
-.stat-num{font-size:22px;font-weight:800;color:#fb7185;letter-spacing:-.5px;}
-.stat-lbl{font-size:11px;color:var(--text-secondary);margin-top:4px;line-height:1.35;}
-.lj-lead{font-size:15px;color:var(--text-secondary);text-align:center;margin:0 0 18px;font-weight:500;}
-.lj-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.lj-card{display:block;background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:14px;
-padding:16px 14px;text-align:center;text-decoration:none;color:var(--text-primary);font-weight:600;font-size:14.5px;letter-spacing:-.2px;}
-.lj-card.seed{background:linear-gradient(145deg,rgba(245,158,11,.1),rgba(225,29,72,.04));border-color:rgba(245,158,11,.25);}
-.lj-emoji{display:block;font-size:22px;margin-bottom:6px;}
-.footer-text{font-size:12px;color:var(--text-tertiary);line-height:1.6;margin-top:28px;}
-.footer-text b{color:var(--text-secondary);}
-</style></head><body><div class="app-container">
-  <div class="hero-card"><div class="hero-emoji">📡</div>
-    <h1 class="hero-title">What's your AI Risk Type?</h1>
-    <p class="hero-subtitle">See which of your daily tasks are under AI pressure — task by task, with the evidence. Free.</p>
+body{background:#000;color:var(--text-primary);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Roboto,Helvetica,Arial,sans-serif;display:flex;justify-content:center;line-height:1.5;overflow-x:hidden;}
+.app{width:100%;max-width:460px;background:var(--bg-base);min-height:100vh;padding:24px 20px 40px;position:relative;}
+.screen{display:none;animation:fadeUp .45s cubic-bezier(.22,1,.36,1);}
+.screen.active{display:block;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(14px);}to{opacity:1;transform:none;}}
+/* progress */
+.dots{display:flex;gap:7px;justify-content:center;margin-bottom:26px;}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--bg-elevate);transition:.3s;}
+.dot.on{background:var(--text-primary);width:22px;border-radius:4px;}
+/* intro */
+.radar{width:120px;height:120px;margin:8px auto 22px;position:relative;}
+.radar .ring{position:absolute;inset:0;border:2px solid rgba(245,158,11,.25);border-radius:50%;animation:pulse 2.4s ease-out infinite;}
+.radar .ring:nth-child(2){animation-delay:.8s;}.radar .ring:nth-child(3){animation-delay:1.6s;}
+.radar .core{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:52px;}
+@keyframes pulse{0%{transform:scale(.4);opacity:.9;}100%{transform:scale(1);opacity:0;}}
+.h1{font-size:30px;font-weight:800;letter-spacing:-.8px;text-align:center;line-height:1.15;margin-bottom:12px;}
+.lead{font-size:16px;color:var(--text-secondary);text-align:center;margin-bottom:22px;letter-spacing:-.2px;}
+.statline{display:flex;gap:9px;margin-bottom:28px;}
+.stat{flex:1;background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:14px;padding:13px 8px;text-align:center;}
+.stat b{font-size:21px;font-weight:800;color:#fb7185;letter-spacing:-.5px;}
+.stat span{display:block;font-size:11px;color:var(--text-secondary);margin-top:3px;line-height:1.3;}
+/* questions */
+.qnum{font-size:13px;font-weight:700;color:var(--color-cloudy);letter-spacing:.4px;text-transform:uppercase;margin-bottom:8px;text-align:center;}
+.q{font-size:23px;font-weight:800;letter-spacing:-.5px;text-align:center;line-height:1.25;margin-bottom:24px;}
+.opts{display:flex;flex-direction:column;gap:11px;}
+.opt{background:var(--bg-surface);border:1.5px solid var(--bg-elevate);border-radius:16px;padding:17px 18px;cursor:pointer;
+display:flex;align-items:center;gap:13px;text-align:left;transition:.15s;color:var(--text-primary);}
+.opt:active{transform:scale(.98);}
+.opt:hover{border-color:var(--color-cloudy);background:#1f1f23;}
+.opt .em{font-size:24px;flex-shrink:0;}
+.opt .ot{font-size:15.5px;font-weight:600;letter-spacing:-.2px;}
+.opt .od{font-size:12.5px;color:var(--text-secondary);margin-top:2px;}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.grid .opt{flex-direction:column;align-items:center;text-align:center;gap:7px;padding:18px 10px;}
+.grid .opt .ot{font-size:14.5px;}
+.btn{display:block;width:100%;background:var(--text-primary);color:#000;border:none;padding:17px;border-radius:30px;font-size:16.5px;font-weight:800;cursor:pointer;letter-spacing:-.3px;}
+.btn:active{transform:scale(.98);}
+.backlink{display:block;text-align:center;color:var(--text-tertiary);font-size:13px;margin-top:18px;cursor:pointer;}
+/* calculating */
+.calc{text-align:center;padding-top:40px;}
+.scanner{width:160px;height:160px;margin:0 auto 26px;border-radius:50%;position:relative;
+background:radial-gradient(circle,rgba(245,158,11,.12),transparent 70%);border:1px solid var(--bg-elevate);overflow:hidden;}
+.sweep{position:absolute;inset:0;background:conic-gradient(from 0deg,rgba(245,158,11,.55),transparent 40%);animation:spin 1s linear infinite;}
+@keyframes spin{to{transform:rotate(360deg);}}
+.scanner .em{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:46px;}
+.calc-t{font-size:18px;font-weight:700;letter-spacing:-.3px;}
+.calc-s{font-size:14px;color:var(--text-secondary);margin-top:6px;min-height:20px;}
+/* result */
+.hero{background:linear-gradient(145deg,#18181b,#131316);border:1px solid var(--bg-elevate);border-radius:24px;padding:30px 20px 22px;text-align:center;margin-bottom:18px;box-shadow:0 8px 24px rgba(0,0,0,.4);}
+.badge-type{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--color-cloudy);background:rgba(245,158,11,.12);padding:5px 12px;border-radius:20px;margin-bottom:14px;}
+.type-em{font-size:56px;line-height:1;margin-bottom:10px;animation:pop .5s cubic-bezier(.34,1.56,.64,1);}
+@keyframes pop{0%{transform:scale(0);}100%{transform:scale(1);}}
+.type-name{font-size:27px;font-weight:800;letter-spacing:-.6px;margin-bottom:8px;}
+.type-line{font-size:15px;color:var(--text-secondary);letter-spacing:-.2px;margin-bottom:22px;}
+.gauge{width:100%;max-width:260px;margin:0 auto;}
+.gw{font-size:11px;color:var(--text-tertiary);margin-top:2px;}
+.sec-t{font-size:13px;font-weight:700;color:var(--text-tertiary);letter-spacing:.4px;text-transform:uppercase;margin:24px 4px 12px;}
+.path{background:linear-gradient(145deg,rgba(59,130,246,.1),rgba(139,92,246,.05));border:1px solid rgba(99,102,241,.25);border-radius:18px;padding:20px;}
+.path h3{font-size:18px;font-weight:800;letter-spacing:-.3px;margin-bottom:8px;}
+.path p{font-size:14px;color:var(--text-secondary);line-height:1.55;}
+.move{background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:14px;padding:16px;margin-top:12px;}
+.move .ml{font-size:11px;font-weight:700;color:#34d399;background:rgba(52,211,153,.12);padding:3px 9px;border-radius:6px;display:inline-block;margin-bottom:9px;}
+.move p{font-size:14px;color:var(--text-primary);line-height:1.55;}
+.tasks{margin-top:6px;}
+.trow{display:flex;align-items:center;margin-bottom:11px;}
+.tlbl{width:104px;font-size:12.5px;color:var(--text-secondary);}
+.ttrack{flex:1;height:8px;background:var(--bg-elevate);border-radius:4px;margin:0 11px;overflow:hidden;}
+.tbar{height:100%;border-radius:4px;width:0;transition:width .9s cubic-bezier(.22,1,.36,1);}
+.tval{width:26px;text-align:right;font-size:13px;font-weight:700;}
+.lock{background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:16px;padding:20px;text-align:center;margin-top:14px;}
+.lock .li{font-size:26px;margin-bottom:8px;}
+.lock h4{font-size:16px;font-weight:800;margin-bottom:6px;letter-spacing:-.3px;}
+.lock p{font-size:13.5px;color:var(--text-secondary);line-height:1.5;margin-bottom:16px;}
+.cta{display:inline-block;background:var(--text-primary);color:#000;padding:13px 26px;border-radius:26px;font-size:15px;font-weight:800;text-decoration:none;}
+.cta-fine{font-size:11px;color:var(--text-tertiary);margin-top:11px;}
+.share{width:100%;background:linear-gradient(135deg,#f59e0b,#e11d48);color:#fff;border:none;padding:18px;border-radius:16px;font-size:16.5px;font-weight:800;margin:20px 0 12px;cursor:pointer;letter-spacing:-.3px;}
+.share:active{transform:scale(.98);}
+.retake{display:block;text-align:center;color:var(--text-secondary);font-size:13px;text-decoration:none;cursor:pointer;}
+.foot{font-size:11.5px;color:var(--text-tertiary);line-height:1.6;margin-top:24px;}
+.foot b{color:var(--text-secondary);}
+</style></head><body><div class="app">
+
+<!-- INTRO -->
+<div class="screen active" id="s-intro">
+  <div class="radar"><div class="ring"></div><div class="ring"></div><div class="ring"></div><div class="core">📡</div></div>
+  <h1 class="h1">What's your<br>AI Risk Type?</h1>
+  <p class="lead">A 30-second test. See which of your tasks AI is coming for — and your survival path.</p>
+  <div class="statline">
+    <div class="stat"><b>60%</b><span>of US workers expect AI to cut jobs in 2026</span></div>
+    <div class="stat"><b>64%</b><span>of Gen Z fear losing their job to AI</span></div>
   </div>
-  <div class="stat-row">
-    <div class="stat-card"><div class="stat-num">60%</div><div class="stat-lbl">of US workers expect AI to cut more jobs in 2026</div></div>
-    <div class="stat-card"><div class="stat-num">64%</div><div class="stat-lbl">of Gen Z fear losing their job to AI</div></div>
-  </div>
-  <p class="lj-lead">Pick your job to see your pressure report 👇</p>
-  <div class="lj-grid">
-    <a class="lj-card seed" href="result-junior-developer.html"><span class="lj-emoji">💻</span>Junior Developer</a>
-    <a class="lj-card seed" href="result-video-editor.html"><span class="lj-emoji">🎬</span>Video Editor</a>
-    <a class="lj-card" href="result-junior-developer.html"><span class="lj-emoji">📊</span>Data Analyst</a>
-    <a class="lj-card" href="result-video-editor.html"><span class="lj-emoji">✍️</span>Copywriter</a>
-    <a class="lj-card" href="result-junior-developer.html"><span class="lj-emoji">📞</span>Support Agent</a>
-    <a class="lj-card" href="result-video-editor.html"><span class="lj-emoji">🎨</span>Designer</a>
-  </div>
-  <p class="footer-text">※ WorkRadar is a <b>directional reference indicator</b> built from public AI news using a fixed, published method — not a prediction and not a verdict on any person or company. Every score change shows its source. <b>Preview:</b> figures here illustrate the method; full product scores your exact tasks live with linked evidence.</p>
+  <button class="btn" onclick="start()">Take the test →</button>
+  <p class="foot" style="text-align:center;margin-top:16px">Free · no signup · directional reference, not a prediction</p>
 </div>
+
+<!-- JOB -->
+<div class="screen" id="s-job">
+  <div class="dots"><div class="dot on"></div><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+  <div class="qnum">Question 1 of 4</div>
+  <div class="q">What do you do?</div>
+  <div class="grid" id="jobGrid"></div>
+</div>
+
+<!-- Q REPETITIVE -->
+<div class="screen" id="s-rep">
+  <div class="dots"><div class="dot"></div><div class="dot on"></div><div class="dot"></div><div class="dot"></div></div>
+  <div class="qnum">Question 2 of 4</div>
+  <div class="q">How much of your day is repetitive, predictable work?</div>
+  <div class="opts" id="repOpts"></div>
+  <span class="backlink" onclick="show('s-job')">← back</span>
+</div>
+
+<!-- Q FEEL -->
+<div class="screen" id="s-feel">
+  <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot on"></div><div class="dot"></div></div>
+  <div class="qnum">Question 3 of 4</div>
+  <div class="q">Honestly — how do you feel about your field?</div>
+  <div class="opts" id="feelOpts"></div>
+  <span class="backlink" onclick="show('s-rep')">← back</span>
+</div>
+
+<!-- Q INSTINCT -->
+<div class="screen" id="s-inst">
+  <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div><div class="dot on"></div></div>
+  <div class="qnum">Question 4 of 4</div>
+  <div class="q">If your job vanished tomorrow, your gut says:</div>
+  <div class="opts" id="instOpts"></div>
+  <span class="backlink" onclick="show('s-feel')">← back</span>
+</div>
+
+<!-- CALCULATING -->
+<div class="screen" id="s-calc">
+  <div class="calc">
+    <div class="scanner"><div class="sweep"></div><div class="em">📡</div></div>
+    <div class="calc-t">Reading the signal…</div>
+    <div class="calc-s" id="calcMsg"></div>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div class="screen" id="s-result"></div>
+
+<script>
+/* ---------- DATA ---------- */
+var JOBS={
+ "junior-developer":{name:"Junior Developer",emoji:"💻",base:64,
+   hi:[["Boilerplate / CRUD",84],["Unit tests",78],["Simple bug fixes",70]],
+   lo:[["System design",30],["Hard debugging",26]]},
+ "video-editor":{name:"Video Editor",emoji:"🎬",base:59,
+   hi:[["Auto-captioning",82],["Rough cuts",77],["Thumbnails",74]],
+   lo:[["Sound & mixing",48],["On-set direction",22]]},
+ "data-analyst":{name:"Data Analyst",emoji:"📊",base:57,
+   hi:[["Dashboards",80],["SQL pulls",75],["Report formatting",72]],
+   lo:[["Causal analysis",38],["Stakeholder framing",28]]},
+ "designer":{name:"Designer",emoji:"🎨",base:55,
+   hi:[["Production mockups",78],["Resizing/variants",76],["Stock-style art",70]],
+   lo:[["Brand strategy",34],["Art direction",26]]},
+ "marketer":{name:"Marketer",emoji:"📣",base:58,
+   hi:[["Copy variants",81],["Scheduling",74],["Basic reporting",71]],
+   lo:[["Positioning",36],["Partnerships",27]]},
+ "support-agent":{name:"Support Agent",emoji:"📞",base:70,
+   hi:[["FAQ replies",86],["Ticket triage",79],["Macros",77]],
+   lo:[["Escalation judgment",40],["Retention saves",30]]}
+};
+var BRANCHES={
+ defend:{em:"🛡️",name:"The Defender",line:"You stay — and out-level the AI in your own role.",
+   why:"Your tasks face pressure, but your field still rewards human judgment. The move isn't to run — it's to become the person who directs the AI instead of competing with it.",
+   move:"This week, take ONE repetitive task and let AI do the first pass — you own the final judgment call. That decision layer is exactly what AI can't take.",
+   lock:"Which specific skills & titles stay defensible in your field, plus a 90-day defend plan — written into your resume."},
+ pivot:{em:"🔄",name:"The Pivoter",line:"Same field, but you slide to the work AI can't touch.",
+   why:"A big chunk of your day is automatable — staying still is the risk. But you like the field, so you don't need to leave. You need to move your weight to the high-value tasks.",
+   move:"Look at your task list below. Pick the one with the LOWEST pressure. Starting now, spend 20% more of your week there.",
+   lock:"Your exact pivot-target role + the 3 portfolio pieces that prove you can do it — built with you."},
+ reskill:{em:"🧗",name:"The Reskiller",line:"You jump to an adjacent role with more runway.",
+   why:"You want out, and that's a real signal. The smart escape isn't random — it's a role that reuses half your current skills but sits in calmer water.",
+   move:"List 3 roles that use ~50% of your current skills but face less AI pressure. That shortlist is your map.",
+   lock:"Your best-fit adjacent role + a skills-gap map + a realistic timeline to land it."},
+ independent:{em:"🦅",name:"The Independent",line:"You sell your strongest tasks directly, on your terms.",
+   why:"You'd rather switch lanes than wait. The leverage you already have: there's a task people keep asking YOU for. That's a business of one.",
+   move:"Name the ONE task people already come to you for help with. That's your first offer — package it.",
+   lock:"Your packaged offer + pricing + where your first 5 clients actually are."},
+ founder:{em:"🚀",name:"The Founder",line:"The thing that annoys you at work IS the business.",
+   why:"Your instinct is to build. Perfect — the friction you hit every day is friction thousands of others hit too. That's not a complaint, it's a product.",
+   move:"Write down the workflow that wastes the most time in your field. That friction is your seed idea.",
+   lock:"Your pain → product hypothesis + the smallest version you could sell within 30 days."}
+};
+var REP=[["🧊","Most of it","Same templates, same steps, over and over",2],
+ ["🌗","About half","Some routine, some judgment calls",1],
+ ["🔥","Barely any","Every day is different and ambiguous",0]];
+var FEEL=[["❤️","I love it","I'd stay in this field if I could",0],
+ ["😐","It's fine","Pays the bills, no strong feelings",1],
+ ["🚪","I want out","I've been thinking about leaving anyway",2]];
+var INST=[["🔬","Go deeper","Specialize hard in something safer",0],
+ ["🦅","Do my own thing","Freelance / sell my skills directly",1],
+ ["🚀","Build something","Start my own product or company",2]];
+
+var st={job:null,rep:null,feel:null,inst:null};
+
+/* ---------- NAV ---------- */
+function show(id){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
+ var el=document.getElementById(id);el.classList.add('active');window.scrollTo(0,0);}
+function start(){show('s-job');}
+
+/* build job grid */
+(function(){var g=document.getElementById('jobGrid');var h='';
+ for(var k in JOBS){h+='<button class="opt" onclick="pickJob(\''+k+'\')"><span class="em">'+JOBS[k].emoji+'</span><span class="ot">'+JOBS[k].name+'</span></button>';}
+ g.innerHTML=h;
+ function fill(id,arr,key){var c=document.getElementById(id),o='';for(var i=0;i<arr.length;i++){o+='<button class="opt" onclick="pick(\''+key+'\','+arr[i][3]+')"><span class="em">'+arr[i][0]+'</span><span><span class="ot">'+arr[i][1]+'</span><span class="od">'+arr[i][2]+'</span></span></button>';}c.innerHTML=o;}
+ fill('repOpts',REP,'rep');fill('feelOpts',FEEL,'feel');fill('instOpts',INST,'inst');
+})();
+function pickJob(k){st.job=k;show('s-rep');}
+function pick(key,v){st[key]=v;
+ if(key==='rep')show('s-feel');
+ else if(key==='feel')show('s-inst');
+ else if(key==='inst')calculate();}
+
+/* ---------- LOGIC ---------- */
+function decideBranch(){
+ if(st.feel<=1){return st.rep>=1?'pivot':'defend';}
+ if(st.inst===2)return 'founder';
+ if(st.inst===1)return 'independent';
+ return 'reskill';
+}
+function calculate(){
+ show('s-calc');
+ var msgs=["Scanning your tasks…","Weighing AI pressure…","Mapping your survival path…"];
+ var i=0,m=document.getElementById('calcMsg');m.textContent=msgs[0];
+ var t=setInterval(function(){i++;if(i<msgs.length)m.textContent=msgs[i];},620);
+ setTimeout(function(){clearInterval(t);renderResult();},2000);
+}
+
+/* ---------- RESULT ---------- */
+function band(s){return s<=25?["Clear","#3b82f6"]:s<=50?["Partly cloudy","#8b5cf6"]:s<=75?["Cloudy","#f59e0b"]:["Storm","#e11d48"];}
+function renderResult(){
+ var j=JOBS[st.job], br=BRANCHES[decideBranch()];
+ var score=Math.max(8,Math.min(96,j.base+(st.rep-1)*4));
+ var bd=band(score);
+ var tasks=j.hi.concat(j.lo);
+ var trh='';for(var i=0;i<tasks.length;i++){var v=tasks[i][1];var col=v>75?'linear-gradient(90deg,#9f1239,#fb7185)':v>50?'linear-gradient(90deg,#b45309,#f59e0b)':v>35?'linear-gradient(90deg,#5b21b6,#8b5cf6)':'linear-gradient(90deg,#1d4ed8,#3b82f6)';
+   trh+='<div class="trow"><div class="tlbl">'+tasks[i][0]+'</div><div class="ttrack"><div class="tbar" data-w="'+v+'" style="background:'+col+'"></div></div><div class="tval">'+v+'</div></div>';}
+ var html=''
+ +'<div class="hero">'
+ +'<span class="badge-type">'+j.name+' · AI Risk Type</span>'
+ +'<div class="type-em">'+br.em+'</div>'
+ +'<div class="type-name">'+br.name+'</div>'
+ +'<div class="type-line">"'+br.line+'"</div>'
+ +'<svg class="gauge" viewBox="0 0 200 110"><path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#27272a" stroke-width="12" stroke-linecap="round"/>'
+ +'<path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#3b82f6" stroke-width="12" stroke-dasharray="62.83 502.65"/>'
+ +'<path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#8b5cf6" stroke-width="12" stroke-dasharray="62.83 502.65" stroke-dashoffset="-62.83"/>'
+ +'<path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#f59e0b" stroke-width="12" stroke-dasharray="62.83 502.65" stroke-dashoffset="-125.66"/>'
+ +'<path d="M 20 100 A 80 80 0 0 1 180 100" fill="none" stroke="#e11d48" stroke-width="12" stroke-dasharray="62.83 502.65" stroke-dashoffset="-188.49"/>'
+ +'<g id="needle" transform="rotate(0,100,100)"><circle cx="20" cy="100" r="6" fill="#fff" stroke="#18181b" stroke-width="2.5"/></g>'
+ +'<text x="100" y="50" font-size="11" text-anchor="middle" fill="#a1a1aa">AI pressure (ref.)</text>'
+ +'<text id="num" x="100" y="86" font-size="40" font-weight="800" text-anchor="middle" fill="#fff">0</text>'
+ +'<text x="100" y="104" font-size="11" text-anchor="middle" fill="'+bd[1]+'">'+bd[0]+'</text></svg>'
+ +'</div>'
+ +'<div class="sec-t">Your path</div>'
+ +'<div class="path"><h3>'+br.em+' '+br.name+'</h3><p>'+br.why+'</p>'
+ +'<div class="move"><span class="ml">DO THIS WEEK · FREE</span><p>'+br.move+'</p></div></div>'
+ +'<div class="sec-t">Your tasks by AI pressure</div><div class="tasks">'+trh+'</div>'
+ +'<div class="lock"><div class="li">🔒</div><h4>Your full '+br.name.replace("The ","")+' roadmap</h4><p>'+br.lock+'</p>'
+ +'<a class="cta" href="mailto:idsexyhomme@gmail.com?subject=WorkRadar%20pilot%20-%20'+encodeURIComponent(j.name+' / '+br.name)+'&body=I%20want%20my%20full%20roadmap%20(%2429%20pilot).">Get my roadmap · $29 pilot →</a>'
+ +'<p class="cta-fine">Waitlist — not charged yet. Concierge, human-reviewed. No automated professional judgment or guaranteed outcomes.</p></div>'
+ +'<button class="share" onclick="wrShare()">📲 Share my AI Risk Type</button>'
+ +'<a class="retake" onclick="location.reload()">↺ Retake the test</a>'
+ +'<p class="foot">※ WorkRadar is a <b>directional reference indicator</b> from public AI news using a fixed method — not a prediction, not a verdict on any person or company. <b>Preview:</b> figures illustrate the method; the full product scores your exact tasks live with linked sources.</p>';
+ var r=document.getElementById('s-result');r.innerHTML=html;show('s-result');
+ window._share={t:"[The "+br.name.replace("The ","")+" "+br.em+"] "+br.line+"\nI'm a "+j.name+", AI pressure "+score+" ("+bd[0]+"). What's your AI Risk Type?"};
+ // animate
+ setTimeout(function(){
+   document.querySelectorAll('.tbar').forEach(function(b){b.style.width=b.getAttribute('data-w')+'%';});
+   var needle=document.getElementById('needle'),num=document.getElementById('num');
+   var target=score,t0=null,dur=1100;
+   function step(ts){if(!t0)t0=ts;var p=Math.min((ts-t0)/dur,1);var e=1-Math.pow(1-p,3);
+     needle.setAttribute('transform','rotate('+(1.8*target*e)+',100,100)');num.textContent=Math.round(target*e);
+     if(p<1)requestAnimationFrame(step);}
+   requestAnimationFrame(step);
+ },80);
+}
+function wrShare(){var d={title:"WorkRadar",text:window._share.t,url:"https://idsexyhomme-code.github.io/1000/web/en/"};
+ if(navigator.share){navigator.share(d).catch(function(){});}
+ else if(navigator.clipboard){navigator.clipboard.writeText(d.text+" "+d.url);alert("Copied your share link!");}
+ else{window.prompt("Share link",d.url);}}
+</script>
 <script data-goatcounter="https://workradar.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body></html>
