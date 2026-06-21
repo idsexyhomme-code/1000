@@ -69,6 +69,21 @@ MOVE_TMPL: dict[str, str] = {
 
 REP_RANGE = FEEL_RANGE = INST_RANGE = (0, 1, 2)
 
+# 경력 연차 보정 — 연차↑ = 판단/맥락/관계로 방어됨(압력↓). 손추정·directional.
+EXP_ADJ = {0: +6, 1: 0, 2: -8}        # 0=0~2y(주니어) / 1=3~7y / 2=8y+(시니어)
+EXP_LABEL = {0: "0–2 yrs (junior)", 1: "3–7 yrs", 2: "8+ yrs (senior)"}
+# AI툴 사용 보정 — 이미 잘 쓰면 '도구를 휘두르는 쪽'이라 방어됨(압력↓). 안 쓰면 격차(압력↑).
+AI_ADJ = {0: +6, 1: -2, 2: -8}        # 0=안씀 / 1=가끔 / 2=매일
+AI_LABEL = {0: "No AI tools yet", 1: "Sometimes use AI", 2: "Daily AI user"}
+
+
+def _adj(v, table) -> int:
+    if v is None:
+        return 0
+    if not _valid_answer(v):
+        raise ValueError("invalid factor")
+    return table[v]
+
 
 def _derive_rep(avg_selected: float) -> int:
     """선택한 업무들의 평균 압력 → 반복도(0~2) 추론. 고압력 업무 위주 = 반복많음."""
@@ -100,9 +115,12 @@ def _valid_answer(v) -> bool:
     return isinstance(v, int) and not isinstance(v, bool) and v in (0, 1, 2)
 
 
-def compute_result(job_id: str, tasks, feel: int, inst: int) -> dict:
-    """개인화 결과 계산. tasks = 사용자가 '내 주를 차지하는 업무'로 고른 인덱스 리스트(1~3).
-    점수 = 그 사람이 실제로 하는 업무들의 평균 압력 → 같은 직업이라도 사람마다 다름. 검증 실패 시 ValueError."""
+def compute_result(job_id: str, tasks, feel: int, inst: int,
+                   exp=None, ai=None) -> dict:
+    """개인화 결과 계산.
+    tasks = '내 주를 차지하는 업무' 인덱스(1~3) / exp = 경력연차(0~2) / ai = AI툴 사용(0~2).
+    점수 = 내가 하는 업무 평균압력 + 경력보정 + AI툴보정 → 같은 직업도 사람마다 다름.
+    검증 실패 시 ValueError."""
     if job_id not in JOBS:
         raise ValueError("unknown job")
     if not all(_valid_answer(x) for x in (feel, inst)):
@@ -119,15 +137,22 @@ def compute_result(job_id: str, tasks, feel: int, inst: int) -> dict:
             idx.append(t)
     idx = idx[:3]
     sel = [full[i] for i in idx]
-    avg_sel = sum(s[1] for s in sel) / len(sel)
-    score = max(8, min(96, round(avg_sel)))
-    rep = _derive_rep(avg_sel)
+    task_avg = sum(s[1] for s in sel) / len(sel)
+    exp_adj, ai_adj = _adj(exp, EXP_ADJ), _adj(ai, AI_ADJ)
+    score = max(8, min(96, round(task_avg + exp_adj + ai_adj)))
+    rep = _derive_rep(score)               # 최종 점수 기준 → 경력/AI툴도 분기에 영향
     branch_id = decide_branch(rep, feel, inst)
     br = BRANCHES[branch_id]
     top = max(sel, key=lambda s: s[1])[0]          # 본인이 고른 것 중 최고압력 = 가장 노출된 업무
     low = min(full, key=lambda s: s[1])[0]         # 직업 전체 최저압력 = 가장 안전한 레버
     move = MOVE_TMPL[branch_id].format(top=top, low=low)
     bd = band(score)
+    # 점수 분해(투명성) — 무엇이 점수를 움직였는지. 블랙박스 아님 = 신뢰.
+    factors = [{"label": "Your tasks", "value": round(task_avg)}]
+    if exp is not None and exp_adj:
+        factors.append({"label": EXP_LABEL[exp], "delta": exp_adj})
+    if ai is not None and ai_adj:
+        factors.append({"label": AI_LABEL[ai], "delta": ai_adj})
     return {
         "job_id": job_id, "job_name": job["name"], "emoji": job["emoji"],
         "branch_id": branch_id, "type_name": br["name"], "type_emoji": br["em"],
@@ -136,6 +161,7 @@ def compute_result(job_id: str, tasks, feel: int, inst: int) -> dict:
         "rep": rep, "top_task": top, "low_task": low,
         "selected": [[s[0], s[1]] for s in sel],
         "tasks": full, "selected_idx": idx,
+        "exp": exp, "ai": ai, "factors": factors,
     }
 
 

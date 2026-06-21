@@ -1622,6 +1622,27 @@ def test_wr_compute_result_personalized():
             pass
 
 
+def test_wr_experience_aitool_adjust():
+    # 같은 업무믹스라도 경력/AI툴로 점수가 갈려야 한다 (심화 개인화)
+    base = workradar.compute_result("junior-developer", [0, 1], 0, 0)            # 81, 보정 없음
+    senior_ai = workradar.compute_result("junior-developer", [0, 1], 0, 0, exp=2, ai=2)  # 81-8-8
+    junior_noai = workradar.compute_result("junior-developer", [0, 1], 0, 0, exp=0, ai=0)  # 81+6+6→96 clamp
+    assert base["score"] == 81
+    assert senior_ai["score"] == 65 and junior_noai["score"] == 93
+    assert senior_ai["score"] < base["score"] < junior_noai["score"]
+    # 점수 분해(factors): 시니어+AI매일은 두 개의 음수 delta가 잡혀야
+    deltas = [f.get("delta") for f in senior_ai["factors"] if "delta" in f]
+    assert deltas == [-8, -8]
+    # 경력/AI툴이 '분기'도 바꿔야: tasks[2,3]=avg50→pivot, 시니어+AI매일(-16)→34→defend
+    assert workradar.compute_result("junior-developer", [2, 3], 0, 0)["branch_id"] == "pivot"
+    assert workradar.compute_result("junior-developer", [2, 3], 0, 0, exp=2, ai=2)["branch_id"] == "defend"
+    try:
+        workradar.compute_result("junior-developer", [0], 0, 0, exp=5)
+        assert False
+    except ValueError:
+        pass
+
+
 def test_wr_valid_email():
     assert workradar.valid_email("a@b.co")
     for bad in ["", "x", "a@b", "a b@c.com", "a@@b.com", "a@b."]:

@@ -2,7 +2,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta property="og:type" content="website"><meta property="og:site_name" content="WorkRadar">
 <meta property="og:title" content="What's your AI Risk Type?">
-<meta property="og:description" content="30-second test: see which of your tasks AI is coming for — and your survival path. Free.">
+<meta property="og:description" content="1-minute test: see which of your tasks AI is coming for — and your survival path. Free.">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='88'%3E%F0%9F%93%A1%3C/text%3E%3C/svg%3E"><title>WorkRadar — What's your AI Risk Type?</title>
 <style>
 :root{--bg-base:#09090b;--bg-surface:#18181b;--bg-elevate:#27272a;--border-color:#3f3f46;
@@ -95,7 +95,7 @@ background:radial-gradient(circle,rgba(245,158,11,.12),transparent 70%);border:1
 <div class="screen active" id="s-intro">
   <div class="radar"><div class="ring"></div><div class="ring"></div><div class="ring"></div><div class="core">📡</div></div>
   <h1 class="h1">What's your<br>AI Risk Type?</h1>
-  <p class="lead">A 30-second test. See which of your tasks AI is coming for — and your survival path.</p>
+  <p class="lead">A 1-minute test. See which of your tasks AI is coming for — and your survival path.</p>
   <div class="statline">
     <div class="stat"><b>60%</b><span>of US workers expect AI to cut jobs in 2026</span></div>
     <div class="stat"><b>64%</b><span>of Gen Z fear losing their job to AI</span></div>
@@ -124,13 +124,31 @@ background:radial-gradient(circle,rgba(245,158,11,.12),transparent 70%);border:1
   <span class="backlink" onclick="show('s-job')">← back</span>
 </div>
 
+<!-- Q EXPERIENCE -->
+<div class="screen" id="s-exp">
+  <div class="dots"></div>
+  <div class="qnum"></div>
+  <div class="q">How long have you done this kind of work?</div>
+  <div class="opts" id="expOpts"></div>
+  <span class="backlink" onclick="show('s-tasks')">← back</span>
+</div>
+
+<!-- Q AI TOOL -->
+<div class="screen" id="s-ai">
+  <div class="dots"></div>
+  <div class="qnum"></div>
+  <div class="q">How much do you use AI tools at work today?</div>
+  <div class="opts" id="aiOpts"></div>
+  <span class="backlink" onclick="show('s-exp')">← back</span>
+</div>
+
 <!-- Q FEEL -->
 <div class="screen" id="s-feel">
-  <div class="dots"><div class="dot"></div><div class="dot"></div><div class="dot on"></div><div class="dot"></div></div>
-  <div class="qnum">Question 3 of 4</div>
+  <div class="dots"></div>
+  <div class="qnum"></div>
   <div class="q">Honestly — how do you feel about your field?</div>
   <div class="opts" id="feelOpts"></div>
-  <span class="backlink" onclick="show('s-tasks')">← back</span>
+  <span class="backlink" onclick="show('s-ai')">← back</span>
 </div>
 
 <!-- Q INSTINCT -->
@@ -210,8 +228,15 @@ var FEEL=[["❤️","I love it","I'd stay in this field if I could",0],
 var INST=[["🔬","Go deeper","Specialize hard in something safer",0],
  ["🦅","Do my own thing","Freelance / sell my skills directly",1],
  ["🚀","Build something","Start my own product or company",2]];
+var EXP=[["🌱","0–2 years","Still early / junior",0],
+ ["🌳","3–7 years","Solid mid-level",1],
+ ["🏔️","8+ years","Senior / lead",2]];
+var AITOOL=[["🚫","Barely / never","I don't really use AI tools yet",0],
+ ["🔆","Sometimes","Here and there",1],
+ ["⚡","Every day","AI is part of my workflow",2]];
+var EXP_ADJ={0:6,1:0,2:-8}, AI_ADJ={0:6,1:-2,2:-8};   // 백엔드와 동일
 
-var st={job:null,tasks:[],feel:null,inst:null};
+var st={job:null,tasks:[],exp:null,ai:null,feel:null,inst:null};
 /* 백엔드 API 주소 — 24h Mac을 Cloudflare Tunnel로 노출한 URL을 여기 넣으면
    결과 로깅 + 이메일 구독이 백엔드로 들어감. 비워두면 퀴즈는 100% 작동하고 구독은 mailto 폴백. */
 var API_BASE="";
@@ -226,8 +251,12 @@ function start(){show('s-job');}
  for(var k in JOBS){h+='<button class="opt" onclick="pickJob(\''+k+'\')"><span class="em">'+JOBS[k].emoji+'</span><span class="ot">'+JOBS[k].name+'</span></button>';}
  g.innerHTML=h;
  function fill(id,arr,key){var c=document.getElementById(id),o='';for(var i=0;i<arr.length;i++){o+='<button class="opt" onclick="pick(\''+key+'\','+arr[i][3]+')"><span class="em">'+arr[i][0]+'</span><span><span class="ot">'+arr[i][1]+'</span><span class="od">'+arr[i][2]+'</span></span></button>';}c.innerHTML=o;}
- fill('feelOpts',FEEL,'feel');fill('instOpts',INST,'inst');
+ fill('feelOpts',FEEL,'feel');fill('instOpts',INST,'inst');fill('expOpts',EXP,'exp');fill('aiOpts',AITOOL,'ai');
 })();
+/* 진행 점·문항번호 자동 세팅 (6단계) */
+(function(){var steps=['s-job','s-tasks','s-exp','s-ai','s-feel','s-inst'];
+ steps.forEach(function(id,si){var el=document.querySelector('#'+id+' .dots');if(el){var h='';for(var i=0;i<steps.length;i++)h+='<div class="dot'+(i===si?' on':'')+'"></div>';el.innerHTML=h;}
+  var qn=document.querySelector('#'+id+' .qnum');if(qn)qn.textContent='Question '+(si+1)+' of '+steps.length;});})();
 function jobTasks(){var j=JOBS[st.job];return j.hi.concat(j.lo);}
 function pickJob(k){st.job=k;st.tasks=[];
  var tasks=jobTasks(),c=document.getElementById('taskOpts'),o='';
@@ -240,14 +269,17 @@ function toggleTask(i){var p=st.tasks.indexOf(i);
  syncTaskNext();}
 function syncTaskNext(){var b=document.getElementById('taskNext'),ok=st.tasks.length>=1;
  b.style.opacity=ok?'1':'.4';b.style.pointerEvents=ok?'auto':'none';}
-function continueTasks(){if(st.tasks.length>=1)show('s-feel');}
+function continueTasks(){if(st.tasks.length>=1)show('s-exp');}
 function pick(key,v){st[key]=v;
- if(key==='feel')show('s-inst');
+ if(key==='exp')show('s-ai');
+ else if(key==='ai')show('s-feel');
+ else if(key==='feel')show('s-inst');
  else if(key==='inst')calculate();}
 
-/* ---------- LOGIC (개인화: 점수=내가 고른 업무들의 평균 압력) ---------- */
-function selScore(){var t=jobTasks(),s=0;for(var i=0;i<st.tasks.length;i++)s+=t[st.tasks[i]][1];return s/st.tasks.length;}
-function deriveRep(){var a=selScore();return a>=65?2:a>=45?1:0;}
+/* ---------- LOGIC (개인화: 점수=내 업무 평균압력 + 경력보정 + AI툴보정) ---------- */
+function taskAvg(){var t=jobTasks(),s=0;for(var i=0;i<st.tasks.length;i++)s+=t[st.tasks[i]][1];return s/st.tasks.length;}
+function finalScore(){var s=taskAvg()+(EXP_ADJ[st.exp]||0)+(AI_ADJ[st.ai]||0);return Math.max(8,Math.min(96,Math.round(s)));}
+function deriveRep(){var a=finalScore();return a>=65?2:a>=45?1:0;}
 function decideBranch(){var rep=deriveRep();
  if(st.feel<=1){return rep>=1?'pivot':'defend';}
  if(st.inst===2)return 'founder';
@@ -267,12 +299,18 @@ function band(s){return s<=25?["Clear","#3b82f6"]:s<=50?["Partly cloudy","#8b5cf
 function renderResult(){
  var j=JOBS[st.job], bid=decideBranch(), br=BRANCHES[bid];
  var tasks=j.hi.concat(j.lo);
- var score=Math.max(8,Math.min(96,Math.round(selScore())));
+ var score=finalScore();
  var bd=band(score);
  var sel=st.tasks.map(function(i){return tasks[i];});
  var top=sel.slice().sort(function(a,b){return b[1]-a[1];})[0][0];
  var low=tasks.slice().sort(function(a,b){return a[1]-b[1];})[0][0];
  var move=MOVE_TMPL[bid].split('{top}').join(top).split('{low}').join(low);
+ var fac=[['Your tasks',Math.round(taskAvg()),true]];
+ if(st.exp!==null&&EXP_ADJ[st.exp])fac.push([EXP[st.exp][1],EXP_ADJ[st.exp],false]);
+ if(st.ai!==null&&AI_ADJ[st.ai])fac.push([AITOOL[st.ai][1],AI_ADJ[st.ai],false]);
+ var fhtml='';for(var fi=0;fi<fac.length;fi++){var fv=fac[fi][1],fbase=fac[fi][2];var disp=fbase?fv:(fv>0?'+'+fv:''+fv);var fcol=fbase?'#a1a1aa':(fv>0?'#fb7185':'#34d399');
+   fhtml+='<div style="display:flex;justify-content:space-between;font-size:12.5px;padding:3px 0"><span style="color:#a1a1aa">'+fac[fi][0]+'</span><span style="color:'+fcol+';font-weight:700">'+disp+'</span></div>';}
+ fhtml+='<div style="display:flex;justify-content:space-between;font-size:13px;padding:7px 0 0;margin-top:5px;border-top:1px solid #27272a"><b>Your AI pressure</b><b style="color:'+bd[1]+'">'+score+'</b></div>';
  var trh='';for(var i=0;i<tasks.length;i++){var v=tasks[i][1];var on=st.tasks.indexOf(i)>=0;var col=v>75?'linear-gradient(90deg,#9f1239,#fb7185)':v>50?'linear-gradient(90deg,#b45309,#f59e0b)':v>35?'linear-gradient(90deg,#5b21b6,#8b5cf6)':'linear-gradient(90deg,#1d4ed8,#3b82f6)';
    trh+='<div class="trow" style="'+(on?'':'opacity:.45')+'"><div class="tlbl">'+(on?'<b style=\"color:#fafafa\">▸ '+tasks[i][0]+'</b>':tasks[i][0])+'</div><div class="ttrack"><div class="tbar" data-w="'+v+'" style="background:'+col+'"></div></div><div class="tval">'+v+'</div></div>';}
  var html=''
@@ -291,6 +329,8 @@ function renderResult(){
  +'<text id="num" x="100" y="86" font-size="40" font-weight="800" text-anchor="middle" fill="#fff">0</text>'
  +'<text x="100" y="104" font-size="11" text-anchor="middle" fill="'+bd[1]+'">'+bd[0]+'</text></svg>'
  +'</div>'
+ +'<div class="sec-t">Why this score</div>'
+ +'<div style="background:#18181b;border:1px solid #27272a;border-radius:14px;padding:14px 16px">'+fhtml+'</div>'
  +'<div class="sec-t">Your path</div>'
  +'<div class="path"><h3>'+br.em+' '+br.name+'</h3><p>'+br.why+'</p>'
  +'<div class="move"><span class="ml">DO THIS WEEK · FREE</span><p>'+move+'</p></div></div>'
@@ -313,7 +353,7 @@ function renderResult(){
  +'<a class="retake" onclick="location.reload()">↺ Retake the test</a>'
  +'<p class="foot">※ WorkRadar is a <b>directional reference indicator</b> from public AI news using a fixed method — not a prediction, not a verdict on any person or company. <b>Preview:</b> figures illustrate the method; the full product scores your exact tasks live with linked sources.</p>';
  var r=document.getElementById('s-result');r.innerHTML=html;show('s-result');
- if(API_BASE){try{fetch(API_BASE+'/api/quiz',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({job:st.job,tasks:st.tasks,feel:st.feel,inst:st.inst})}).catch(function(){});}catch(e){}}
+ if(API_BASE){try{fetch(API_BASE+'/api/quiz',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({job:st.job,tasks:st.tasks,exp:st.exp,ai:st.ai,feel:st.feel,inst:st.inst})}).catch(function(){});}catch(e){}}
  window._share={t:"[The "+br.name.replace("The ","")+" "+br.em+"] "+br.line+"\nI'm a "+j.name+", AI pressure "+score+" ("+bd[0]+"). What's your AI Risk Type?"};
  // animate
  setTimeout(function(){

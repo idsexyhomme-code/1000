@@ -615,7 +615,8 @@ class Handler(BaseHTTPRequestHandler):
                 return self._json_cors(400, {"ok": False})
             try:
                 res = workradar.compute_result(str(body.get("job", "")),
-                                               body.get("tasks"), body.get("feel"), body.get("inst"))
+                                               body.get("tasks"), body.get("feel"), body.get("inst"),
+                                               exp=body.get("exp"), ai=body.get("ai"))
             except (ValueError, TypeError) as e:
                 return self._json_cors(400, {"ok": False, "error": str(e)})
             workradar.append_quiz_result(res, iph=_ip_hmac(self.client_address[0]))
