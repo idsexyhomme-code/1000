@@ -1695,6 +1695,28 @@ def test_wr_evidence_and_percentile():
     assert 0 <= lo < hi <= 100
 
 
+def test_wr_referral_loop():
+    import tempfile
+    orig = workradar.REFERRALS_FILE
+    fd, p = tempfile.mkstemp(suffix=".jsonl")
+    os.close(fd)
+    os.unlink(p)
+    workradar.REFERRALS_FILE = p
+    try:
+        assert not workradar.append_referral("ab", "signup")          # 코드 너무 짧음
+        assert not workradar.append_referral("abcd", "bogus")          # 무효 이벤트
+        assert workradar.append_referral("abc123", "signup", iph="h1")
+        assert workradar.append_referral("abc123", "signup", iph="h2")
+        assert workradar.append_referral("abc123", "signup", iph="h1")  # 같은 친구(iph) 중복
+        assert workradar.append_referral("abc123", "visit", iph="h3")   # visit은 카운트 안 함
+        assert workradar.referral_count("abc123") == 2                  # 고유 signup 2명
+        assert workradar.referral_count("nope") == 0
+    finally:
+        if os.path.exists(p):
+            os.unlink(p)
+        workradar.REFERRALS_FILE = orig
+
+
 def test_wr_game_leaderboard():
     import tempfile
     orig = workradar.SCORES_FILE

@@ -296,6 +296,9 @@ var st={job:null,tasks:[],exp:null,ai:null,feel:null,inst:null};
 /* 백엔드 API 주소 — 24h Mac을 Cloudflare Tunnel로 노출한 URL을 여기 넣으면
    결과 로깅 + 이메일 구독이 백엔드로 들어감. 비워두면 퀴즈는 100% 작동하고 구독은 mailto 폴백. */
 var API_BASE="https://unsavory-paralysis-jokingly.ngrok-free.dev";
+function refCode(){var c=localStorage.getItem('wr_ref');if(!c){c=(Math.random().toString(36).replace(/[^a-z0-9]/g,'')+'00000').slice(0,6);localStorage.setItem('wr_ref',c);}return c;}
+var REFERRED_BY=(new URLSearchParams(location.search).get('ref')||'').replace(/[^a-zA-Z0-9]/g,'').slice(0,12);
+function postRefer(ev){if(API_BASE&&REFERRED_BY){try{fetch(API_BASE+'/api/refer',{method:'POST',headers:{'Content-Type':'application/json','ngrok-skip-browser-warning':'1'},body:JSON.stringify({code:REFERRED_BY,event:ev})}).catch(function(){});}catch(e){}}}
 
 /* ---------- NAV ---------- */
 function show(id){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
@@ -312,6 +315,7 @@ function buildJobGrid(filter){var g=document.getElementById('jobGrid');if(!g)ret
  fill('feelOpts',FEEL,'feel');fill('instOpts',INST,'inst');fill('expOpts',EXP,'exp');fill('aiOpts',AITOOL,'ai');
  loadJobs(function(){buildJobGrid('');});
  if(API_BASE){try{fetch(API_BASE+'/api/hit',{method:'POST',headers:{'Content-Type':'application/json','ngrok-skip-browser-warning':'1'},body:JSON.stringify({path:location.pathname,ref:document.referrer})}).catch(function(){});}catch(e){}}
+ postRefer('visit');
 })();
 /* 진행 점·문항번호 자동 세팅 (6단계) */
 (function(){var steps=['s-job','s-tasks','s-exp','s-ai','s-feel','s-inst'];
@@ -369,6 +373,12 @@ function renderResult(){
  var svchtml='';for(var si=0;si<svc.length;si++){svchtml+='<div class="move" style="margin-top:10px"><div style="font-size:14px;font-weight:700">'+(si+1)+'. '+svc[si][0]+'</div><div style="font-size:12.5px;color:#a1a1aa;margin-top:4px;line-height:1.5">'+svc[si][1]+'</div></div>';}
  var ev=FAMSIG[famOf(st.job)]||FAMSIG.general;
  var pct=pctExposed(score);
+ var myRef=refCode();
+ var myLink="https://idsexyhomme-code.github.io/1000/?ref="+myRef;
+ var border5=['defend','pivot','reskill','independent','founder'],paths5='';
+ for(var pi=0;pi<border5.length;pi++){var pb=BRANCHES[border5[pi]];var pm=MOVE_TMPL[border5[pi]].split('{top}').join(top).split('{low}').join(low);
+  paths5+='<div class="move" style="margin-top:8px"><div style="font-size:13.5px;font-weight:700">'+pb.em+' '+pb.name+'</div><div style="font-size:12px;color:#a1a1aa;margin-top:3px;line-height:1.5">'+pm+'</div></div>';}
+ window._ref={code:myRef,paths:paths5};
  var fac=[['Your tasks',Math.round(taskAvg()),true]];
  if(st.exp!==null&&EXP_ADJ[st.exp])fac.push([EXP[st.exp][1],EXP_ADJ[st.exp],false]);
  if(st.ai!==null&&AI_ADJ[st.ai])fac.push([AITOOL[st.ai][1],AI_ADJ[st.ai],false]);
@@ -415,6 +425,17 @@ function renderResult(){
  +'<div class="lock"><div class="li">🔒</div><h4>Your full '+br.name.replace("The ","")+' roadmap</h4><p>'+br.lock+'</p>'
  +'<a class="cta" href="mailto:idsexyhomme@gmail.com?subject=WorkRadar%20pilot%20-%20'+encodeURIComponent(j.name+' / '+br.name)+'&body=I%20want%20my%20full%20roadmap%20(%2429%20pilot).">Get my roadmap · $29 pilot →</a>'
  +'<p class="cta-fine">Waitlist — not charged yet. Concierge, human-reviewed. No automated professional judgment or guaranteed outcomes.</p></div>'
+ +'<div class="sec-t">🎁 Unlock all 5 survival paths</div>'
+ +'<div class="lock" style="text-align:left">'
+ +'<div id="refLocked">'
+ +'<p style="text-align:left">You got <b>'+br.name+'</b>. Want to see what <b>all 5 types</b> would do for a '+j.name+'? Invite '+3+' friends with your link 👇</p>'
+ +'<input readonly value="'+myLink+'" onclick="this.select()" style="width:100%;background:#0b0b0d;border:1px solid #3f3f46;border-radius:10px;padding:11px 12px;color:#a1a1aa;font-size:12.5px;margin:10px 0 8px">'
+ +'<button class="cta" style="border:none;cursor:pointer;width:100%" onclick="copyRef()">📋 Copy my invite link</button>'
+ +'<div id="refProg" style="text-align:center;font-size:13px;color:#a1a1aa;margin-top:12px">0/'+3+' friends joined</div>'
+ +'<div style="height:8px;background:#27272a;border-radius:4px;margin-top:6px;overflow:hidden"><div id="refBar" style="height:100%;width:0;background:linear-gradient(90deg,#f59e0b,#34d399);transition:width .5s"></div></div>'
+ +'</div>'
+ +'<div id="refUnlocked" style="display:none"><div style="font-weight:800;color:#34d399;margin-bottom:6px">🎉 Unlocked! All 5 paths for your job:</div>'+paths5+'</div>'
+ +'</div>'
  +'<div class="lock" style="text-align:left">'
  +'<div style="font-size:11px;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">📬 Free weekly signal</div>'
  +'<h4 style="text-align:left">Track your AI pressure every week</h4>'
@@ -432,6 +453,7 @@ function renderResult(){
  +'<p class="foot">※ WorkRadar is a <b>directional reference indicator</b> from public AI news using a fixed method — not a prediction, not a verdict on any person or company. <b>Preview:</b> figures illustrate the method; the full product scores your exact tasks live with linked sources.</p>';
  var r=document.getElementById('s-result');r.innerHTML=html;show('s-result');
  if(API_BASE){try{fetch(API_BASE+'/api/quiz',{method:'POST',headers:{'Content-Type':'application/json','ngrok-skip-browser-warning':'1'},body:JSON.stringify({job:st.job,tasks:st.tasks,exp:st.exp,ai:st.ai,feel:st.feel,inst:st.inst})}).catch(function(){});}catch(e){}}
+ postRefer('signup');checkRefProgress();
  window._share={t:"[The "+br.name.replace("The ","")+" "+br.em+"] "+br.line+"\nI'm a "+j.name+" — AI pressure "+score+" ("+bd[0]+"), more exposed than "+pct+"% of jobs. What's your AI Risk Type?"};
  window._card={em:br.em,type:br.name,job:j.name,score:score,band:bd[0],color:bd[1],pct:pct,line:br.line};
  // animate
@@ -476,6 +498,16 @@ function downloadCard(){var c=window._card;if(!c)return;
  x.fillStyle='#fb7185';x.font='700 34px -apple-system,sans-serif';x.fillText('More AI-exposed than '+c.pct+'% of jobs',W/2,975);
  x.fillStyle='#71717a';x.font='30px -apple-system,sans-serif';x.fillText('📡 WorkRadar · idsexyhomme-code.github.io/1000/web/en',W/2,1040);
  var a=document.createElement('a');a.download='my-ai-risk-type.png';a.href=cv.toDataURL('image/png');a.click();}
+function copyRef(){var l="https://idsexyhomme-code.github.io/1000/?ref="+refCode();
+ if(navigator.share){navigator.share({title:"WorkRadar",text:"Find your AI Risk Type — which of your tasks is AI coming for? 👇",url:l}).catch(function(){});}
+ else if(navigator.clipboard){navigator.clipboard.writeText(l);alert("Invite link copied! Share with 3 friends to unlock all 5 paths.");}
+ else{window.prompt("Your invite link",l);}}
+function checkRefProgress(){if(!API_BASE||!window._ref)return;
+ fetch(API_BASE+'/api/refer?code='+encodeURIComponent(window._ref.code),{headers:{'ngrok-skip-browser-warning':'1'}}).then(function(r){return r.json();}).then(function(d){
+  var c=d.count||0,g=d.goal||3;var p=document.getElementById('refProg'),bar=document.getElementById('refBar');
+  if(p)p.textContent=c+'/'+g+' friends joined';if(bar)bar.style.width=Math.min(100,Math.round(100*c/g))+'%';
+  if(c>=g){var lk=document.getElementById('refLocked'),un=document.getElementById('refUnlocked');if(lk)lk.style.display='none';if(un)un.style.display='block';}
+ }).catch(function(){});}
 function wrShare(){var d={title:"WorkRadar",text:window._share.t,url:"https://idsexyhomme-code.github.io/1000/web/en/"};
  if(navigator.share){navigator.share(d).catch(function(){});}
  else if(navigator.clipboard){navigator.clipboard.writeText(d.text+" "+d.url);alert("Copied your share link!");}

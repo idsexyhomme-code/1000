@@ -545,6 +545,11 @@ class Handler(BaseHTTPRequestHandler):
             grounded = bool(plan.get("guardrail_ok") and plan.get("actions"))
             return self._send(200, report.offer_html(res, PAYMENT_URL or None, grounded=grounded).encode("utf-8"),
                               "text/html; charset=utf-8")
+        if parts.path == "/api/refer":     # 추천 루프: 내 코드로 가입한 친구 수
+            q = parse_qs(parts.query)
+            code = (q.get("code") or [""])[0]
+            return self._json_cors(200, {"ok": True, "count": workradar.referral_count(code),
+                                         "goal": workradar.REFERRAL_GOAL})
         if parts.path == "/api/leaderboard":  # 게임 글로벌 랭킹(공개)
             q = parse_qs(parts.query)
             try:
@@ -627,6 +632,16 @@ class Handler(BaseHTTPRequestHandler):
             workradar.append_hit(str(body.get("path", "")), str(body.get("ref", "")),
                                  iph=_ip_hmac(self.client_address[0]))
             return self._json_cors(200, {"ok": True})
+        if parts.path == "/api/refer":    # 추천 이벤트 적재(visit/signup)
+            try:
+                body = json.loads(raw or b"{}")
+            except Exception:
+                return self._json_cors(400, {"ok": False})
+            if not isinstance(body, dict):
+                return self._json_cors(400, {"ok": False})
+            ok = workradar.append_referral(body.get("code"), str(body.get("event", "")),
+                                           iph=_ip_hmac(self.client_address[0]))
+            return self._json_cors(200 if ok else 400, {"ok": ok})
         if parts.path == "/api/score":    # 게임 점수 제출 → 랭킹
             try:
                 body = json.loads(raw or b"{}")

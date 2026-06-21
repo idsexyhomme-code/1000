@@ -408,6 +408,47 @@ def score_rank(streak) -> dict:
     return {"rank": better + 1, "total": len(allscores) + 1}
 
 
+REFERRALS_FILE = os.path.join(_DATA, "wr_referrals.jsonl")  # 추천 루프(드롭박스식): code→유입/가입
+_REF_LOCK = threading.Lock()
+REFERRAL_GOAL = 3          # N명 초대 시 보상 해제
+
+
+def _clean_code(c) -> str:
+    return re.sub(r"[^a-zA-Z0-9]", "", str(c or ""))[:12]
+
+
+def append_referral(code, event: str, iph: str = "") -> bool:
+    """추천 이벤트 적재. code=추천인 코드, event='visit'|'signup'. 코드 무효/이벤트 무효면 False."""
+    code = _clean_code(code)
+    if len(code) < 4 or event not in ("visit", "signup"):
+        return False
+    _ensure()
+    rec = {"ts": datetime.now(timezone.utc).isoformat(), "code": code, "event": event, "iph": iph}
+    with _REF_LOCK:
+        with open(REFERRALS_FILE, "a", encoding="utf-8") as f:
+            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    return True
+
+
+def referral_count(code) -> int:
+    """이 코드로 가입(signup)한 고유 친구 수(iph 기준 중복제거, 어뷰즈 완화)."""
+    code = _clean_code(code)
+    if len(code) < 4 or not os.path.exists(REFERRALS_FILE):
+        return 0
+    seen = set()
+    with _REF_LOCK:
+        for ln in open(REFERRALS_FILE, encoding="utf-8"):
+            if not ln.strip():
+                continue
+            try:
+                r = json.loads(ln)
+            except Exception:
+                continue
+            if r.get("code") == code and r.get("event") == "signup":
+                seen.add(r.get("iph") or r.get("ts"))   # iph 없으면 ts로 fallback(중복 최소화)
+    return len(seen)
+
+
 def append_hit(path: str = "", ref: str = "", iph: str = "") -> None:
     """페이지뷰 1건 적재 — 자체 애널리틱스(외부서비스 불필요). PII 없음."""
     _ensure()
