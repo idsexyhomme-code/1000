@@ -1,0 +1,105 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta property="og:type" content="website"><meta property="og:site_name" content="WorkRadar">
+<meta property="og:title" content="WorkRadar Daily — today's AI exposure challenge">
+<meta property="og:description" content="10 jobs. Guess which AI is coming for harder. Same challenge for everyone, every day. Free.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='88'%3E%F0%9F%93%A1%3C/text%3E%3C/svg%3E">
+<title>WorkRadar Daily</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+body{background:#000;color:#fafafa;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Roboto,sans-serif;display:flex;justify-content:center;line-height:1.4;}
+.app{width:100%;max-width:460px;min-height:100vh;background:#09090b;position:relative;overflow:hidden;}
+.top{display:flex;justify-content:space-between;align-items:center;padding:16px 18px;}
+.brand{font-size:14px;font-weight:800;color:#a1a1aa;text-decoration:none;}
+.date{font-size:13px;font-weight:700;color:#fbbf24;}
+.prog{padding:0 18px;margin-bottom:6px;}
+.pdots{display:flex;gap:5px;justify-content:center;}
+.pd{flex:1;height:6px;border-radius:3px;background:#27272a;max-width:26px;}
+.pd.ok{background:#34d399;}.pd.no{background:#fb7185;}.pd.cur{background:#fafafa;}
+.cards{height:calc(100vh - 90px);display:flex;flex-direction:column;}
+.card{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:18px;}
+.cardA{background:linear-gradient(160deg,#1f1f23,#131316);}.cardB{background:linear-gradient(160deg,#18181b,#0b0b0d);}
+.em{font-size:50px;margin-bottom:10px;}.nm{font-size:23px;font-weight:800;letter-spacing:-.5px;padding:0 10px;}
+.lab{font-size:13px;color:#a1a1aa;margin-top:8px;}.scoreA{font-size:38px;font-weight:800;margin-top:4px;}
+.qmark{font-size:38px;font-weight:800;margin-top:4px;color:#71717a;}
+.vs{position:absolute;top:calc(50% + 22px);left:50%;transform:translate(-50%,-50%);z-index:6;width:50px;height:50px;border-radius:50%;background:#000;border:2px solid #3f3f46;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;}
+.btns{margin-top:14px;display:flex;flex-direction:column;gap:9px;width:100%;max-width:240px;}
+.gb{padding:13px;border-radius:30px;border:2px solid #3f3f46;background:rgba(255,255,255,.04);color:#fafafa;font-size:16px;font-weight:800;cursor:pointer;}
+.gb:active{transform:scale(.97);}.gb.hi{border-color:#fb7185;}.gb.lo{border-color:#60a5fa;}
+.over{position:absolute;inset:0;z-index:20;background:rgba(0,0,0,.94);display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px;}
+.over.show{display:flex;}
+.over h2{font-size:24px;font-weight:800;margin-bottom:4px;}
+.over .sc{font-size:56px;font-weight:800;color:#fbbf24;margin:4px 0;}
+.grid{font-size:30px;letter-spacing:4px;margin:10px 0 18px;}
+.share{width:100%;max-width:300px;background:linear-gradient(135deg,#f59e0b,#e11d48);color:#fff;border:none;padding:16px;border-radius:14px;font-size:16px;font-weight:800;cursor:pointer;margin-bottom:10px;}
+.again{width:100%;max-width:300px;background:#27272a;color:#fafafa;border:none;padding:14px;border-radius:14px;font-size:14px;font-weight:700;cursor:pointer;text-decoration:none;display:block;margin-bottom:9px;}
+.tmr{font-size:13px;color:#a1a1aa;margin-top:6px;}
+.foot{text-align:center;font-size:10.5px;color:#52525b;padding:8px;}
+</style></head><body><div class="app">
+<div class="top"><a href="index.html" class="brand">📡 WorkRadar</a><div class="date" id="date">Daily</div></div>
+<div class="prog"><div class="pdots" id="pdots"></div></div>
+<div class="cards" id="cards">
+  <div class="card cardA"><div class="em" id="emA">💻</div><div class="nm" id="nmA">—</div><div class="lab">AI pressure</div><div class="scoreA" id="scA">0</div></div>
+  <div class="card cardB"><div class="em" id="emB">🎬</div><div class="nm" id="nmB">—</div><div class="lab">more or less?</div><div class="qmark" id="qB">?</div>
+    <div class="btns"><button class="gb hi" onclick="guess('hi')">⬆️ More exposed</button><button class="gb lo" onclick="guess('lo')">⬇️ Less exposed</button></div></div>
+  <div class="vs">VS</div>
+</div>
+<div class="over" id="over">
+  <h2 id="ovT">Today's score</h2>
+  <div class="sc" id="ovS">0/10</div>
+  <div class="grid" id="ovG"></div>
+  <button class="share" onclick="shareDaily()">📲 Share my score</button>
+  <a class="again" href="game.html">🎮 Play endless mode</a>
+  <a class="again" href="index.html">🎯 Find YOUR AI Risk Type</a>
+  <div class="tmr" id="tmr"></div>
+</div>
+<p class="foot">Same 10 matchups for everyone today · directional reference, not a prediction</p>
+<script>
+var API_BASE="https://unsavory-paralysis-jokingly.ngrok-free.dev";
+var N=10,JOBS=[],pairs=[],idx=0,results=[],lock=false;
+function today(){return new Date().toISOString().slice(0,10);}
+function seed(str){var h=2166136261;for(var i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function rng(s){return function(){s|=0;s=s+0x6D2B79F5|0;var t=Math.imul(s^s>>>15,1|s);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function buildPairs(){var r=rng(seed(today()));var used={};pairs=[];
+ function pickIdx(){var i;do{i=Math.floor(r()*JOBS.length);}while(used[i]&&Object.keys(used).length<JOBS.length);used[i]=1;return i;}
+ for(var k=0;k<N;k++){used={};var a=pickIdx(),b;do{b=Math.floor(r()*JOBS.length);}while(b===a||JOBS[b].base===JOBS[a].base);pairs.push([JOBS[a],JOBS[b]]);}
+}
+function pdraw(){var h='';for(var i=0;i<N;i++){var c=i<results.length?(results[i]?'ok':'no'):(i===idx?'cur':'');h+='<div class="pd '+c+'"></div>';}document.getElementById('pdots').innerHTML=h;}
+function show(){if(idx>=N)return finish();var p=pairs[idx];
+ document.getElementById('emA').textContent=p[0].emoji;document.getElementById('nmA').textContent=p[0].name;document.getElementById('scA').textContent=p[0].base;
+ document.getElementById('emB').textContent=p[1].emoji;document.getElementById('nmB').textContent=p[1].name;
+ var q=document.getElementById('qB');q.textContent='?';q.style.color='#71717a';pdraw();lock=false;}
+function guess(dir){if(lock)return;lock=true;var p=pairs[idx],q=document.getElementById('qB'),t=p[1].base,t0=null;
+ function step(ts){if(!t0)t0=ts;var pr=Math.min((ts-t0)/450,1);q.textContent=Math.round(t*pr);if(pr<1)requestAnimationFrame(step);else done();}
+ requestAnimationFrame(step);
+ function done(){q.textContent=t;var correct=(dir==='hi'&&p[1].base>=p[0].base)||(dir==='lo'&&p[1].base<=p[0].base);
+  q.style.color=correct?'#34d399':'#fb7185';results.push(correct);pdraw();setTimeout(function(){idx++;show();},650);}
+}
+function gridStr(){return results.map(function(x){return x?'🟩':'🟥';}).join('');}
+function finish(){var sc=results.filter(Boolean).length;
+ localStorage.setItem('wr_daily_'+today(),JSON.stringify(results));
+ document.getElementById('ovS').textContent=sc+'/'+N;
+ document.getElementById('ovT').textContent=sc>=9?'Genius 🧠':sc>=7?'Sharp 🎯':sc>=5?'Decent 🔥':'Tomorrow’s another day';
+ document.getElementById('ovG').textContent=gridStr();
+ var ms=new Date(today()+'T24:00:00Z')-new Date();var hh=Math.max(0,Math.floor(ms/3600000)),mm=Math.floor(ms%3600000/60000);
+ document.getElementById('tmr').textContent='Next challenge in '+hh+'h '+mm+'m';
+ document.getElementById('over').classList.add('show');
+ if(API_BASE){try{fetch(API_BASE+'/api/score',{method:'POST',headers:{'Content-Type':'application/json','ngrok-skip-browser-warning':'1'},body:JSON.stringify({name:'daily',streak:sc})}).catch(function(){});}catch(e){}}
+}
+function shareDaily(){var sc=results.filter(Boolean).length;
+ var txt="WorkRadar Daily "+today()+"\n"+sc+"/"+N+" "+gridStr()+"\nGuess which job AI is coming for harder 👇";
+ var d={title:"WorkRadar Daily",text:txt,url:"https://idsexyhomme-code.github.io/1000/web/en/daily.html"};
+ if(navigator.share){navigator.share(d).catch(function(){});}
+ else if(navigator.clipboard){navigator.clipboard.writeText(txt+" "+d.url);alert("Copied! Paste it anywhere.");}
+ else{window.prompt("Share",d.url);}
+}
+fetch('jobs.json').then(function(r){return r.json();}).then(function(d){
+ JOBS=Object.keys(d).map(function(k){return {id:k,name:d[k].name,emoji:d[k].emoji,base:d[k].base};});
+ document.getElementById('date').textContent=today();
+ var done=localStorage.getItem('wr_daily_'+today());
+ buildPairs();
+ if(done){results=JSON.parse(done);finish();}else{show();}
+}).catch(function(){document.getElementById('nmA').textContent='Could not load';});
+if(API_BASE){try{fetch(API_BASE+'/api/hit',{method:'POST',headers:{'Content-Type':'application/json','ngrok-skip-browser-warning':'1'},body:JSON.stringify({path:'/daily',ref:document.referrer})}).catch(function(){});}catch(e){}}
+</script>
+</body></html>
