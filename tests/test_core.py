@@ -1667,6 +1667,19 @@ def test_wr_subscriber_dedup(tmp_path=None):
         workradar.SUBS_FILE = orig
 
 
+def test_wr_jobs_complete_and_synced():
+    import workradar_weekly as ww
+    assert len(workradar.JOBS) >= 14                          # 14개 이상
+    for jid, j in workradar.JOBS.items():
+        assert len(j["hi"]) + len(j["lo"]) == 5, jid          # 5 task(3+2)
+        r = workradar.compute_result(jid, [0, 1], 1, 1, exp=1, ai=1)
+        assert 8 <= r["score"] <= 96, jid                     # 모든 직업 compute OK
+        assert jid in ww.SIGNALS, jid                         # 주간 신호 존재
+    idx = open(os.path.join(_ROOT, "web", "en", "index.html"), encoding="utf-8").read()
+    for jid in workradar.JOBS:                                # 프론트와 동기화(드리프트 방지)
+        assert '"' + jid + '"' in idx, "frontend missing " + jid
+
+
 # ── runner ────────────────────────────────────────────────────────────
 def run():
     tests = sorted((v for k, v in globals().items()
