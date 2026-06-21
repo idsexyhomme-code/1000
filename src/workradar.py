@@ -335,8 +335,10 @@ def valid_email(e: str) -> bool:
 _DATA = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data")
 QUIZ_FILE = os.path.join(_DATA, "wr_quiz.jsonl")          # 완료 로그(분석용, PII 없음)
 SUBS_FILE = os.path.join(_DATA, "wr_subscribers.jsonl")   # 이메일 구독 → PII, .gitignore 필수
+HITS_FILE = os.path.join(_DATA, "wr_hits.jsonl")          # 페이지뷰 로그(자체 애널리틱스, PII 없음)
 _QUIZ_LOCK = threading.Lock()
 _SUBS_LOCK = threading.Lock()
+_HITS_LOCK = threading.Lock()
 
 
 def _ensure() -> None:
@@ -353,6 +355,16 @@ def append_quiz_result(res: dict, iph: str = "") -> None:
     }
     with _QUIZ_LOCK:
         with open(QUIZ_FILE, "a", encoding="utf-8") as f:
+            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+
+
+def append_hit(path: str = "", ref: str = "", iph: str = "") -> None:
+    """페이지뷰 1건 적재 — 자체 애널리틱스(외부서비스 불필요). PII 없음."""
+    _ensure()
+    rec = {"ts": datetime.now(timezone.utc).isoformat(),
+           "path": (path or "")[:120], "ref": (ref or "")[:200], "iph": iph}
+    with _HITS_LOCK:
+        with open(HITS_FILE, "a", encoding="utf-8") as f:
             f.write(json.dumps(rec, ensure_ascii=False) + "\n")
 
 
@@ -406,6 +418,10 @@ def quiz_count() -> int:
 
 def subscriber_count() -> int:
     return _count(SUBS_FILE, _SUBS_LOCK)
+
+
+def hit_count() -> int:
+    return _count(HITS_FILE, _HITS_LOCK)
 
 
 def quiz_stats() -> dict:

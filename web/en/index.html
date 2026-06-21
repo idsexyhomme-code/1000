@@ -310,6 +310,7 @@ function buildJobGrid(filter){var g=document.getElementById('jobGrid');if(!g)ret
  function fill(id,arr,key){var c=document.getElementById(id),o='';for(var i=0;i<arr.length;i++){o+='<button class="opt" onclick="pick(\''+key+'\','+arr[i][3]+')"><span class="em">'+arr[i][0]+'</span><span><span class="ot">'+arr[i][1]+'</span><span class="od">'+arr[i][2]+'</span></span></button>';}c.innerHTML=o;}
  fill('feelOpts',FEEL,'feel');fill('instOpts',INST,'inst');fill('expOpts',EXP,'exp');fill('aiOpts',AITOOL,'ai');
  loadJobs(function(){buildJobGrid('');});
+ if(API_BASE){try{fetch(API_BASE+'/api/hit',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({path:location.pathname,ref:document.referrer})}).catch(function(){});}catch(e){}}
 })();
 /* 진행 점·문항번호 자동 세팅 (6단계) */
 (function(){var steps=['s-job','s-tasks','s-exp','s-ai','s-feel','s-inst'];

@@ -1695,6 +1695,24 @@ def test_wr_evidence_and_percentile():
     assert 0 <= lo < hi <= 100
 
 
+def test_wr_self_analytics_hits():
+    import tempfile
+    orig = workradar.HITS_FILE
+    fd, p = tempfile.mkstemp(suffix=".jsonl")
+    os.close(fd)
+    os.unlink(p)
+    workradar.HITS_FILE = p
+    try:
+        assert workradar.hit_count() == 0
+        workradar.append_hit("/", "tiktok")
+        workradar.append_hit("/ranked.html")
+        assert workradar.hit_count() == 2          # 자체 페이지뷰 카운트(외부서비스 불필요)
+    finally:
+        if os.path.exists(p):
+            os.unlink(p)
+        workradar.HITS_FILE = orig
+
+
 def test_wr_signals_classify_and_fallback():
     import workradar_signals as wsig
     import tempfile

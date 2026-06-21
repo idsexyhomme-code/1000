@@ -545,10 +545,14 @@ class Handler(BaseHTTPRequestHandler):
             grounded = bool(plan.get("guardrail_ok") and plan.get("actions"))
             return self._send(200, report.offer_html(res, PAYMENT_URL or None, grounded=grounded).encode("utf-8"),
                               "text/html; charset=utf-8")
-        if parts.path == "/api/wr/health":   # WorkRadar US 운영 지표(공개)
-            return self._json_cors(200, {"ok": True,
-                                         "quiz": workradar.quiz_count(),
-                                         "subscribers": workradar.subscriber_count(),
+        if parts.path == "/api/wr/health":   # WorkRadar US 운영 지표(공개·자체 애널리틱스)
+            hits = workradar.hit_count()
+            quiz = workradar.quiz_count()
+            subs = workradar.subscriber_count()
+            funnel = {"visits": hits, "quizzes": quiz, "subscribers": subs,
+                      "quiz_rate": round(100 * quiz / hits, 1) if hits else None,
+                      "sub_rate": round(100 * subs / quiz, 1) if quiz else None}
+            return self._json_cors(200, {"ok": True, "funnel": funnel,
                                          "stats": workradar.quiz_stats()})
         if parts.path == "/payment/success":
             # PG 결제 후 클라이언트 리다이렉트. 쿼리는 누구나 조작 가능 → 아무것도 저장하지 않는다
@@ -606,6 +610,16 @@ class Handler(BaseHTTPRequestHandler):
                 "iph": _ip_hmac(self.client_address[0]),
             })
             return self._json(200, {"ok": True})
+        if parts.path == "/api/hit":      # WorkRadar US: 페이지뷰 핑(자체 애널리틱스)
+            try:
+                body = json.loads(raw or b"{}")
+            except Exception:
+                body = {}
+            if not isinstance(body, dict):
+                body = {}
+            workradar.append_hit(str(body.get("path", "")), str(body.get("ref", "")),
+                                 iph=_ip_hmac(self.client_address[0]))
+            return self._json_cors(200, {"ok": True})
         if parts.path == "/api/quiz":     # WorkRadar US: 퀴즈 결과 계산 + 완료 로깅(PII 없음)
             try:
                 body = json.loads(raw or b"{}")
