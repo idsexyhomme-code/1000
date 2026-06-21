@@ -1,0 +1,51 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta property="og:type" content="website"><meta property="og:site_name" content="WorkRadar">
+<meta property="og:title" content="AI Exposure Leaderboard — 300+ jobs ranked">
+<meta property="og:description" content="Which jobs face the most (and least) AI pressure? 300+ jobs ranked, with the method shown.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='88'%3E%F0%9F%93%A1%3C/text%3E%3C/svg%3E">
+<title>WorkRadar — AI Exposure Leaderboard (300+ jobs)</title>
+<style>
+:root{--clear:#3b82f6;--pcloudy:#8b5cf6;--cloudy:#f59e0b;--storm:#e11d48;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}
+body{background:#000;color:#fafafa;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Roboto,sans-serif;display:flex;justify-content:center;line-height:1.5;}
+.app{width:100%;max-width:520px;background:#09090b;min-height:100vh;padding:24px 18px 48px;}
+h1{font-size:25px;font-weight:800;letter-spacing:-.6px;text-align:center;margin-bottom:6px;}
+.sub{font-size:13.5px;color:#a1a1aa;text-align:center;margin-bottom:18px;}
+.toggle{display:flex;gap:8px;margin-bottom:12px;}
+.tg{flex:1;background:#18181b;border:1px solid #27272a;border-radius:12px;padding:11px;text-align:center;font-size:13.5px;font-weight:700;color:#a1a1aa;cursor:pointer;}
+.tg.on{background:#fafafa;color:#000;}
+input{width:100%;background:#0b0b0d;border:1px solid #3f3f46;border-radius:12px;padding:12px 14px;color:#fafafa;font-size:15px;margin-bottom:14px;}
+.row{display:flex;align-items:center;gap:11px;padding:10px 12px;border-radius:12px;background:#131316;border:1px solid #1f1f23;margin-bottom:7px;cursor:pointer;text-decoration:none;color:#fafafa;}
+.rk{width:30px;font-size:13px;font-weight:800;color:#8b8b94;text-align:center;flex-shrink:0;}
+.rem{font-size:22px;flex-shrink:0;}
+.rn{flex:1;font-size:14.5px;font-weight:600;letter-spacing:-.2px;}
+.rbar{width:74px;height:7px;background:#27272a;border-radius:4px;overflow:hidden;flex-shrink:0;}
+.rbf{height:100%;border-radius:4px;}
+.rv{width:26px;text-align:right;font-size:13px;font-weight:800;flex-shrink:0;}
+.cta{display:block;text-align:center;background:linear-gradient(135deg,#f59e0b,#e11d48);color:#fff;padding:16px;border-radius:14px;font-size:16px;font-weight:800;text-decoration:none;margin:18px 0 10px;}
+.foot{font-size:11.5px;color:#71717a;line-height:1.6;margin-top:18px;}
+.foot b{color:#a1a1aa;}
+</style></head><body><div class="app">
+<h1>📡 AI Exposure Leaderboard</h1>
+<p class="sub">300+ jobs ranked by AI pressure on their daily tasks.</p>
+<div class="toggle"><div class="tg on" id="tgHi" onclick="setMode('hi')">🌪️ Most exposed</div><div class="tg" id="tgLo" onclick="setMode('lo')">🛡️ Safest</div></div>
+<input id="q" type="text" placeholder="🔍 Find your job…" oninput="render()">
+<div id="list"></div>
+<a class="cta" href="index.html">Get YOUR personal score (free) →</a>
+<p class="foot">※ WorkRadar is a <b>directional reference indicator</b> built from public AI news with a fixed method — not a prediction, and not a verdict on any person or company. Ranking is relative to the 300+ roles we track.</p>
+</div>
+<script>
+var JOBS={},MODE='hi';
+function band(s){return s<=25?'#3b82f6':s<=50?'#8b5cf6':s<=75?'#f59e0b':'#e11d48';}
+function setMode(m){MODE=m;document.getElementById('tgHi').classList.toggle('on',m==='hi');document.getElementById('tgLo').classList.toggle('on',m==='lo');render();}
+function render(){var f=(document.getElementById('q').value||'').toLowerCase();
+ var arr=[];for(var k in JOBS)arr.push([k,JOBS[k]]);
+ arr.sort(function(a,b){return MODE==='hi'?b[1].base-a[1].base:a[1].base-b[1].base;});
+ var h='',rank=0;
+ for(var i=0;i<arr.length;i++){var j=arr[i][1];if(f&&j.name.toLowerCase().indexOf(f)<0)continue;rank++;
+  h+='<a class="row" href="index.html"><div class="rk">'+rank+'</div><div class="rem">'+j.emoji+'</div><div class="rn">'+j.name+'</div><div class="rbar"><div class="rbf" style="width:'+j.base+'%;background:'+band(j.base)+'"></div></div><div class="rv" style="color:'+band(j.base)+'">'+j.base+'</div></a>';}
+ document.getElementById('list').innerHTML=h||'<p style="text-align:center;color:#a1a1aa;padding:20px">No match.</p>';}
+fetch('jobs.json').then(function(r){return r.json();}).then(function(d){JOBS=d;render();}).catch(function(){document.getElementById('list').innerHTML='<p style="text-align:center;color:#a1a1aa;padding:20px">Could not load jobs.</p>';});
+</script>
+</body></html>
