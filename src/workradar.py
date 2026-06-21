@@ -57,7 +57,22 @@ BRANCHES: dict[str, dict] = {
         "move": "Write down the workflow that wastes the most time in your field. That friction is your seed."},
 }
 
+# 분기별 '이번 주 다음 수' — {top}=내가 가장 많이 하는 고압력 업무, {low}=가장 안전한 업무.
+# 개인의 실제 업무 선택을 끼워넣어 사람마다 다른 처방을 만든다(가짜 아님, 입력 기반).
+MOVE_TMPL: dict[str, str] = {
+    "defend": "This week, take your most exposed task — {top} — and let AI do the first pass. You own the final call.",
+    "pivot": "Your safest ground is {low}. Spend 20% more of your week there, and less on {top}.",
+    "reskill": "You spend your week on {top}, which AI is coming for. List 3 adjacent roles that lean on {low}-style judgment instead.",
+    "independent": "People already trust your {low}. Package that as your first solo offer.",
+    "founder": "The {top} grind you repeat every week? That friction is a product — write it down.",
+}
+
 REP_RANGE = FEEL_RANGE = INST_RANGE = (0, 1, 2)
+
+
+def _derive_rep(avg_selected: float) -> int:
+    """선택한 업무들의 평균 압력 → 반복도(0~2) 추론. 고압력 업무 위주 = 반복많음."""
+    return 2 if avg_selected >= 65 else 1 if avg_selected >= 45 else 0
 
 
 def decide_branch(rep: int, feel: int, inst: int) -> str:
@@ -85,23 +100,42 @@ def _valid_answer(v) -> bool:
     return isinstance(v, int) and not isinstance(v, bool) and v in (0, 1, 2)
 
 
-def compute_result(job_id: str, rep: int, feel: int, inst: int) -> dict:
-    """퀴즈 결과 계산. 입력 검증 실패 시 ValueError."""
+def compute_result(job_id: str, tasks, feel: int, inst: int) -> dict:
+    """개인화 결과 계산. tasks = 사용자가 '내 주를 차지하는 업무'로 고른 인덱스 리스트(1~3).
+    점수 = 그 사람이 실제로 하는 업무들의 평균 압력 → 같은 직업이라도 사람마다 다름. 검증 실패 시 ValueError."""
     if job_id not in JOBS:
         raise ValueError("unknown job")
-    if not all(_valid_answer(x) for x in (rep, feel, inst)):
+    if not all(_valid_answer(x) for x in (feel, inst)):
         raise ValueError("invalid answer")
     job = JOBS[job_id]
+    full = job["hi"] + job["lo"]            # [[label, score], ...] (5개)
+    if not isinstance(tasks, list) or not tasks:
+        raise ValueError("no tasks")
+    idx: list[int] = []
+    for t in tasks:
+        if isinstance(t, bool) or not isinstance(t, int) or t < 0 or t >= len(full):
+            raise ValueError("bad task")
+        if t not in idx:
+            idx.append(t)
+    idx = idx[:3]
+    sel = [full[i] for i in idx]
+    avg_sel = sum(s[1] for s in sel) / len(sel)
+    score = max(8, min(96, round(avg_sel)))
+    rep = _derive_rep(avg_sel)
     branch_id = decide_branch(rep, feel, inst)
     br = BRANCHES[branch_id]
-    score = max(8, min(96, job["base"] + (rep - 1) * 4))
+    top = max(sel, key=lambda s: s[1])[0]          # 본인이 고른 것 중 최고압력 = 가장 노출된 업무
+    low = min(full, key=lambda s: s[1])[0]         # 직업 전체 최저압력 = 가장 안전한 레버
+    move = MOVE_TMPL[branch_id].format(top=top, low=low)
     bd = band(score)
     return {
         "job_id": job_id, "job_name": job["name"], "emoji": job["emoji"],
         "branch_id": branch_id, "type_name": br["name"], "type_emoji": br["em"],
-        "type_line": br["line"], "free_move": br["move"],
+        "type_line": br["line"], "free_move": move,
         "score": score, "band": bd[0], "band_color": bd[1],
-        "tasks": job["hi"] + job["lo"],
+        "rep": rep, "top_task": top, "low_task": low,
+        "selected": [[s[0], s[1]] for s in sel],
+        "tasks": full, "selected_idx": idx,
     }
 
 

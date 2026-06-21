@@ -1600,17 +1600,25 @@ def test_wr_branch_logic():
     assert workradar.decide_branch(1, 2, 2) == "founder"    # 떠남 + 창업
 
 
-def test_wr_compute_result():
-    r = workradar.compute_result("junior-developer", 2, 2, 2)
-    assert r["branch_id"] == "founder" and r["type_name"] == "The Founder"
-    assert r["score"] == 68 and r["band"] == "Cloudy"       # 64 + (2-1)*4
-    assert len(r["tasks"]) == 5
-    for bad in [("nope", 0, 0, 0), ("junior-developer", 5, 0, 0),
-                ("junior-developer", True, 0, 0), ("junior-developer", 0, 0, None)]:
+def test_wr_compute_result_personalized():
+    # 같은 직업이라도 '내가 하는 업무'에 따라 점수가 달라야 한다 (개인화 핵심)
+    # 주니어개발자 full tasks: [Boilerplate84, UnitTests78, SimpleFixes70, SystemDesign30, HardDebug26]
+    exposed = workradar.compute_result("junior-developer", [0, 1], 2, 2)   # 고압력 업무 위주
+    defended = workradar.compute_result("junior-developer", [3, 4], 2, 2)  # 저압력 업무 위주
+    assert exposed["score"] == 81 and defended["score"] == 28              # (84+78)/2, (30+26)/2
+    assert exposed["score"] != defended["score"]                          # 사람마다 다름 ✓
+    assert exposed["top_task"] == "Boilerplate / CRUD"
+    assert defended["low_task"] == "Hard debugging"
+    # 고압력 위주 → rep=2 → feel2/inst2 → founder. 저압력 위주 → rep=0 → 여전히 떠남(feel2)+build=founder
+    assert exposed["branch_id"] == "founder"
+    assert "Boilerplate" in exposed["free_move"]                          # 처방이 내 업무를 가리킴
+    for bad in [("nope", [0], 0, 0), ("junior-developer", [], 0, 0),
+                ("junior-developer", [9], 0, 0), ("junior-developer", [0], 0, None),
+                ("junior-developer", "x", 0, 0)]:
         try:
             workradar.compute_result(*bad)
             assert False, bad
-        except ValueError:
+        except (ValueError, TypeError):
             pass
 
 
