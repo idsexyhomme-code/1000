@@ -55,3 +55,5 @@ data/**/*.jsonl.bak
 # 외부 캘리브레이션 데이터(AIOE/Eloundou 등) — 라이선스/저작권 있음, 커밋 금지(job_soc_map.json만 커밋)
 data/calibration/*.csv
 data/calibration/*.xlsx
+data/wr_subscribers.jsonl
+data/wr_quiz.jsonl

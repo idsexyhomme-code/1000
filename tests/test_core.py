@@ -31,6 +31,7 @@ import scoring
 import sender
 import server
 import store
+import workradar
 from scoring import Affected, Event, ScoringEngine
 
 NOW = datetime(2026, 6, 6, tzinfo=timezone.utc)
@@ -1587,6 +1588,54 @@ def test_calibrate_load_exposure_autodetect(tmp_csv=None):
         assert calibrate.load_exposure("/no/such/file.csv") == {}        # 없는 파일 → {}(정직 no-op)
     finally:
         _os.unlink(p.name)
+
+
+# ── WorkRadar US (5갈래 코파일럿) ───────────────────────────────────────
+def test_wr_branch_logic():
+    # feel<=1 → 같은 분야(defend/pivot), feel==2 → 떠남(reskill/independent/founder)
+    assert workradar.decide_branch(0, 0, 0) == "defend"     # 반복 적음 + 분야 좋음
+    assert workradar.decide_branch(2, 1, 0) == "pivot"      # 반복 많음 + 분야 ok
+    assert workradar.decide_branch(1, 2, 0) == "reskill"    # 떠남 + 더 깊이
+    assert workradar.decide_branch(1, 2, 1) == "independent" # 떠남 + 내 일
+    assert workradar.decide_branch(1, 2, 2) == "founder"    # 떠남 + 창업
+
+
+def test_wr_compute_result():
+    r = workradar.compute_result("junior-developer", 2, 2, 2)
+    assert r["branch_id"] == "founder" and r["type_name"] == "The Founder"
+    assert r["score"] == 68 and r["band"] == "Cloudy"       # 64 + (2-1)*4
+    assert len(r["tasks"]) == 5
+    for bad in [("nope", 0, 0, 0), ("junior-developer", 5, 0, 0),
+                ("junior-developer", True, 0, 0), ("junior-developer", 0, 0, None)]:
+        try:
+            workradar.compute_result(*bad)
+            assert False, bad
+        except ValueError:
+            pass
+
+
+def test_wr_valid_email():
+    assert workradar.valid_email("a@b.co")
+    for bad in ["", "x", "a@b", "a b@c.com", "a@@b.com", "a@b."]:
+        assert not workradar.valid_email(bad), bad
+
+
+def test_wr_subscriber_dedup(tmp_path=None):
+    import tempfile
+    orig = workradar.SUBS_FILE
+    fd, p = tempfile.mkstemp(suffix=".jsonl")
+    os.close(fd)
+    os.unlink(p)
+    workradar.SUBS_FILE = p
+    try:
+        assert workradar.append_subscriber({"email": "X@Y.com", "job": "junior-developer"})
+        assert not workradar.append_subscriber({"email": "x@y.com", "job": "junior-developer"})  # 중복(대소문자)
+        assert not workradar.append_subscriber({"email": "bad-email", "job": ""})                # 무효 이메일
+        assert workradar.subscriber_count() == 1
+    finally:
+        if os.path.exists(p):
+            os.unlink(p)
+        workradar.SUBS_FILE = orig
 
 
 # ── runner ────────────────────────────────────────────────────────────

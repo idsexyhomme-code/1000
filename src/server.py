@@ -32,6 +32,7 @@ import pain_probe
 import pipeline
 import report
 import store
+import workradar
 from scoring import ScoringEngine
 
 JOBS_DIR = pipeline.JOBS_DIR
@@ -422,6 +423,29 @@ class Handler(BaseHTTPRequestHandler):
         self._send(code, json.dumps(obj, ensure_ascii=False).encode("utf-8"),
                    "application/json; charset=utf-8")
 
+    # WorkRadar US: 정적 퀴즈(GitHub Pages)가 다른 오리진에서 호출 → CORS 허용.
+    # 쿠키/인증정보 미사용(공개 퀴즈 API)이라 "*" 안전. WR_ALLOW_ORIGIN로 좁힐 수 있음.
+    def _cors(self):
+        self.send_header("Access-Control-Allow-Origin", os.environ.get("WR_ALLOW_ORIGIN", "*"))
+        self.send_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Vary", "Origin")
+
+    def _json_cors(self, code: int, obj: dict):
+        body = json.dumps(obj, ensure_ascii=False).encode("utf-8")
+        self.send_response(code)
+        self.send_header("Content-Type", "application/json; charset=utf-8")
+        self.send_header("Content-Length", str(len(body)))
+        self._cors()
+        self.end_headers()
+        self.wfile.write(body)
+
+    def do_OPTIONS(self):     # CORS preflight
+        self.send_response(204)
+        self._cors()
+        self.send_header("Content-Length", "0")
+        self.end_headers()
+
     def _not_found(self):
         html = ('<!doctype html><meta charset="utf-8"><title>커리어 시그널</title>'
                 '<body style="background:#09090b;color:#fafafa;font-family:-apple-system,sans-serif;'
@@ -521,6 +545,11 @@ class Handler(BaseHTTPRequestHandler):
             grounded = bool(plan.get("guardrail_ok") and plan.get("actions"))
             return self._send(200, report.offer_html(res, PAYMENT_URL or None, grounded=grounded).encode("utf-8"),
                               "text/html; charset=utf-8")
+        if parts.path == "/api/wr/health":   # WorkRadar US 운영 지표(공개)
+            return self._json_cors(200, {"ok": True,
+                                         "quiz": workradar.quiz_count(),
+                                         "subscribers": workradar.subscriber_count(),
+                                         "stats": workradar.quiz_stats()})
         if parts.path == "/payment/success":
             # PG 결제 후 클라이언트 리다이렉트. 쿼리는 누구나 조작 가능 → 아무것도 저장하지 않는다
             # (Codex fix: 공개 append-only DoS 차단 + 조작 가능한 'reported'는 신뢰 불가 노이즈).
@@ -577,6 +606,42 @@ class Handler(BaseHTTPRequestHandler):
                 "iph": _ip_hmac(self.client_address[0]),
             })
             return self._json(200, {"ok": True})
+        if parts.path == "/api/quiz":     # WorkRadar US: 퀴즈 결과 계산 + 완료 로깅(PII 없음)
+            try:
+                body = json.loads(raw or b"{}")
+            except Exception:
+                return self._json_cors(400, {"ok": False})
+            if not isinstance(body, dict):
+                return self._json_cors(400, {"ok": False})
+            try:
+                res = workradar.compute_result(str(body.get("job", "")),
+                                               body.get("rep"), body.get("feel"), body.get("inst"))
+            except ValueError as e:
+                return self._json_cors(400, {"ok": False, "error": str(e)})
+            workradar.append_quiz_result(res, iph=_ip_hmac(self.client_address[0]))
+            return self._json_cors(200, {"ok": True, "result": res})
+        if parts.path == "/api/subscribe":  # WorkRadar US: 주간리포트 이메일 구독(리텐션 엔진)
+            try:
+                body = json.loads(raw or b"{}")
+            except Exception:
+                return self._json_cors(400, {"ok": False})
+            if not isinstance(body, dict):
+                return self._json_cors(400, {"ok": False})
+            if str(body.get("hp_url", "")).strip():        # honeypot → 봇, 조용히 통과
+                return self._json_cors(200, {"ok": True})
+            if not body.get("consent"):                    # 동의 필수
+                return self._json_cors(400, {"ok": False, "error": "consent required"})
+            email = str(body.get("email", "")).strip()[:254]
+            if not workradar.valid_email(email):
+                return self._json_cors(400, {"ok": False, "error": "invalid email"})
+            job = str(body.get("job", ""))[:60]
+            workradar.append_subscriber({
+                "email": email,
+                "job": job if job in workradar.JOBS else "",
+                "branch": str(body.get("branch", ""))[:20],
+                "iph": _ip_hmac(self.client_address[0]),
+            })
+            return self._json_cors(200, {"ok": True})
         if parts.path == "/pain/intent":  # 가려움별 수요 신호 수집(사전신청, 결제 아님)
             try:
                 body = json.loads(raw or b"{}")
