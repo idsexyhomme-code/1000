@@ -206,6 +206,9 @@ var INST=[["🔬","Go deeper","Specialize hard in something safer",0],
  ["🚀","Build something","Start my own product or company",2]];
 
 var st={job:null,rep:null,feel:null,inst:null};
+/* 백엔드 API 주소 — 24h Mac을 Cloudflare Tunnel로 노출한 URL을 여기 넣으면
+   결과 로깅 + 이메일 구독이 백엔드로 들어감. 비워두면 퀴즈는 100% 작동하고 구독은 mailto 폴백. */
+var API_BASE="";
 
 /* ---------- NAV ---------- */
 function show(id){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
@@ -272,10 +275,22 @@ function renderResult(){
  +'<div class="lock"><div class="li">🔒</div><h4>Your full '+br.name.replace("The ","")+' roadmap</h4><p>'+br.lock+'</p>'
  +'<a class="cta" href="mailto:idsexyhomme@gmail.com?subject=WorkRadar%20pilot%20-%20'+encodeURIComponent(j.name+' / '+br.name)+'&body=I%20want%20my%20full%20roadmap%20(%2429%20pilot).">Get my roadmap · $29 pilot →</a>'
  +'<p class="cta-fine">Waitlist — not charged yet. Concierge, human-reviewed. No automated professional judgment or guaranteed outcomes.</p></div>'
+ +'<div class="lock" style="text-align:left">'
+ +'<div style="font-size:11px;font-weight:700;color:#f59e0b;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">📬 Free weekly signal</div>'
+ +'<h4 style="text-align:left">Track your AI pressure every week</h4>'
+ +'<p style="text-align:left">A 1-minute weekly read on your job + your next move. Free, unsubscribe anytime.</p>'
+ +'<div id="subBox">'
+ +'<input id="subEmail" type="email" inputmode="email" placeholder="you@email.com" autocomplete="email" style="width:100%;background:#0b0b0d;border:1px solid #3f3f46;border-radius:12px;padding:13px 14px;color:#fafafa;font-size:15px;margin-bottom:10px">'
+ +'<input type="text" id="subHp" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px" aria-hidden="true">'
+ +'<label style="display:flex;gap:8px;align-items:flex-start;font-size:11.5px;color:#a1a1aa;margin-bottom:12px;text-align:left"><input type="checkbox" id="subConsent" style="margin-top:2px">I agree to receive weekly emails. Directional reference, not advice. Unsubscribe anytime.</label>'
+ +'<button class="cta" style="border:none;cursor:pointer;width:100%" onclick="subscribe()">Get my weekly signal →</button></div>'
+ +'<div id="subDone" style="display:none;text-align:center;font-weight:700;color:#34d399">✓ You\'re in. First signal lands within a week.</div>'
+ +'</div>'
  +'<button class="share" onclick="wrShare()">📲 Share my AI Risk Type</button>'
  +'<a class="retake" onclick="location.reload()">↺ Retake the test</a>'
  +'<p class="foot">※ WorkRadar is a <b>directional reference indicator</b> from public AI news using a fixed method — not a prediction, not a verdict on any person or company. <b>Preview:</b> figures illustrate the method; the full product scores your exact tasks live with linked sources.</p>';
  var r=document.getElementById('s-result');r.innerHTML=html;show('s-result');
+ if(API_BASE){try{fetch(API_BASE+'/api/quiz',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({job:st.job,rep:st.rep,feel:st.feel,inst:st.inst})}).catch(function(){});}catch(e){}}
  window._share={t:"[The "+br.name.replace("The ","")+" "+br.em+"] "+br.line+"\nI'm a "+j.name+", AI pressure "+score+" ("+bd[0]+"). What's your AI Risk Type?"};
  // animate
  setTimeout(function(){
@@ -287,6 +302,18 @@ function renderResult(){
      if(p<1)requestAnimationFrame(step);}
    requestAnimationFrame(step);
  },80);
+}
+function subscribe(){
+ var em=(document.getElementById('subEmail').value||"").trim();
+ if(document.getElementById('subHp').value){return;} // honeypot → 봇
+ if(!/^[^@\s]+@[^@\s]+\.[^@\s]{2,}$/.test(em)){alert("Please enter a valid email.");return;}
+ if(!document.getElementById('subConsent').checked){alert("Please check the box to continue.");return;}
+ var payload={email:em,job:st.job,branch:decideBranch(),consent:true,hp_url:""};
+ var fb="mailto:idsexyhomme@gmail.com?subject=WorkRadar%20weekly%20signup&body="+encodeURIComponent(em+" / "+st.job+" / "+decideBranch());
+ function done(){document.getElementById('subBox').style.display='none';document.getElementById('subDone').style.display='block';}
+ if(API_BASE){fetch(API_BASE+'/api/subscribe',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)})
+   .then(function(r){if(!r.ok)throw 0;done();}).catch(function(){window.location.href=fb;done();});}
+ else{window.location.href=fb;done();}
 }
 function wrShare(){var d={title:"WorkRadar",text:window._share.t,url:"https://idsexyhomme-code.github.io/1000/web/en/"};
  if(navigator.share){navigator.share(d).catch(function(){});}

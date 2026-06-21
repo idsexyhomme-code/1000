@@ -57,3 +57,4 @@ data/calibration/*.csv
 data/calibration/*.xlsx
 data/wr_subscribers.jsonl
 data/wr_quiz.jsonl
+data/wr_outbox.jsonl
