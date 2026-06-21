@@ -1,0 +1,123 @@
+<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta property="og:type" content="website"><meta property="og:site_name" content="WorkRadar">
+<meta property="og:title" content="Higher or Lower: AI Edition — which job is more AI-exposed?">
+<meta property="og:description" content="Guess which job AI is coming for harder. Build a streak. 300+ jobs. Free.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='88'%3E%F0%9F%93%A1%3C/text%3E%3C/svg%3E">
+<title>Higher or Lower: AI Edition — WorkRadar</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;-webkit-tap-highlight-color:transparent;}
+body{background:#000;color:#fafafa;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Roboto,sans-serif;display:flex;justify-content:center;line-height:1.4;}
+.app{width:100%;max-width:460px;min-height:100vh;background:#09090b;position:relative;overflow:hidden;}
+.top{position:absolute;top:0;left:0;right:0;z-index:5;display:flex;justify-content:space-between;align-items:center;padding:16px 18px;}
+.brand{font-size:14px;font-weight:800;color:#a1a1aa;letter-spacing:-.2px;}
+.streak{font-size:15px;font-weight:800;color:#fbbf24;}
+.cards{height:100vh;display:flex;flex-direction:column;}
+.card{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;position:relative;padding:20px;transition:background .3s;}
+.cardA{background:linear-gradient(160deg,#1f1f23,#131316);}
+.cardB{background:linear-gradient(160deg,#18181b,#0b0b0d);}
+.em{font-size:54px;line-height:1;margin-bottom:10px;}
+.nm{font-size:24px;font-weight:800;letter-spacing:-.5px;padding:0 10px;}
+.lab{font-size:13px;color:#a1a1aa;margin-top:8px;}
+.scoreA{font-size:40px;font-weight:800;margin-top:4px;}
+.vs{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:6;width:54px;height:54px;border-radius:50%;background:#000;border:2px solid #3f3f46;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:800;color:#fafafa;}
+.btns{margin-top:14px;display:flex;flex-direction:column;gap:10px;width:100%;max-width:240px;}
+.gb{padding:13px;border-radius:30px;border:2px solid #3f3f46;background:rgba(255,255,255,.04);color:#fafafa;font-size:16px;font-weight:800;cursor:pointer;}
+.gb:active{transform:scale(.97);}
+.gb.hi{border-color:#fb7185;}
+.gb.lo{border-color:#60a5fa;}
+.qmark{font-size:40px;font-weight:800;margin-top:4px;color:#71717a;}
+.flash{position:absolute;inset:0;z-index:8;display:flex;align-items:center;justify-content:center;font-size:90px;opacity:0;pointer-events:none;}
+/* overlay */
+.over{position:absolute;inset:0;z-index:20;background:rgba(0,0,0,.92);display:none;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:30px;}
+.over.show{display:flex;}
+.over .big{font-size:70px;margin-bottom:6px;}
+.over h2{font-size:26px;font-weight:800;letter-spacing:-.5px;margin-bottom:6px;}
+.over .sc{font-size:54px;font-weight:800;color:#fbbf24;margin:6px 0;}
+.over .best{font-size:14px;color:#a1a1aa;margin-bottom:22px;}
+.share{width:100%;max-width:300px;background:linear-gradient(135deg,#f59e0b,#e11d48);color:#fff;border:none;padding:16px;border-radius:14px;font-size:16px;font-weight:800;cursor:pointer;margin-bottom:10px;}
+.again{width:100%;max-width:300px;background:#27272a;color:#fafafa;border:none;padding:15px;border-radius:14px;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:10px;}
+.quiz{font-size:14px;color:#a1a1aa;text-decoration:none;margin-top:6px;}
+.foot{position:absolute;bottom:0;left:0;right:0;text-align:center;font-size:10.5px;color:#52525b;padding:8px;z-index:4;}
+</style></head><body><div class="app">
+<div class="top"><a href="index.html" style="text-decoration:none" class="brand">📡 WorkRadar</a><div class="streak">🔥 <span id="streak">0</span></div></div>
+
+<div class="cards" id="cards">
+  <div class="card cardA">
+    <div class="em" id="emA">💻</div><div class="nm" id="nmA">—</div>
+    <div class="lab">AI pressure</div><div class="scoreA" id="scA">0</div>
+  </div>
+  <div class="card cardB">
+    <div class="em" id="emB">🎬</div><div class="nm" id="nmB">—</div>
+    <div class="lab" id="labB">has more or less AI pressure?</div>
+    <div class="qmark" id="qB">?</div>
+    <div class="btns"><button class="gb hi" onclick="guess('hi')">⬆️ More exposed</button><button class="gb lo" onclick="guess('lo')">⬇️ Less exposed</button></div>
+  </div>
+  <div class="vs">VS</div>
+</div>
+<div class="flash" id="flash"></div>
+
+<div class="over" id="over">
+  <div class="big" id="ovEmoji">🔥</div>
+  <h2 id="ovTitle">Game over</h2>
+  <div class="sc">🔥 <span id="ovScore">0</span></div>
+  <div class="best">Best streak: <span id="ovBest">0</span></div>
+  <button class="share" onclick="shareGame()">📲 Share my streak</button>
+  <button class="again" onclick="newGame()">↺ Play again</button>
+  <a class="quiz" href="index.html">Find YOUR AI Risk Type →</a>
+</div>
+<p class="foot">Directional reference from public AI news — not a prediction. 300+ jobs.</p>
+
+<script>
+var API_BASE="https://unsavory-paralysis-jokingly.ngrok-free.dev";
+var JOBS=[],a=null,b=null,streak=0,best=+(localStorage.getItem('wr_best')||0),lock=false;
+function pick(){return JOBS[Math.floor(Math.random()*JOBS.length)];}
+function diff(x,y){return x.id!==y.id;}
+function setCard(id,j,which){document.getElementById('em'+which).textContent=j.emoji;document.getElementById('nm'+which).textContent=j.name;if(which==='A')document.getElementById('scA').textContent=j.base;}
+function next(keepB){
+ if(keepB&&b){a=b;}else{a=pick();}
+ do{b=pick();}while(!diff(a,b));
+ setCard('A',a,'A');setCard('B',b,'B');
+ document.getElementById('qB').textContent='?';document.getElementById('qB').style.color='#71717a';
+ lock=false;
+}
+function flash(txt){var f=document.getElementById('flash');f.textContent=txt;f.style.transition='none';f.style.opacity='1';f.style.transform='scale(1.3)';requestAnimationFrame(function(){f.style.transition='opacity .5s,transform .5s';f.style.opacity='0';f.style.transform='scale(1)';});}
+function guess(dir){
+ if(lock)return;lock=true;
+ // count-up reveal of B
+ var q=document.getElementById('qB'),target=b.base,t0=null;
+ function step(ts){if(!t0)t0=ts;var p=Math.min((ts-t0)/600,1);q.textContent=Math.round(target*p);if(p<1)requestAnimationFrame(step);else done();}
+ requestAnimationFrame(step);
+ function done(){
+  q.textContent=target;
+  var correct=(dir==='hi'&&b.base>=a.base)||(dir==='lo'&&b.base<=a.base);
+  if(correct){q.style.color='#34d399';flash('✅');streak++;document.getElementById('streak').textContent=streak;setTimeout(function(){next(true);},700);}
+  else{q.style.color='#fb7185';flash('❌');setTimeout(gameOver,750);}
+ }
+}
+function gameOver(){
+ if(streak>best){best=streak;localStorage.setItem('wr_best',best);}
+ document.getElementById('ovScore').textContent=streak;
+ document.getElementById('ovBest').textContent=best;
+ var t=document.getElementById('ovTitle'),e=document.getElementById('ovEmoji');
+ if(streak>=15){t.textContent='AI Whisperer!';e.textContent='🧠';}
+ else if(streak>=8){t.textContent='Sharp eye!';e.textContent='🎯';}
+ else if(streak>=3){t.textContent='Not bad!';e.textContent='🔥';}
+ else{t.textContent='Ouch.';e.textContent='💀';}
+ document.getElementById('over').classList.add('show');
+}
+function newGame(){streak=0;document.getElementById('streak').textContent=0;document.getElementById('over').classList.remove('show');next(false);}
+function shareGame(){
+ var txt="I got a "+streak+" streak 🔥 on 'Higher or Lower: AI Edition' — guessing which jobs AI is coming for harder. Can you beat me?";
+ var d={title:"WorkRadar Game",text:txt,url:"https://idsexyhomme-code.github.io/1000/web/en/game.html"};
+ if(navigator.share){navigator.share(d).catch(function(){});}
+ else if(navigator.clipboard){navigator.clipboard.writeText(txt+" "+d.url);alert("Copied! Paste it anywhere.");}
+ else{window.prompt("Share",d.url);}
+}
+fetch('jobs.json').then(function(r){return r.json();}).then(function(d){
+ JOBS=Object.keys(d).map(function(k){return {id:k,name:d[k].name,emoji:d[k].emoji,base:d[k].base};});
+ newGame();
+}).catch(function(){document.getElementById('nmA').textContent='Could not load jobs';});
+if(API_BASE){try{fetch(API_BASE+'/api/hit',{method:'POST',headers:{'Content-Type':'application/json','ngrok-skip-browser-warning':'1'},body:JSON.stringify({path:'/game',ref:document.referrer})}).catch(function(){});}catch(e){}}
+</script>
+</body></html>
