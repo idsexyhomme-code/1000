@@ -428,7 +428,7 @@ class Handler(BaseHTTPRequestHandler):
     def _cors(self):
         self.send_header("Access-Control-Allow-Origin", os.environ.get("WR_ALLOW_ORIGIN", "*"))
         self.send_header("Access-Control-Allow-Methods", "POST, GET, OPTIONS")
-        self.send_header("Access-Control-Allow-Headers", "Content-Type")
+        self.send_header("Access-Control-Allow-Headers", "Content-Type, ngrok-skip-browser-warning")
         self.send_header("Vary", "Origin")
 
     def _json_cors(self, code: int, obj: dict):
