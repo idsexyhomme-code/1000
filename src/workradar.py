@@ -144,6 +144,36 @@ BRANCH_SERVICES: dict[str, list] = {
         {"t": "First-users plan", "d": "Who to talk to and what to ship first."}],
 }
 
+# 분기별 '이번 주 실행 플랜' 3단계 — free_move를 구체 행동으로 분해. {top}/{low} 개인화.
+# directional(방향 제시)이지 결과 보장 아님. 가짜 수치/약속 금지 = 정직성 원칙.
+PLAN_TMPL: dict[str, list] = {
+    "defend": [
+        "Run {top} through an AI tool first, then edit. Note where its draft is wrong — that gap is your value.",
+        "Write the 2–3 judgment calls in {top} that still need a human. Keep them visible in your work.",
+        "Show one colleague your AI-assisted {top} flow. Being the one who directs the AI is the defensible role.",
+    ],
+    "pivot": [
+        "Track one week: how much of it goes to {top} vs {low}.",
+        "Hand one recurring {top} task to AI or a teammate; reinvest that time into {low}.",
+        "Ship one piece of work that's mostly {low}. That's your proof you've shifted.",
+    ],
+    "reskill": [
+        "List 3 roles that reuse your strength in {low} but lean less on {top}.",
+        "Pick the closest one and find the 2 skills you're missing for it.",
+        "Do one small project that uses {low}-style judgment toward that role.",
+    ],
+    "independent": [
+        "Write the one outcome people already trust you for around {low}.",
+        "Turn it into a one-line offer with a price.",
+        "Send it to 5 people who've needed that from you before.",
+    ],
+    "founder": [
+        "Describe the {top} workflow that wastes the most time in your field.",
+        "Sketch the smallest tool that would remove that friction.",
+        "Find 3 people with the same pain and show them the sketch.",
+    ],
+}
+
 REP_RANGE = FEEL_RANGE = INST_RANGE = (0, 1, 2)
 
 # 경력 연차 보정 — 연차↑ = 판단/맥락/관계로 방어됨(압력↓). 손추정·directional.
@@ -165,6 +195,23 @@ def _adj(v, table) -> int:
 def _derive_rep(avg_selected: float) -> int:
     """선택한 업무들의 평균 압력 → 반복도(0~2) 추론. 고압력 업무 위주 = 반복많음."""
     return 2 if avg_selected >= 65 else 1 if avg_selected >= 45 else 0
+
+
+def _task_action(label: str, score: float) -> dict:
+    """과제 하나의 압력 점수 → 압력구간별 맞춤 행동 한 줄. 실제 점수 기반(가짜 아님), directional."""
+    if score >= 70:
+        tier = "high"
+        text = (f"AI is closing in on {label} fast — make it your first-pass tool and own "
+                f"the final review. Don't compete on speed here.")
+    elif score >= 45:
+        tier = "mid"
+        text = (f"{label} is half-automatable. Let AI do the routine half; keep the "
+                f"judgment half visibly yours.")
+    else:
+        tier = "low"
+        text = (f"{label} is your high ground — AI struggles here. Put more of your week "
+                f"into it and make it your signature.")
+    return {"task": label, "score": round(score), "tier": tier, "action": text}
 
 
 # 직군별 '이번 압력의 근거' 신호(+출처) — 모든 점수에 근거(원 컨셉). 큐레이션·directional, 가짜 금지.
@@ -299,6 +346,10 @@ def compute_result(job_id: str, tasks, feel: int, inst: int,
     top = max(sel, key=lambda s: s[1])[0]          # 본인이 고른 것 중 최고압력 = 가장 노출된 업무
     low = min(full, key=lambda s: s[1])[0]         # 직업 전체 최저압력 = 가장 안전한 레버
     move = MOVE_TMPL[branch_id].format(top=top, low=low)
+    # 이번 주 실행 플랜(3단계) — free_move를 구체 행동으로. {top}/{low} 개인화.
+    plan = [step.format(top=top, low=low) for step in PLAN_TMPL[branch_id]]
+    # 선택한 모든 과제에 압력구간별 맞춤 조언 — 화면이 top 1개만 보여주던 한계 해소.
+    task_actions = [_task_action(s[0], s[1]) for s in sel]
     # 상황별 다중 서비스(한 직업에 하나가 아님) — 내 업무/직업으로 개인화
     services = [{"t": s["t"], "d": s["d"].format(top=top, low=low, job=job["name"])}
                 for s in BRANCH_SERVICES[branch_id]]
@@ -318,6 +369,7 @@ def compute_result(job_id: str, tasks, feel: int, inst: int,
         "selected": [[s[0], s[1]] for s in sel],
         "tasks": full, "selected_idx": idx,
         "exp": exp, "ai": ai, "factors": factors, "services": services,
+        "plan": plan, "task_actions": task_actions,
         "evidence": get_evidence(job_id),
         "more_exposed_than": exposure_percentile(score),
     }

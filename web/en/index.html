@@ -279,6 +279,23 @@ var MOVE_TMPL={
  reskill:"You spend your week on {top}, which AI is coming for. List 3 adjacent roles that lean on {low}-style judgment instead.",
  independent:"People already trust your {low}. Package that as your first solo offer.",
  founder:"The {top} grind you repeat every week? That friction is a product — write it down."};
+// 이번 주 3단계 실행 플랜 — free_move를 구체 행동으로. 엔진 PLAN_TMPL과 동일(나중에 API로 일원화).
+var PLAN_TMPL={
+ defend:["Run {top} through an AI tool first, then edit. Note where its draft is wrong — that gap is your value.",
+  "Write the 2–3 judgment calls in {top} that still need a human. Keep them visible in your work.",
+  "Show one colleague your AI-assisted {top} flow. Being the one who directs the AI is the defensible role."],
+ pivot:["Track one week: how much of it goes to {top} vs {low}.",
+  "Hand one recurring {top} task to AI or a teammate; reinvest that time into {low}.",
+  "Ship one piece of work that's mostly {low}. That's your proof you've shifted."],
+ reskill:["List 3 roles that reuse your strength in {low} but lean less on {top}.",
+  "Pick the closest one and find the 2 skills you're missing for it.",
+  "Do one small project that uses {low}-style judgment toward that role."],
+ independent:["Write the one outcome people already trust you for around {low}.",
+  "Turn it into a one-line offer with a price.",
+  "Send it to 5 people who've needed that from you before."],
+ founder:["Describe the {top} workflow that wastes the most time in your field.",
+  "Sketch the smallest tool that would remove that friction.",
+  "Find 3 people with the same pain and show them the sketch."]};
 var FEEL=[["❤️","I love it","I'd stay in this field if I could",0],
  ["😐","It's fine","Pays the bills, no strong feelings",1],
  ["🚪","I want out","I've been thinking about leaving anyway",2]];
@@ -370,6 +387,8 @@ function renderResult(){
  var top=sel.slice().sort(function(a,b){return b[1]-a[1];})[0][0];
  var low=tasks.slice().sort(function(a,b){return a[1]-b[1];})[0][0];
  var move=MOVE_TMPL[bid].split('{top}').join(top).split('{low}').join(low);
+ var planSteps=PLAN_TMPL[bid].map(function(s){return s.split('{top}').join(top).split('{low}').join(low);});
+ var planhtml='';for(var pli=0;pli<planSteps.length;pli++){planhtml+='<div style="display:flex;gap:10px;align-items:flex-start;margin-top:'+(pli?'10px':'2px')+'"><div style="flex:none;width:22px;height:22px;border-radius:50%;background:#27272a;color:#fafafa;font-size:12px;font-weight:800;display:flex;align-items:center;justify-content:center">'+(pli+1)+'</div><div style="font-size:13px;color:#d4d4d8;line-height:1.5;text-align:left">'+planSteps[pli]+'</div></div>';}
  var svc=SERVICE_TMPL[bid].map(function(s){return [s[0],s[1].split('{top}').join(top).split('{low}').join(low).split('{job}').join(j.name)];});
  var svchtml='';for(var si=0;si<svc.length;si++){svchtml+='<div class="move" style="margin-top:10px"><div style="font-size:14px;font-weight:700">'+(si+1)+'. '+svc[si][0]+'</div><div style="font-size:12.5px;color:#a1a1aa;margin-top:4px;line-height:1.5">'+svc[si][1]+'</div></div>';}
  var ev=FAMSIG[famOf(st.job)]||FAMSIG.general;
@@ -424,7 +443,8 @@ function renderResult(){
  +'<div style="font-size:12.5px;color:#a1a1aa;line-height:1.6;margin-top:10px">Your score = the average AI pressure of the tasks <b>you picked</b>, adjusted for your experience and AI-tool use. Task pressures are <b>hand-estimated from public AI capability signals</b> (model launches, shipped features) — directional, and <b>not yet calibrated against labor data</b> (like O*NET). It\'s a reference indicator, not a prediction, and never a verdict on you. Most \"AI will replace you\" tools hide their method. We show ours.</div></details>'
  +'<div class="sec-t">Your path</div>'
  +'<div class="path"><h3>'+br.em+' '+br.name+'</h3><p>'+br.why+'</p>'
- +'<div class="move"><span class="ml">DO THIS WEEK · FREE</span><p>'+move+'</p></div></div>'
+ +'<div class="move"><span class="ml">DO THIS WEEK · FREE</span><p>'+move+'</p></div>'
+ +'<div class="move" style="margin-top:10px"><span class="ml">YOUR 3-STEP PLAN</span><div style="margin-top:8px">'+planhtml+'</div></div></div>'
  +'<div class="sec-t">What to do about each task</div>'+tact
  +'<div class="sec-t">Services for your situation</div>'
  +'<p style="font-size:12px;color:#8b8b94;margin:-6px 4px 6px">Not one-size — these 3 match your '+br.name.replace("The ","")+' path. The free move above is yours now; these are the pilot.</p>'

@@ -1644,6 +1644,25 @@ def test_wr_experience_aitool_adjust():
         pass
 
 
+def test_wr_task_actions_and_plan():
+    # 선택한 모든 과제에 압력구간별 맞춤 조언이 붙어야 (화면이 top 1개만 보여주던 한계 해소)
+    # junior-developer: [Boilerplate84, UnitTests78, SimpleFixes70, SystemDesign30, HardDebug26]
+    r = workradar.compute_result("junior-developer", [0, 3], 0, 0)   # 고압력1 + 저압력1
+    assert len(r["task_actions"]) == 2                                # 선택한 과제 전부 (top 1개 아님)
+    ta = {t["task"]: t for t in r["task_actions"]}
+    assert ta["Boilerplate / CRUD"]["tier"] == "high"                 # 84 → high
+    assert ta["System design"]["tier"] == "low"                       # 30 → low
+    assert all(t["action"] for t in r["task_actions"])               # 빈 조언 없음
+    # 압력 구간 경계 직접 검증
+    assert workradar._task_action("X", 70)["tier"] == "high"
+    assert workradar._task_action("X", 55)["tier"] == "mid"
+    assert workradar._task_action("X", 44)["tier"] == "low"
+    # 이번 주 플랜은 3단계 + 내 업무를 가리켜야 (개인화)
+    assert len(r["plan"]) == 3
+    assert any("Boilerplate" in s for s in r["plan"])                 # pivot 플랜이 {top}=Boilerplate 가리킴
+    assert all(s for s in r["plan"])
+
+
 def test_wr_valid_email():
     assert workradar.valid_email("a@b.co")
     for bad in ["", "x", "a@b", "a b@c.com", "a@@b.com", "a@b."]:
