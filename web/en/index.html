@@ -228,6 +228,23 @@ var SERVICE_TMPL={
  reskill:[["Adjacent-role shortlist","3 roles that reuse your {job} skills but face less AI pressure."],["Skills-gap map","What you already have vs what each target role needs."],["Transition timeline","A realistic month-by-month path to the switch."]],
  independent:[["Productized offer","Your {low} packaged into a sellable service + pricing."],["First-5-clients map","Where your first paying clients actually are."],["Solo launch kit","Landing copy + outreach to start this month."]],
  founder:[["Pain to product brief","The {top} friction in {job} turned into a product hypothesis."],["30-day MVP scope","The smallest version you could sell within a month."],["First-users plan","Who to talk to and what to ship first."]]};
+/* 직군별 근거 신호(+출처) — 모든 점수에 근거. 백엔드 FAMILY_SIGNALS와 동일 */
+var FAMSIG={
+ tech:["Coding agents handle more multi-file work","Routine code automates; design & debugging judgment stay yours.","https://www.anthropic.com/claude-code"],
+ creative:["Generative image/video tools ship production assets","Production work automates; art direction & live craft stay yours.","https://www.adobe.com/products/firefly.html"],
+ writing:["LLMs flood first-draft & SEO content","Drafting automates; original voice & reporting stay yours.","https://www.anthropic.com/claude"],
+ marketing:["AI writes ad copy & runs campaigns","Copy/variants automate; strategy & relationships stay human.","https://www.anthropic.com/claude"],
+ business:["AI drafts reports, specs & meeting notes","Documentation automates; stakeholder judgment stays human.","https://www.anthropic.com/claude"],
+ finance:["AI automates entry, reconciliation & modeling","Number-crunching automates; advisory & risk judgment stay human.","https://www.anthropic.com/claude"],
+ legal:["Legal AI speeds doc review & drafting","Review/drafting automate; counsel & advocacy stay human.","https://www.anthropic.com/claude"],
+ support:["AI agents resolve more tier-1 tickets","Scripted replies automate; de-escalation & retention stay human.","https://www.anthropic.com/claude"],
+ healthcare:["AI assists notes, coding & first-pass reads","Documentation automates; hands-on care & diagnosis judgment stay human.","https://www.anthropic.com/claude"],
+ education:["AI generates lessons & grades drafts","Prep/grading automate; presence & mentoring stay human.","https://www.anthropic.com/claude"],
+ trades:["AI handles quotes & scheduling, not the hands-on work","Paperwork automates; physical skill & on-site judgment stay yours.","https://www.anthropic.com/claude"],
+ general:["AI is expanding into the routine parts of this role","Repetitive parts automate; your human-judgment tasks are the hedge.","https://www.anthropic.com/claude"]};
+var FAMKW=[["tech",["developer","engineer","data-analyst","data-scientist","ml-","qa-","sysadmin","security","devops"]],["creative",["designer","illustrator","animator","editor","photographer","art-","3d-","game-","motion","interior","fashion","voice-actor","musician"]],["writing",["writer","journalist","translator","screenwriter","proofreader","seo-","podcaster","content"]],["marketing",["marketer","marketing","pr-","brand","social-media","email-marketer","market-researcher"]],["finance",["account","bookkeeper","financial","auditor","tax-","investment","actuary","loan-","payroll","insurance"]],["legal",["paralegal","lawyer","legal","contract","compliance"]],["support",["support","customer","call-center","receptionist","virtual-assistant","community"]],["healthcare",["nurse","doctor","pharmacist","medical","radiologist","therapist","dental","dietitian","social-worker"]],["education",["teacher","professor","tutor","instructional","counselor","librarian"]],["business",["manager","analyst","consultant","assistant","admin","scrum","recruiter","sales","account-exec","real-estate","travel-agent","event-planner","urban-planner","architect"]],["trades",["electrician","plumber","mechanic","chef","hairstylist","trainer","truck-driver","flight-attendant","construction","carpenter"]]];
+function famOf(id){for(var i=0;i<FAMKW.length;i++)for(var j=0;j<FAMKW[i][1].length;j++)if(id.indexOf(FAMKW[i][1][j])>=0)return FAMKW[i][0];return 'general';}
+function pctExposed(score){var b=[],k;for(k in JOBS)b.push(JOBS[k].base);if(!b.length)return 50;var c=0;for(var i=0;i<b.length;i++)if(b[i]<score)c++;return Math.round(100*c/b.length);}
 var BRANCHES={
  defend:{em:"🛡️",name:"The Defender",line:"You stay — and out-level the AI in your own role.",
    why:"Your tasks face pressure, but your field still rewards human judgment. The move isn't to run — it's to become the person who directs the AI instead of competing with it.",
@@ -344,6 +361,8 @@ function renderResult(){
  var move=MOVE_TMPL[bid].split('{top}').join(top).split('{low}').join(low);
  var svc=SERVICE_TMPL[bid].map(function(s){return [s[0],s[1].split('{top}').join(top).split('{low}').join(low).split('{job}').join(j.name)];});
  var svchtml='';for(var si=0;si<svc.length;si++){svchtml+='<div class="move" style="margin-top:10px"><div style="font-size:14px;font-weight:700">'+(si+1)+'. '+svc[si][0]+'</div><div style="font-size:12.5px;color:#a1a1aa;margin-top:4px;line-height:1.5">'+svc[si][1]+'</div></div>';}
+ var ev=FAMSIG[famOf(st.job)]||FAMSIG.general;
+ var pct=pctExposed(score);
  var fac=[['Your tasks',Math.round(taskAvg()),true]];
  if(st.exp!==null&&EXP_ADJ[st.exp])fac.push([EXP[st.exp][1],EXP_ADJ[st.exp],false]);
  if(st.ai!==null&&AI_ADJ[st.ai])fac.push([AITOOL[st.ai][1],AI_ADJ[st.ai],false]);
@@ -368,8 +387,18 @@ function renderResult(){
  +'<text id="num" x="100" y="86" font-size="40" font-weight="800" text-anchor="middle" fill="#fff">0</text>'
  +'<text x="100" y="104" font-size="11" text-anchor="middle" fill="'+bd[1]+'">'+bd[0]+'</text></svg>'
  +'</div>'
+ +'<div style="background:linear-gradient(145deg,rgba(225,29,72,.1),rgba(245,158,11,.05));border:1px solid rgba(225,29,72,.25);border-radius:14px;padding:14px 16px;text-align:center;margin-bottom:4px">'
+ +'<div style="font-size:13px;color:#a1a1aa">Your job is more AI-exposed than</div>'
+ +'<div style="font-size:30px;font-weight:800;color:'+bd[1]+';letter-spacing:-.5px">'+pct+'%</div>'
+ +'<div style="font-size:12px;color:#8b8b94">of the 100+ jobs we track</div></div>'
  +'<div class="sec-t">Why this score</div>'
  +'<div style="background:#18181b;border:1px solid #27272a;border-radius:14px;padding:14px 16px">'+fhtml+'</div>'
+ +'<div class="sec-t">What\'s driving this</div>'
+ +'<a href="'+ev[2]+'" target="_blank" rel="noopener" style="display:block;background:#18181b;border:1px solid #27272a;border-radius:14px;padding:14px 16px;text-decoration:none">'
+ +'<div style="font-size:11px;font-weight:700;color:#a78bfa;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Signal · curated</div>'
+ +'<div style="font-size:14.5px;font-weight:700;color:#fafafa">'+ev[0]+'</div>'
+ +'<div style="font-size:12.5px;color:#a1a1aa;margin-top:4px;line-height:1.5">'+ev[1]+'</div>'
+ +'<div style="font-size:12px;color:#60a5fa;margin-top:6px">source &#8599;</div></a>'
  +'<div class="sec-t">Your path</div>'
  +'<div class="path"><h3>'+br.em+' '+br.name+'</h3><p>'+br.why+'</p>'
  +'<div class="move"><span class="ml">DO THIS WEEK · FREE</span><p>'+move+'</p></div></div>'
@@ -396,7 +425,7 @@ function renderResult(){
  +'<p class="foot">※ WorkRadar is a <b>directional reference indicator</b> from public AI news using a fixed method — not a prediction, not a verdict on any person or company. <b>Preview:</b> figures illustrate the method; the full product scores your exact tasks live with linked sources.</p>';
  var r=document.getElementById('s-result');r.innerHTML=html;show('s-result');
  if(API_BASE){try{fetch(API_BASE+'/api/quiz',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({job:st.job,tasks:st.tasks,exp:st.exp,ai:st.ai,feel:st.feel,inst:st.inst})}).catch(function(){});}catch(e){}}
- window._share={t:"[The "+br.name.replace("The ","")+" "+br.em+"] "+br.line+"\nI'm a "+j.name+", AI pressure "+score+" ("+bd[0]+"). What's your AI Risk Type?"};
+ window._share={t:"[The "+br.name.replace("The ","")+" "+br.em+"] "+br.line+"\nI'm a "+j.name+" — AI pressure "+score+" ("+bd[0]+"), more exposed than "+pct+"% of jobs. What's your AI Risk Type?"};
  // animate
  setTimeout(function(){
    document.querySelectorAll('.tbar').forEach(function(b){b.style.width=b.getAttribute('data-w')+'%';});

@@ -167,6 +167,51 @@ def _derive_rep(avg_selected: float) -> int:
     return 2 if avg_selected >= 65 else 1 if avg_selected >= 45 else 0
 
 
+# 직군별 '이번 압력의 근거' 신호(+출처) — 모든 점수에 근거(원 컨셉). 큐레이션·directional, 가짜 금지.
+FAMILY_SIGNALS: dict[str, dict] = {
+    "tech": {"head": "Coding agents handle more multi-file work", "why": "Routine code automates; system design & debugging judgment stay yours.", "url": "https://www.anthropic.com/claude-code"},
+    "creative": {"head": "Generative image/video tools ship production assets", "why": "Production work automates; art direction & live craft stay yours.", "url": "https://www.adobe.com/products/firefly.html"},
+    "writing": {"head": "LLMs flood first-draft & SEO content", "why": "Drafting automates; original voice & reporting stay yours.", "url": "https://www.anthropic.com/claude"},
+    "marketing": {"head": "AI writes ad copy & runs campaigns", "why": "Copy/variants automate; strategy & relationships stay human.", "url": "https://www.anthropic.com/claude"},
+    "business": {"head": "AI drafts reports, specs & meeting notes", "why": "Documentation automates; stakeholder judgment stays human.", "url": "https://www.anthropic.com/claude"},
+    "finance": {"head": "AI automates entry, reconciliation & modeling", "why": "Number-crunching automates; advisory & risk judgment stay human.", "url": "https://www.anthropic.com/claude"},
+    "legal": {"head": "Legal AI speeds doc review & drafting", "why": "Review/drafting automate; counsel & advocacy stay human.", "url": "https://www.anthropic.com/claude"},
+    "support": {"head": "AI agents resolve more tier-1 tickets", "why": "Scripted replies automate; de-escalation & retention stay human.", "url": "https://www.anthropic.com/claude"},
+    "healthcare": {"head": "AI assists notes, coding & first-pass reads", "why": "Documentation automates; hands-on care & diagnosis judgment stay human.", "url": "https://www.anthropic.com/claude"},
+    "education": {"head": "AI generates lessons & grades drafts", "why": "Prep/grading automate; presence & mentoring stay human.", "url": "https://www.anthropic.com/claude"},
+    "trades": {"head": "AI handles quotes & scheduling, not the hands-on work", "why": "Paperwork automates; physical skill & on-site judgment stay yours.", "url": "https://www.anthropic.com/claude"},
+    "general": {"head": "AI is expanding into the routine parts of this role", "why": "Repetitive parts automate; your human-judgment tasks are the hedge.", "url": "https://www.anthropic.com/claude"},
+}
+_FAMILY_KEYWORDS = [
+    ("tech", ("developer", "engineer", "data-analyst", "data-scientist", "ml-", "qa-", "sysadmin", "security", "devops")),
+    ("creative", ("designer", "illustrator", "animator", "editor", "photographer", "art-", "3d-", "game-", "motion", "interior", "fashion", "voice-actor", "musician")),
+    ("writing", ("writer", "journalist", "translator", "screenwriter", "proofreader", "seo-", "podcaster", "content")),
+    ("marketing", ("marketer", "marketing", "pr-", "brand", "social-media", "email-marketer", "market-researcher")),
+    ("finance", ("account", "bookkeeper", "financial", "auditor", "tax-", "investment", "actuary", "loan-", "payroll", "insurance")),
+    ("legal", ("paralegal", "lawyer", "legal", "contract", "compliance")),
+    ("support", ("support", "customer", "call-center", "receptionist", "virtual-assistant", "community")),
+    ("healthcare", ("nurse", "doctor", "pharmacist", "medical", "radiologist", "therapist", "dental", "dietitian", "social-worker")),
+    ("education", ("teacher", "professor", "tutor", "instructional", "counselor", "librarian")),
+    ("business", ("manager", "analyst", "consultant", "assistant", "admin", "scrum", "recruiter", "sales", "account-exec", "real-estate", "travel-agent", "event-planner", "urban-planner", "architect")),
+    ("trades", ("electrician", "plumber", "mechanic", "chef", "hairstylist", "trainer", "truck-driver", "flight-attendant", "construction", "carpenter")),
+]
+
+
+def job_family(job_id: str) -> str:
+    for fam, kws in _FAMILY_KEYWORDS:
+        if any(k in job_id for k in kws):
+            return fam
+    return "general"
+
+
+def exposure_percentile(score: float) -> int:
+    """이 점수가 추적 직업들의 몇 %보다 노출(압력)이 높은지. 우리 데이터셋 기준(directional)."""
+    bases = [j["base"] for j in JOBS.values()]
+    if not bases:
+        return 50
+    return round(100 * sum(1 for b in bases if b < score) / len(bases))
+
+
 def decide_branch(rep: int, feel: int, inst: int) -> str:
     """답변 3개 → 5갈래 결정 (프론트 decideBranch와 동일)."""
     if feel <= 1:
@@ -242,6 +287,8 @@ def compute_result(job_id: str, tasks, feel: int, inst: int,
         "selected": [[s[0], s[1]] for s in sel],
         "tasks": full, "selected_idx": idx,
         "exp": exp, "ai": ai, "factors": factors, "services": services,
+        "evidence": FAMILY_SIGNALS.get(job_family(job_id), FAMILY_SIGNALS["general"]),
+        "more_exposed_than": exposure_percentile(score),
     }
 
 

@@ -1682,6 +1682,18 @@ def test_wr_jobs_from_json_complete():
     assert "jobs.json" in idx and "loadJobs" in idx
 
 
+def test_wr_evidence_and_percentile():
+    r = workradar.compute_result("junior-developer", [0, 1], 0, 0)
+    assert r["evidence"]["head"] and r["evidence"]["url"]          # 모든 점수에 근거
+    assert workradar.job_family("nurse") == "healthcare"
+    assert workradar.job_family("electrician") == "trades"
+    assert workradar.job_family("copywriter") == "writing"
+    # 백분위: 높은 압력일수록 더 많은 직업보다 노출
+    hi = workradar.compute_result("copywriter", [0, 1], 0, 0)["more_exposed_than"]
+    lo = workradar.compute_result("electrician", [3, 4], 0, 0)["more_exposed_than"]
+    assert 0 <= lo < hi <= 100
+
+
 def test_wr_services_personalized_by_branch():
     # 분기(상황)마다 서비스가 달라야 한다
     base = workradar.compute_result("copywriter", [0, 1], 0, 0)          # defend류
