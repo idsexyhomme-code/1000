@@ -180,20 +180,22 @@ FAMILY_SIGNALS: dict[str, dict] = {
     "healthcare": {"head": "AI assists notes, coding & first-pass reads", "why": "Documentation automates; hands-on care & diagnosis judgment stay human.", "url": "https://www.anthropic.com/claude"},
     "education": {"head": "AI generates lessons & grades drafts", "why": "Prep/grading automate; presence & mentoring stay human.", "url": "https://www.anthropic.com/claude"},
     "trades": {"head": "AI handles quotes & scheduling, not the hands-on work", "why": "Paperwork automates; physical skill & on-site judgment stay yours.", "url": "https://www.anthropic.com/claude"},
+    "science": {"head": "AI accelerates analysis, simulation & lit review", "why": "Modeling & data work speed up; experimental design & field judgment stay human.", "url": "https://www.anthropic.com/claude"},
     "general": {"head": "AI is expanding into the routine parts of this role", "why": "Repetitive parts automate; your human-judgment tasks are the hedge.", "url": "https://www.anthropic.com/claude"},
 }
 _FAMILY_KEYWORDS = [
-    ("tech", ("developer", "engineer", "data-analyst", "data-scientist", "ml-", "qa-", "sysadmin", "security", "devops")),
-    ("creative", ("designer", "illustrator", "animator", "editor", "photographer", "art-", "3d-", "game-", "motion", "interior", "fashion", "voice-actor", "musician")),
-    ("writing", ("writer", "journalist", "translator", "screenwriter", "proofreader", "seo-", "podcaster", "content")),
-    ("marketing", ("marketer", "marketing", "pr-", "brand", "social-media", "email-marketer", "market-researcher")),
-    ("finance", ("account", "bookkeeper", "financial", "auditor", "tax-", "investment", "actuary", "loan-", "payroll", "insurance")),
-    ("legal", ("paralegal", "lawyer", "legal", "contract", "compliance")),
-    ("support", ("support", "customer", "call-center", "receptionist", "virtual-assistant", "community")),
-    ("healthcare", ("nurse", "doctor", "pharmacist", "medical", "radiologist", "therapist", "dental", "dietitian", "social-worker")),
-    ("education", ("teacher", "professor", "tutor", "instructional", "counselor", "librarian")),
-    ("business", ("manager", "analyst", "consultant", "assistant", "admin", "scrum", "recruiter", "sales", "account-exec", "real-estate", "travel-agent", "event-planner", "urban-planner", "architect")),
-    ("trades", ("electrician", "plumber", "mechanic", "chef", "hairstylist", "trainer", "truck-driver", "flight-attendant", "construction", "carpenter")),
+    ("science", ("biologist", "chemist", "physicist", "statistician", "economist", "scientist", "geologist", "meteorolog","lab-tech")),
+    ("healthcare", ("nurse", "doctor", "pharmacist", "medical", "radiologist", "therapist", "dental", "dietitian", "social-worker", "veterinar", "surgeon", "psychiatr", "psycholog", "phlebot", "paramedic", "optometr", "midwife")),
+    ("trades", ("electrician", "plumber", "mechanic", "chef", "hairstylist", "trainer", "truck-driver", "flight-attendant", "construction", "carpenter", "welder", "hvac", "painter", "landscaper", "baker", "tailor", "butcher", "security-guard", "firefighter", "police", "warehouse", "delivery", "roofer", "mason", "locksmith", "janitor", "farmer", "barista", "bartender", "waiter", "pilot", "air-traffic", "flight-instructor")),
+    ("tech", ("developer", "engineer", "data-analyst", "data-scientist", "data-engineer", "ml-", "qa-", "sysadmin", "security", "devops", "sre", "prompt-engineer", "blockchain", "it-support", "cloud-", "database-admin", "network-engineer", "technical-support")),
+    ("creative", ("designer", "illustrator", "animator", "editor", "photographer", "art-", "3d-", "game-", "motion", "interior", "fashion", "voice-actor", "musician", "concept-artist", "storyboard", "colorist", "sound-designer", "music-producer", "songwriter", "film-director", "cinematographer", "makeup", "tattoo", "comic", "dj", "set-designer", "logo")),
+    ("writing", ("writer", "journalist", "translator", "screenwriter", "proofreader", "seo-", "podcaster", "content", "ghostwriter", "grant-writer", "columnist", "fact-checker", "transcriptionist", "news-anchor", "novelist", "interpreter")),
+    ("marketing", ("marketer", "marketing", "pr-", "brand", "social-media", "email-marketer", "market-researcher", "influencer")),
+    ("finance", ("account", "bookkeeper", "financial", "auditor", "tax-", "investment", "actuary", "loan-", "payroll", "insurance", "credit-analyst", "underwriter", "claims", "billing", "treasury", "quant", "mortgage", "stockbroker", "budget-analyst")),
+    ("legal", ("paralegal", "lawyer", "legal", "contract", "compliance", "court-reporter", "mediator", "patent", "title-examiner", "notary")),
+    ("support", ("support", "customer", "call-center", "receptionist", "virtual-assistant", "community", "concierge", "bank-teller", "dispatcher")),
+    ("education", ("teacher", "professor", "tutor", "instructional", "counselor", "librarian", "teaching-assistant", "curriculum", "academic-advisor", "esl-")),
+    ("business", ("manager", "analyst", "consultant", "assistant", "admin", "scrum", "recruiter", "sales", "account-exec", "real-estate", "travel-agent", "event-planner", "urban-planner", "architect", "logistics", "procurement", "data-entry", "chief-of-staff", "business-development", "partnerships")),
 ]
 
 
