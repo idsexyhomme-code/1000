@@ -48,6 +48,7 @@ body{background:#000;color:#fafafa;font-family:-apple-system,BlinkMacSystemFont,
   <h2 id="ovT">Today's score</h2>
   <div class="sc" id="ovS">0/10</div>
   <div class="grid" id="ovG"></div>
+  <div id="strk" style="font-size:15px;font-weight:800;color:#fbbf24;margin-bottom:14px"></div>
   <button class="share" onclick="shareDaily()">📲 Share my score</button>
   <a class="again" href="game.html">🎮 Play endless mode</a>
   <a class="again" href="index.html">🎯 Find YOUR AI Risk Type</a>
@@ -76,11 +77,17 @@ function guess(dir){if(lock)return;lock=true;var p=pairs[idx],q=document.getElem
   q.style.color=correct?'#34d399':'#fb7185';results.push(correct);pdraw();setTimeout(function(){idx++;show();},650);}
 }
 function gridStr(){return results.map(function(x){return x?'🟩':'🟥';}).join('');}
+function updateStreak(){var t=today();var s;try{s=JSON.parse(localStorage.getItem('wr_streak')||'{"c":0,"d":""}');}catch(e){s={c:0,d:""};}
+ if(s.d===t)return s.c;                                  // 오늘 이미 카운트됨
+ var y=new Date(Date.now()-86400000).toISOString().slice(0,10);
+ s.c=(s.d===y)?(s.c+1):1; s.d=t; localStorage.setItem('wr_streak',JSON.stringify(s));return s.c;}
 function finish(){var sc=results.filter(Boolean).length;
  localStorage.setItem('wr_daily_'+today(),JSON.stringify(results));
  document.getElementById('ovS').textContent=sc+'/'+N;
  document.getElementById('ovT').textContent=sc>=9?'Genius 🧠':sc>=7?'Sharp 🎯':sc>=5?'Decent 🔥':'Tomorrow’s another day';
  document.getElementById('ovG').textContent=gridStr();
+ var stk=updateStreak();
+ document.getElementById('strk').textContent=stk>1?('🔥 '+stk+'-day streak — come back tomorrow to keep it!'):'🔥 Day 1 — come back tomorrow to start a streak!';
  var ms=new Date(today()+'T24:00:00Z')-new Date();var hh=Math.max(0,Math.floor(ms/3600000)),mm=Math.floor(ms%3600000/60000);
  document.getElementById('tmr').textContent='Next challenge in '+hh+'h '+mm+'m';
  document.getElementById('over').classList.add('show');
