@@ -380,6 +380,10 @@ function renderResult(){
  for(var pi=0;pi<border5.length;pi++){var pb=BRANCHES[border5[pi]];var pm=MOVE_TMPL[border5[pi]].split('{top}').join(top).split('{low}').join(low);
   paths5+='<div class="move" style="margin-top:8px"><div style="font-size:13.5px;font-weight:700">'+pb.em+' '+pb.name+'</div><div style="font-size:12px;color:#a1a1aa;margin-top:3px;line-height:1.5">'+pm+'</div></div>';}
  window._ref={code:myRef,paths:paths5};
+ var tact='';for(var ti=0;ti<sel.length;ti++){var tv=sel[ti][1];
+  var act=tv>70?"AI is closing in fast here — make it your first-pass tool, and you own the final review.":tv>45?"Half-automatable — hand off the rote part, keep the judgment calls for yourself.":"This is your moat — spend MORE of your week here; it's the hardest to automate.";
+  var tc=tv>70?'#fb7185':tv>45?'#f59e0b':'#34d399';
+  tact+='<div style="background:#18181b;border:1px solid #27272a;border-radius:12px;padding:12px 14px;margin-top:9px;text-align:left"><div style="font-size:13.5px;font-weight:700">'+sel[ti][0]+' <span style="color:'+tc+'">· '+tv+'</span></div><div style="font-size:12.5px;color:#a1a1aa;margin-top:3px;line-height:1.5">'+act+'</div></div>';}
  var fac=[['Your tasks',Math.round(taskAvg()),true]];
  if(st.exp!==null&&EXP_ADJ[st.exp])fac.push([EXP[st.exp][1],EXP_ADJ[st.exp],false]);
  if(st.ai!==null&&AI_ADJ[st.ai])fac.push([AITOOL[st.ai][1],AI_ADJ[st.ai],false]);
@@ -419,6 +423,7 @@ function renderResult(){
  +'<div class="sec-t">Your path</div>'
  +'<div class="path"><h3>'+br.em+' '+br.name+'</h3><p>'+br.why+'</p>'
  +'<div class="move"><span class="ml">DO THIS WEEK · FREE</span><p>'+move+'</p></div></div>'
+ +'<div class="sec-t">What to do about each task</div>'+tact
  +'<div class="sec-t">Services for your situation</div>'
  +'<p style="font-size:12px;color:#8b8b94;margin:-6px 4px 6px">Not one-size — these 3 match your '+br.name.replace("The ","")+' path. The free move above is yours now; these are the pilot.</p>'
  +svchtml
