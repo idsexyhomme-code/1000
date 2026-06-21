@@ -1,0 +1,157 @@
+<!doctype html><html lang="ko"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta property="og:type" content="website"><meta property="og:site_name" content="커리어 시그널">
+<meta property="og:title" content="영상편집자 업무 고통 제거 파일럿">
+<meta property="og:description" content="타임코드별 수정 체크리스트 + 클라이언트 회신문">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='88'%3E%F0%9F%93%A1%3C/text%3E%3C/svg%3E"><title>업무 고통 제거 파일럿 · 영상편집자</title>
+<style>
+:root{--bg-base:#09090b;--bg-surface:#18181b;--bg-elevate:#27272a;--border-color:#3f3f46;
+--text-primary:#fafafa;--text-secondary:#a1a1aa;--text-tertiary:#8b8b94;
+--color-clear:#3b82f6;--color-pcloudy:#8b5cf6;--color-cloudy:#f59e0b;--color-typhoon:#e11d48;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+body{background:#000;color:var(--text-primary);font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,system-ui,Roboto,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;display:flex;justify-content:center;line-height:1.5;}
+.app-container{width:100%;max-width:460px;background:var(--bg-base);min-height:100vh;padding:24px 20px 48px;}
+.hero-card{background:linear-gradient(145deg,#18181b,#131316);border:1px solid var(--bg-elevate);border-radius:24px;padding:32px 20px 24px;text-align:center;margin-bottom:24px;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 8px 24px rgba(0,0,0,.4);}
+.hero-emoji{font-size:48px;margin-bottom:16px;line-height:1;}
+.hero-title{font-size:24px;font-weight:700;margin-bottom:8px;letter-spacing:-.5px;}
+.hero-subtitle{font-size:15px;color:var(--text-secondary);margin-bottom:32px;letter-spacing:-.3px;word-break:keep-all;}
+.gauge-wrapper{position:relative;width:100%;max-width:280px;margin:0 auto;}
+.gauge-svg{width:100%;height:auto;overflow:visible;}
+.insight-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:32px;}
+.insight-card{background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:16px;padding:16px;}
+.insight-header{display:flex;align-items:center;font-size:13px;font-weight:600;margin-bottom:8px;}
+.insight-header.threat{color:#fca5a5;}
+.insight-header.opp{color:#6ee7b7;}
+.insight-icon{margin-right:6px;font-size:14px;}
+.insight-desc{font-size:14px;color:var(--text-primary);line-height:1.4;word-break:keep-all;letter-spacing:-.3px;}
+.section-title{font-size:18px;font-weight:700;margin-bottom:16px;letter-spacing:-.4px;}
+.task-section,.news-section,.pain-section{margin-bottom:36px;}
+.task-item{display:flex;align-items:center;margin-bottom:14px;}
+.task-label{width:64px;font-size:14px;color:var(--text-secondary);letter-spacing:-.3px;}
+.task-track{flex:1;height:8px;background:var(--bg-elevate);border-radius:4px;margin:0 12px;position:relative;overflow:hidden;}
+.task-bar{position:absolute;top:0;left:0;bottom:0;border-radius:4px;}
+.task-value{width:24px;text-align:right;font-size:14px;font-weight:600;}
+.pain-note{font-size:12.5px;color:var(--text-secondary);margin:-4px 0 14px;line-height:1.55;word-break:keep-all;}
+.pain-card{background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:14px;padding:16px;margin-bottom:12px;}
+.pain-top{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px;}
+.pain-label{font-size:11px;font-weight:700;color:#34d399;background:rgba(52,211,153,.12);border-radius:6px;padding:3px 7px;white-space:nowrap;}
+.pain-task{font-size:11.5px;color:var(--text-tertiary);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pain-title{font-size:15px;font-weight:700;color:var(--text-primary);letter-spacing:-.3px;line-height:1.45;margin-bottom:7px;word-break:keep-all;}
+.pain-moment{font-size:13px;color:var(--text-secondary);line-height:1.55;letter-spacing:-.2px;word-break:keep-all;margin-bottom:10px;}
+.pain-artifact{font-size:13px;color:var(--text-primary);line-height:1.55;background:var(--bg-elevate);border-radius:10px;padding:10px 12px;word-break:keep-all;}
+.pain-artifact b{color:#fcd34d;}
+.pain-link{display:block;margin-top:10px;color:#d4d4d8;background:rgba(255,255,255,.04);border:1px solid var(--bg-elevate);border-radius:10px;padding:10px 12px;text-align:center;text-decoration:none;font-size:13px;font-weight:700;letter-spacing:-.2px;}
+.news-card{background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:14px;padding:16px;margin-bottom:12px;text-decoration:none;display:block;}
+.news-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.news-badge{padding:4px 8px;border-radius:6px;font-size:11px;font-weight:600;letter-spacing:-.2px;}
+.badge-official{background:rgba(59,130,246,.15);color:#60a5fa;}
+.badge-vendor{background:rgba(139,92,246,.15);color:#a78bfa;}
+.news-link-text{font-size:12px;color:var(--text-tertiary);}
+.news-title{font-size:15px;font-weight:600;color:var(--text-primary);margin-bottom:6px;letter-spacing:-.3px;line-height:1.4;}
+.news-reason{font-size:13px;color:var(--text-secondary);letter-spacing:-.2px;}
+.cta-card{background:linear-gradient(145deg,rgba(245,158,11,.08),rgba(225,29,72,.03));border:1px solid rgba(245,158,11,.2);border-radius:20px;padding:28px 20px;text-align:center;margin-bottom:36px;}
+.cta-icon{font-size:28px;margin-bottom:12px;}
+.cta-title{font-size:16px;font-weight:700;margin-bottom:8px;letter-spacing:-.3px;}
+.cta-text{font-size:15px;font-weight:500;color:var(--text-secondary);line-height:1.5;margin-bottom:20px;word-break:keep-all;letter-spacing:-.3px;}
+.cta-highlight{color:#fcd34d;}
+.cta-btn{display:inline-block;background:var(--text-primary);color:var(--bg-base);padding:14px 28px;border-radius:30px;font-size:15px;font-weight:700;text-decoration:none;letter-spacing:-.3px;}
+.share-btn{width:100%;background:var(--bg-elevate);color:var(--text-primary);border:1px solid var(--border-color);padding:16px;border-radius:16px;font-size:16px;font-weight:600;margin-bottom:24px;cursor:pointer;letter-spacing:-.3px;}
+.footer-text{font-size:12px;color:var(--text-tertiary);line-height:1.6;text-align:justify;word-break:keep-all;letter-spacing:-.2px;}
+.legal-links{text-align:center;font-size:12px;color:var(--text-tertiary);margin:16px 0 0;line-height:1.6;}
+.legal-links a{color:var(--text-secondary);text-decoration:none;margin:0 5px;}
+.ap-section{margin-bottom:32px;}
+.ap-item{background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:14px;padding:14px 16px;margin-bottom:10px;}
+.ap-h{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;letter-spacing:-.3px;line-height:1.4;}
+.ap-tag{font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;flex-shrink:0;}
+.tag-defend{background:rgba(245,158,11,.15);color:#fbbf24;}
+.tag-pivot{background:rgba(59,130,246,.15);color:#60a5fa;}
+.ap-step{font-size:13px;color:var(--text-secondary);margin-top:8px;line-height:1.5;word-break:keep-all;}
+.ap-meta{font-size:12px;color:var(--text-tertiary);margin-top:6px;}
+.ap-sub{font-size:12.5px;color:var(--text-secondary);margin:-2px 2px 14px;line-height:1.55;word-break:keep-all;}
+.ap-free{font-size:10.5px;font-weight:700;color:#34d399;background:rgba(52,211,153,.12);padding:2px 7px;border-radius:6px;margin-left:auto;flex-shrink:0;}
+.ap-lock{font-size:12.5px;color:var(--text-secondary);margin-top:10px;line-height:1.55;word-break:keep-all;display:flex;gap:7px;align-items:flex-start;background:var(--bg-elevate);border-radius:10px;padding:10px 12px;}
+
+.of-price{display:flex;align-items:baseline;gap:9px;justify-content:center;margin:8px 0 2px;}
+.of-now{font-size:30px;font-weight:800;letter-spacing:-1px;}
+.of-unit{font-size:13px;color:var(--text-secondary);}
+.of-list{list-style:none;padding:0;margin:16px 0 6px;}
+.of-list li{display:flex;gap:11px;padding:12px 0;border-bottom:1px solid var(--bg-elevate);font-size:14px;line-height:1.45;word-break:keep-all;}
+.of-list li:last-child{border-bottom:0;}
+.of-ic{flex-shrink:0;}
+.of-soon{color:var(--text-tertiary);}
+.of-input{width:100%;box-sizing:border-box;background:var(--bg-elevate);border:1px solid transparent;border-radius:12px;
+padding:14px;font-size:15px;color:var(--text-primary);margin-bottom:10px;-webkit-appearance:none;}
+.of-input:focus{outline:none;border-color:#6366f1;}
+.of-submit{width:100%;background:#fafafa;color:#09090b;border:0;border-radius:14px;padding:15px;font-size:15px;font-weight:700;cursor:pointer;text-decoration:none;display:block;text-align:center;box-sizing:border-box;}
+.of-ok{display:none;text-align:center;padding:20px;background:rgba(99,102,241,.1);border-radius:14px;font-size:14px;line-height:1.55;}
+.of-note{font-size:12px;color:var(--text-tertiary);margin-top:14px;line-height:1.6;}
+.of-back{display:block;text-align:center;color:var(--text-secondary);font-size:14px;margin:4px 0 16px;text-decoration:none;}
+.of-kicker{font-size:12px;font-weight:700;color:var(--text-tertiary);letter-spacing:.4px;margin:18px 2px 2px;text-transform:uppercase;}
+.of-steps{list-style:none;counter-reset:s;padding:0;margin:8px 0 4px;}
+.of-steps li{counter-increment:s;display:flex;gap:11px;padding:8px 0;font-size:13.5px;line-height:1.5;color:var(--text-secondary);word-break:keep-all;}
+.of-steps li::before{content:counter(s);flex-shrink:0;width:22px;height:22px;border-radius:50%;background:var(--bg-elevate);color:var(--text-primary);font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+.of-human{font-size:12.5px;color:var(--text-secondary);background:var(--bg-elevate);border-radius:12px;padding:12px 13px;margin:14px 0 4px;line-height:1.55;word-break:keep-all;}
+.of-cap{font-size:13px;color:var(--text-primary);font-weight:600;text-align:center;margin:16px 0 12px;line-height:1.5;}
+.of-depth{background:rgba(255,255,255,.035);border:1px solid var(--bg-elevate);border-radius:12px;padding:12px 13px;margin:14px 0 4px;text-align:left;}
+.of-depth-title{font-size:12px;font-weight:800;color:#fcd34d;margin-bottom:8px;}
+.of-depth-row{font-size:12.5px;color:var(--text-secondary);line-height:1.55;margin-top:7px;word-break:keep-all;}
+.of-depth-row b{color:var(--text-primary);}
+.of-micro-list{margin:7px 0 0 18px;color:var(--text-secondary);font-size:12.5px;line-height:1.55;word-break:keep-all;}
+</style></head><body><div class="app-container">
+  <a class="of-back" href="/pain?job=video-editor&pain=revision-chaos">← 가려움 선택으로</a>
+  <div class="hero-card"><div class="hero-emoji">🧰</div>
+    <h1 class="hero-title">업무 고통 제거 파일럿</h1>
+    <p class="hero-subtitle">'수정 요청이 카톡, 메일, 댓글, 캡처 이미지에 흩어져 타임라인에 다시 꽂아야 한다.'부터 줄이는<br><b>손에 남는 작업 산출물</b>을 만듭니다.</p>
+  </div>
+  <div class="cta-card" style="text-align:center">
+    <div class="of-price"><span class="of-now">39,000원</span><span class="of-unit">/ 파일럿 1회 · 영업일 3일 내</span></div>
+    <div class="of-kicker">선택한 문제</div>
+    <ul class="of-list">
+      <li><span class="of-ic">🩹</span><div><b>클라이언트 수정 요청이 흩어져 버전 관리가 무너지는 순간</b><br>카톡, 메일, 댓글로 온 수정사항을 타임라인 기준으로 다시 정리해야 할 때</div></li>
+      <li><span class="of-ic">📌</span><div><b>관련 업무</b><br>컷 편집, 자막 생성, 사운드·믹싱</div></li>
+      <li><span class="of-ic">🧾</span><div><b>전달 결과물</b><br>타임코드별 수정 체크리스트 + 클라이언트 회신문</div></li>
+      <li><span class="of-ic">🛠️</span><div><b>작업 방식</b><br>수정 요청을 타임코드와 작업 유형으로 정리하고 체크리스트화한다</div></li>
+    </ul>
+    <div class="of-depth"><div class="of-depth-title">왜 돈 내고 줄이는가</div><div class="of-depth-row"><b>구매가 터지는 순간</b><br>최종본 직전 수정이 한꺼번에 들어오거나, 추가비를 말해야 하는데 관계가 껄끄러울 때</div><div class="of-depth-row"><b>첫 10분 안도감</b><br>10분 안에 타임코드별 체크리스트와 클라이언트에게 보낼 확인 문장이 생긴다.</div><div class="of-depth-row"><b>성공 기준</b><br>수정사항 누락 0건, 클라이언트 확인 왕복 1회 이상 감소, 범위 외 요청 분리</div></div>
+    <div class="of-depth"><div class="of-depth-title">이번 파일럿에서 먼저 줄일 작은 가려움</div><ul class="of-micro-list"><li>수정 요청이 카톡, 메일, 댓글, 캡처 이미지에 흩어져 타임라인에 다시 꽂아야 한다.</li><li>클라이언트 요청끼리 서로 충돌하는데 어느 방향을 확인해야 할지 정리되지 않는다.</li></ul></div>
+    <div class="of-depth"><div class="of-depth-title">선택 때문에 달라지는 결과물</div>선택된 작은 가려움이 실제 납품 표의 칸과 QA 기준으로 보이도록 조정합니다.<div class="of-depth-row"><b>수정 체크리스트 상단</b><br>필수 칸: source / timecode_or_scene / original_request / normalized_request / status<br>QA: 카톡·메일·댓글 등 출처별 원문을 보존하고, 합친 요청은 normalized_request에 따로 쓴다.</div><div class="of-depth-row"><b>확인 필요/충돌 요청 표</b><br>필수 칸: conflict_group / request_a / request_b / decision_needed / proposed_reply<br>QA: 서로 충돌하는 요청은 임의 반영하지 않고 클라이언트 확인 질문으로 분리한다.</div></div>
+    <div class="of-kicker">파일럿 진행</div>
+    <ol class="of-steps">
+      <li>신청 후 샘플 자료 또는 상황 설명 제출</li>
+      <li>운영자가 민감정보를 제외하고 반복 패턴을 정리</li>
+      <li>타임코드별 수정 체크리스트 + 클라이언트 회신문 형태의 초안을 전달</li>
+      <li>바로 쓸 수 있는 체크리스트/문장/템플릿으로 마무리</li>
+    </ol>
+    <div class="of-human">🤝 <b>정직한 범위:</b> 이 파일럿은 자동 SaaS가 아니라 초기 컨시어지 검증입니다. 좋은 신호가 모인 pain만 제품화합니다.</div>
+    <form id="poForm" onsubmit="return poSubmit(event)">
+      <input class="of-input" id="poHp" type="text" tabindex="-1" autocomplete="off"
+        style="position:absolute;left:-9999px" aria-hidden="true">
+      <input class="of-input" id="poContact" type="text" maxlength="120" required
+        placeholder="이메일 또는 카카오 오픈채팅 ID">
+      <label style="display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--text-secondary);margin:0 2px 12px;text-align:left;line-height:1.5">
+        <input type="checkbox" id="poConsent" style="margin-top:2px;flex-shrink:0">
+        <span>(필수) 파일럿 안내를 위해 연락처와 선택한 업무 고통 정보를 수집·이용하는 데 동의합니다. 보관: 정식 오픈 후 6개월 또는 삭제 요청 시까지. <a href="/privacy" target="_blank" rel="noopener" style="color:var(--text-secondary)">개인정보처리방침</a> · <a href="/terms" target="_blank" rel="noopener" style="color:var(--text-secondary)">이용약관</a></span></label>
+      <button class="of-submit" type="submit">파일럿 신청 — 오픈 시 우선 안내</button>
+    </form>
+    <div class="of-ok" id="poOk">신청 완료! 이 파일럿을 먼저 열게 되면 안내드릴게요.</div>
+  </div>
+  <p class="of-note">※ 사전신청은 결제가 아닙니다 — 결과물은 선택한 업무 고통 1개를 줄이는 컨시어지 산출물이며, 자동화된 전문 판단이나 성과 보장을 제공하지 않습니다. 실결제 시 법정 청약철회권 및 계약 불일치 시 환불권을 보장합니다.</p>
+  <p class="legal-links"><a href="/privacy">개인정보처리방침</a> · <a href="/terms">이용약관</a></p>
+</div>
+<script>
+function poSubmit(e){e.preventDefault();
+  var c=document.getElementById('poContact').value.trim();
+  if(!c){return false;}
+  if(!document.getElementById('poConsent').checked){alert('개인정보 수집·이용 동의가 필요합니다.');return false;}
+  fetch('/pain/intent',{method:'POST',headers:{'Content-Type':'application/json'},
+    body:JSON.stringify({contact:c,job:"video-editor",pain_id:"revision-chaos",role_type:'unknown',
+      sample_available:'unknown',situation:'pain-offer pilot interest',offer_type:'pain-pack',
+      micro_itches:["수정 요청이 카톡, 메일, 댓글, 캡처 이미지에 흩어져 타임라인에 다시 꽂아야 한다.", "클라이언트 요청끼리 서로 충돌하는데 어느 방향을 확인해야 할지 정리되지 않는다."],
+      consent:true,hp_url:document.getElementById('poHp').value})})
+   .then(function(r){if(!r.ok){throw new Error('bad');}
+     document.getElementById('poForm').style.display='none';
+     document.getElementById('poOk').style.display='block';})
+   .catch(function(){alert('잠시 후 다시 시도해 주세요.');});
+  return false;}
+</script>
+</body></html>

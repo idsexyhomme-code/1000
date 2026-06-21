@@ -15,8 +15,16 @@ sys.path.insert(0, os.path.join(_ROOT, "src"))
 
 import actionplan
 import deepdive
+import fulfillment
+import fulfillment_queue
 import gemini_client
+import launch_preflight
+import legal_preflight
 import notify
+import pain_deepdive
+import painmap
+import pain_probe
+import pain_intents
 import pipeline
 import report
 import scoring
@@ -216,6 +224,208 @@ def test_report_landing_lists_jobs():
     assert h.rstrip().endswith("</html>")
     assert h.count('class="lj-card"') >= 10                              # 직업 카드 그리드
     assert "참고 지표" in h                                              # 가드레일 푸터
+    assert "/privacy" in h and "/terms" in h                              # PII 수집 전 공개 표면
+
+
+def test_legal_pages_are_public_templates_with_required_items():
+    privacy = report.privacy_html()
+    terms = report.terms_html()
+    assert privacy.rstrip().endswith("</html>")
+    assert terms.rstrip().endswith("</html>")
+    assert "[필수 입력]" in privacy and "[필수 입력]" in terms             # 사업자 정보 채우기 전제
+    for marker in [
+        "개인정보의 처리 목적",
+        "개인정보의 처리 및 보유 기간",
+        "제3자 제공",
+        "개인정보 처리위탁",
+        "정보주체의 권리",
+        "파기 절차",
+        "자동화된 결정",
+        "2026 개인정보 처리방침 작성지침",
+    ]:
+        assert marker in privacy
+    for marker in [
+        "사업자 정보",
+        "상품 및 제공시점",
+        "청약철회",
+        "환불",
+        "전문 판단 제외",
+        "개인정보처리방침",
+        "전자상거래",
+    ]:
+        assert marker in terms
+
+
+def test_legal_preflight_blocks_placeholders_until_env_is_filled():
+    old = {k: os.environ.get(k) for k in legal_preflight.REQUIRED_ENV}
+    try:
+        for key in legal_preflight.REQUIRED_ENV:
+            os.environ.pop(key, None)
+        ok, issues = legal_preflight.check()
+        assert ok is False
+        assert any("missing env" in issue for issue in issues)
+        assert any("[필수 입력]" in issue for issue in issues)
+    finally:
+        for key, val in old.items():
+            if val is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = val
+
+
+def test_legal_preflight_passes_when_legal_env_is_filled():
+    old = {k: os.environ.get(k) for k in legal_preflight.REQUIRED_ENV + ["LEGAL_SERVICE_NAME"]}
+    vals = {
+        "LEGAL_SERVICE_NAME": "커리어 시그널",
+        "LEGAL_OPERATOR_NAME": "테스트상호",
+        "LEGAL_OPERATOR_ADDRESS": "서울특별시 테스트로 1",
+        "LEGAL_CONTACT_EMAIL": "legal@example.com",
+        "LEGAL_PRIVACY_OFFICER": "개인정보책임자",
+        "LEGAL_BUSINESS_NUMBER": "123-45-67890",
+        "LEGAL_TELECOMMERCE_NUMBER": "제2026-서울테스트-0001호",
+        "LEGAL_PAYMENT_PROCESSOR": "테스트PG",
+        "LEGAL_HOSTING_PROVIDER": "테스트호스팅",
+        "LEGAL_NOTIFICATION_PROVIDER": "테스트메일도구",
+        "LEGAL_FULFILLMENT_FIELDS": "결제자 이름, 이메일, 주문번호, 이력서, 포트폴리오",
+    }
+    try:
+        os.environ.update(vals)
+        ok, issues = legal_preflight.check()
+        assert ok is True, issues
+        assert "[필수 입력]" not in report.privacy_html()
+        assert "[필수 입력]" not in report.terms_html()
+    finally:
+        for key, val in old.items():
+            if val is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = val
+
+
+def _with_env(vals, fn, clear=None):
+    keys = set(vals) | set(clear or [])
+    old = {k: os.environ.get(k) for k in keys}
+    try:
+        for key in clear or []:
+            os.environ.pop(key, None)
+        os.environ.update(vals)
+        fn()
+    finally:
+        for key, val in old.items():
+            if val is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = val
+
+
+def _ready_launch_env(extra=None):
+    vals = {
+        "GEMINI_API_KEY": "test-gemini-key",
+        "REPORT_BASE_URL": "https://career.example.com",
+        "WEBHOOK_TOKEN": "webhook-token-123456",
+        "INTEREST_SALT": "interest-salt-123456",
+        "LEGAL_SERVICE_NAME": "커리어 시그널",
+        "LEGAL_OPERATOR_NAME": "테스트상호",
+        "LEGAL_OPERATOR_ADDRESS": "서울특별시 테스트로 1",
+        "LEGAL_CONTACT_EMAIL": "legal@example.com",
+        "LEGAL_PRIVACY_OFFICER": "개인정보책임자",
+        "LEGAL_BUSINESS_NUMBER": "123-45-67890",
+        "LEGAL_TELECOMMERCE_NUMBER": "제2026-서울테스트-0001호",
+        "LEGAL_PAYMENT_PROCESSOR": "테스트PG",
+        "LEGAL_HOSTING_PROVIDER": "테스트호스팅",
+        "LEGAL_NOTIFICATION_PROVIDER": "테스트메일도구",
+        "LEGAL_FULFILLMENT_FIELDS": "결제자 이름, 이메일, 주문번호, 이력서, 포트폴리오",
+    }
+    vals.update(extra or {})
+    return vals
+
+
+def test_launch_preflight_lead_mode_blocks_unready_env():
+    def body():
+        ok, issues = launch_preflight.check("lead")
+        assert ok is False
+        assert any("legal:" in issue for issue in issues)
+        assert any("GEMINI_API_KEY" in issue for issue in issues)
+    _with_env({}, body, clear=launch_preflight.COMMON_REQUIRED + legal_preflight.REQUIRED_ENV)
+
+
+def test_launch_preflight_lead_mode_passes_and_rejects_payment_urls():
+    clear = ["PAYMENT_URL", "PAIN_PAYMENT_URL", "PAYMENT_ALLOWED_AMOUNTS",
+             "PAYMENT_WEBHOOK_SECRET", "PAYMENT_EXPECTED_AMOUNT", "PAIN_PAYMENT_EXPECTED_AMOUNT"]
+
+    def ok_body():
+        ok, issues = launch_preflight.check("lead")
+        assert ok is True, issues
+
+    _with_env(_ready_launch_env(), ok_body, clear=clear)
+
+    def bad_body():
+        ok, issues = launch_preflight.check("lead")
+        assert ok is False
+        assert "lead mode must not set PAYMENT_URL" in issues
+
+    _with_env(_ready_launch_env({"PAYMENT_URL": "https://pay.example/checkout"}), bad_body,
+              clear=["PAIN_PAYMENT_URL", "PAYMENT_ALLOWED_AMOUNTS"])
+
+
+def test_launch_preflight_paid_modes_require_payment_guards():
+    def bad_body():
+        ok, issues = launch_preflight.check("paid")
+        assert ok is False
+        assert any("PAYMENT_URL" in issue for issue in issues)
+        assert any("PAYMENT_WEBHOOK_SECRET" in issue for issue in issues)
+
+    _with_env(_ready_launch_env(), bad_body, clear=["PAYMENT_URL", "PAYMENT_WEBHOOK_SECRET"])
+
+    paid_env = _ready_launch_env({
+        "PAYMENT_URL": "https://pay.example/career",
+        "PAYMENT_WEBHOOK_SECRET": "payment-secret-123456",
+        "PAYMENT_EXPECTED_AMOUNT": "99000",
+        "PAYMENT_ALLOWED_AMOUNTS": "99000,39000",
+    })
+
+    def paid_body():
+        ok, issues = launch_preflight.check("paid")
+        assert ok is True, issues
+
+    _with_env(paid_env, paid_body)
+
+    pain_env = _ready_launch_env({
+        "PAIN_PAYMENT_URL": "https://pay.example/pain",
+        "PAYMENT_WEBHOOK_SECRET": "payment-secret-123456",
+        "PAIN_PAYMENT_EXPECTED_AMOUNT": "39000",
+        "PAYMENT_ALLOWED_AMOUNTS": "99000,39000",
+    })
+
+    def pain_without_release_body():
+        ok, issues = launch_preflight.check("pain-paid")
+        assert ok is False
+        assert any("PAIN_RELEASE_JOB" in issue for issue in issues)
+        assert any("PAIN_RELEASE_PAIN" in issue for issue in issues)
+        assert any("PAIN_RELEASE_PREVIEW" in issue for issue in issues)
+
+    _with_env(pain_env, pain_without_release_body,
+              clear=["PAIN_RELEASE_JOB", "PAIN_RELEASE_PAIN", "PAIN_RELEASE_PREVIEW"])
+
+    import tempfile
+    job = ScoringEngine(JOBS).score([], now=NOW)["video-editor"]
+    pain_id = "revision-chaos"
+    micro = pain_probe.get("video-editor")["micro_itches_ko"][0]
+    preview = tempfile.NamedTemporaryFile(suffix=".html", delete=False)
+    preview.close()
+    with open(preview.name, "w", encoding="utf-8") as f:
+        f.write(report.pain_offer_html(job, pain_id, micro_itches=[micro]))
+    pain_release_env = {**pain_env, "PAIN_RELEASE_JOB": "video-editor",
+                        "PAIN_RELEASE_PAIN": pain_id, "PAIN_RELEASE_PREVIEW": preview.name}
+
+    def pain_body():
+        ok, issues = launch_preflight.check("pain-paid")
+        assert ok is True, issues
+
+    try:
+        _with_env(pain_release_env, pain_body)
+    finally:
+        os.unlink(preview.name)
 
 
 def test_deepdive_and_detail_honest():
@@ -229,6 +439,646 @@ def test_deepdive_and_detail_honest():
     assert h.rstrip().endswith("</html>")
     assert "과업별 자동화율" in h and "방법론" in h                       # 5섹션 + 방법론
     assert "데이터 연동 필요" in h                                       # 스텁 정직 노출(패딩 아님)
+
+
+def test_painmap_schema_and_job_task_links():
+    errors = painmap.validate_against_jobs(server.JOBS)
+    assert errors == []
+    assert set(painmap.PAIN_MAP) == set(server.JOBS)
+
+
+def test_painmap_build_is_labeled_hypothesis():
+    job = ScoringEngine(JOBS).score([], now=NOW)["video-editor"]
+    pm = painmap.build(job, limit=2)
+    assert pm["label_ko"] == "제품 가설"
+    assert "유료 판단 근거" in pm["note_ko"]                              # 과대표기 방지
+    assert len(pm["pains"]) == 2
+    assert painmap.get(job, pm["pains"][0]["pain_id"])["pain_id"] == pm["pains"][0]["pain_id"]
+    for p in pm["pains"]:
+        assert p["task_names_ko"] and p["artifact_ko"]                    # 업무 맥락 + 결과물
+        assert p["priority_score"] > 0
+
+
+def test_pain_deepdive_covers_representative_job_pains():
+    errors = pain_deepdive.validate_against_jobs(server.JOBS)
+    assert errors == []
+    assert len(pain_deepdive.DEEP_ATLAS) == len(server.JOBS)
+    rows = pain_deepdive.catalog(ScoringEngine(JOBS).score([], now=NOW))
+    assert len(rows) == len(server.JOBS)
+    for row in rows:
+        assert row["burning_moment_ko"]
+        assert row["bad_ai_trap_ko"]
+        assert row["minimum_inputs_ko"]
+        assert row["paid_trigger_ko"]
+        assert row["success_metric_ko"]
+    md = pain_deepdive.markdown_catalog(ScoringEngine(JOBS).score([], now=NOW))
+    assert "직업별 진짜 가려운 업무 심층 아틀라스" in md
+    assert "구매 트리거" in md
+
+
+def test_pain_probe_atlas_deepens_every_job():
+    errors = pain_probe.validate_against_jobs(server.JOBS)
+    assert errors == []
+    rows = pain_probe.catalog(ScoringEngine(JOBS).score([], now=NOW))
+    assert len(rows) == len(server.JOBS)
+    for row in rows:
+        assert row["label_ko"] == "micro-itch 가설"
+        assert len(row["micro_itches_ko"]) >= 10
+        assert len(row["interview_questions_ko"]) >= 4
+        assert row["money_moment_ko"]
+        assert row["wedge_ko"]
+        assert row["avoid_ko"]
+    md = pain_probe.markdown_catalog(ScoringEngine(JOBS).score([], now=NOW))
+    assert "직업별 micro-itch probe atlas" in md
+    assert "검증 질문" in md
+    micro = pain_probe.get("video-editor")["micro_itches_ko"][1]
+    focus = pain_probe.fulfillment_focus("video-editor", [micro, "임의 문장"])
+    assert focus["selected_micro_itches_ko"] == [micro]
+    assert "이번 납품" in focus["priority_focus_ko"]
+    assert any("마지막으로 터진 실제 상황" in q for q in focus["followup_questions_ko"])
+    assert "임의 문장" not in " ".join(focus["followup_questions_ko"])
+    adj = pain_probe.artifact_adjustment("video-editor", [micro, "임의 문장"])
+    assert len(adj["adjustment_rows"]) == 1
+    assert adj["adjustment_rows"][0]["template_fields_ko"] == "conflict_group / request_a / request_b / decision_needed / proposed_reply"
+
+    dev_micro = pain_probe.get("junior-developer")["micro_itches_ko"][0]
+    dev_adj = pain_probe.artifact_adjustment("junior-developer", [dev_micro])
+    assert dev_adj["adjustment_rows"][0]["template_fields_ko"] == "entrypoint / likely_file / reason / unknown / first_probe_command"
+
+    sales_micro = pain_probe.get("sales-rep")["micro_itches_ko"][0]
+    sales_adj = pain_probe.artifact_adjustment("sales-rep", [sales_micro])
+    assert sales_adj["adjustment_rows"][0]["template_fields_ko"] == "account_signal / stakeholder / likely_pain / proof_point / opening_question"
+
+    data_micro = pain_probe.get("data-analyst")["micro_itches_ko"][0]
+    data_adj = pain_probe.artifact_adjustment("data-analyst", [data_micro])
+    assert data_adj["adjustment_rows"][0]["template_fields_ko"] == "metric / numerator / denominator / comparison_window / first_check_sql"
+
+    acct_micro = pain_probe.get("accountant")["micro_itches_ko"][0]
+    acct_adj = pain_probe.artifact_adjustment("accountant", [acct_micro])
+    assert acct_adj["adjustment_rows"][0]["template_fields_ko"] == "client / missing_doc / period / deadline / request_sentence / received_status"
+
+    more_expected = {
+        "office-admin": "request / department / owner / deadline / blocker / reminder_text",
+        "call-center-agent": "call_reason / customer_emotion / confirmed_fact / promised_action / after_call_task",
+        "teacher": "level / learning_goal / activity / scaffold / check_question",
+        "nurse": "observation / intervention / patient_response / report_status / missing_check",
+        "translator": "segment_id / source_text / mt_output / risk_type / fix_priority / reviewer_note",
+        "graphic-designer": "brief_word / possible_meaning / clarifying_question / decision_needed / design_risk",
+        "hr-manager": "candidate / jd_requirement / resume_evidence / concern / interview_question",
+        "journalist": "release_title / news_value / affected_party / fact_to_check / reporting_next_step",
+        "paralegal": "date / actor / event / evidence_file / issue_tag / attorney_question",
+    }
+    for job_id, fields in more_expected.items():
+        row_micro = pain_probe.get(job_id)["micro_itches_ko"][0]
+        row_adj = pain_probe.artifact_adjustment(job_id, [row_micro])
+        assert row_adj["adjustment_rows"][0]["template_fields_ko"] == fields
+
+
+def test_report_surfaces_pain_map_without_paywall_language():
+    job = ScoringEngine(JOBS).score([], now=NOW)["video-editor"]
+    h = report.render_html(job, {"type_name": "t", "emoji": "🧭", "tagline": "", "threat": "", "opportunity": ""})
+    assert "진짜 가려운 업무" in h
+    assert "제품 가설" in h
+    assert "만들어줄 결과물" in h
+    assert "/pain?job=video-editor" in h                                  # 가려움 온보딩으로 연결
+
+
+def test_pain_intake_page_is_non_payment_onboarding():
+    job = ScoringEngine(JOBS).score([], now=NOW)["video-editor"]
+    p = painmap.build(job, limit=1)["pains"][0]
+    micro = pain_probe.get("video-editor")["micro_itches_ko"][1]
+    h = report.pain_intake_html(job, p["pain_id"], recommended_micro_itches=[micro, "임의 조작 문장"])
+    assert h.rstrip().endswith("</html>")
+    assert p["itch_ko"] in h
+    assert "정말 가려운 지점" in h
+    assert "왜 그냥 AI로 부족한가" in h
+    assert "첫 10분 안도감" in h
+    assert "혹시 이런 순간인가요?" in h
+    assert "클라이언트 요청끼리 서로 충돌" in h
+    assert "pi-probe-check" in h
+    assert 'data-mi="2"' in h
+    assert "많이 선택됨" in h
+    assert f'value="{micro}" checked' in h
+    assert "임의 조작 문장" not in h
+    assert "piUpdateOfferLink" in h
+    assert "이 페이지는 결제가 아닙니다" in h                              # 결제 오인 방지
+    assert "fetch('/pain/intent'" in h                                    # 별도 수요 신호 저장
+    assert "/pain-offer?job=video-editor" in h                            # 좁은 파일럿 오퍼로 연결
+    assert "/privacy" in h
+
+
+def test_pain_offer_page_scoped_and_honest():
+    job = ScoringEngine(JOBS).score([], now=NOW)["video-editor"]
+    p = painmap.build(job, limit=1)["pains"][0]
+    micro = pain_probe.get("video-editor")["micro_itches_ko"][1]
+    h = report.pain_offer_html(job, p["pain_id"], micro_itches=[micro])
+    assert h.rstrip().endswith("</html>")
+    assert report.PAIN_OFFER_NAME in h
+    assert p["artifact_ko"] in h
+    assert "이번 파일럿에서 먼저 줄일 작은 가려움" in h
+    assert micro in h
+    assert "선택 때문에 달라지는 결과물" in h
+    assert "conflict_group / request_a / request_b / decision_needed / proposed_reply" in h
+    assert "micro_itches:" in h
+    assert "왜 돈 내고 줄이는가" in h
+    assert "구매가 터지는 순간" in h
+    assert "성공 기준" in h
+    assert "사전신청은 결제가 아닙니다" in h
+    assert "자동화된 전문 판단이나 성과 보장" in h
+    assert "/privacy" in h and "/terms" in h
+    bad = report.pain_offer_html(job, p["pain_id"], micro_itches=["임의 조작 문장"])
+    assert "임의 조작 문장" not in bad
+    assert "선택 때문에 달라지는 결과물" not in bad
+
+
+def test_offer_page_links_legal_pages():
+    job = ScoringEngine(JOBS).score([], now=NOW)["video-editor"]
+    h = report.offer_html(job, grounded=True)
+    assert h.rstrip().endswith("</html>")
+    assert report.OFFER_NAME in h
+    assert "/privacy" in h and "/terms" in h
+    assert "사전신청은 결제가 아닙니다" in h
+
+
+def test_fulfillment_video_editor_revision_pack_is_operational():
+    job = ScoringEngine(JOBS).score([], now=NOW)["video-editor"]
+    md = fulfillment.generate(job, "revision-chaos", sample=True)
+    assert md.startswith("# 영상편집자 pain 파일럿 이행서")
+    assert "타임코드별 수정 체크리스트" in md
+    assert "클라이언트 회신문 초안" in md
+    assert "버전 관리 규칙" in md
+    assert "micro-itch 우선순위" in md
+    assert "작업 초점" in md
+    assert "추가 확인 질문" in md
+    assert "micro-itch 산출물 조정" in md
+    assert "source / timecode_or_scene / original_request / normalized_request / status" in md
+    assert "conflict_group / request_a / request_b / decision_needed / proposed_reply" in md
+    assert "전문 판단이나 성과 보장" in md
+    assert "sample@example.com" not in md                               # 연락처 마스킹
+
+
+def test_fulfillment_kickoff_request_and_three_day_checklist():
+    job = ScoringEngine(JOBS).score([], now=NOW)["video-editor"]
+    md = fulfillment.kickoff_plan(job, "revision-chaos", sample=True)
+    assert md.startswith("# 영상편집자 pain 파일럿 킥오프")
+    assert "## 고객에게 보낼 자료 요청 메시지" in md
+    assert "현재 최신 영상본 링크 또는 파일명" in md
+    assert "수정 요청 원문 전체" in md
+    assert "자료를 받은 뒤 영업일 3일 안에 1차 초안을 전달" in md
+    assert "## D0-D3 운영 체크리스트" in md
+    assert "### D0 결제/신청 직후" in md
+    assert "### D1 자료 검수와 질문" in md
+    assert "### D2 산출물 초안 작성" in md
+    assert "### D3 QA와 전달" in md
+    assert "source / timecode_or_scene / original_request / normalized_request / status" in md
+    assert "자동화된 전문 판단이나 성과 보장" in md
+    assert "sample@example.com" not in md
+    assert fulfillment.materials_for("video-editor", "revision-chaos")[0] == "현재 최신 영상본 링크 또는 파일명"
+
+
+def test_fulfillment_target_job_playbooks_are_specific():
+    scores = ScoringEngine(JOBS).score([], now=NOW)
+    cases = [
+        ("accountant", "missing-client-docs", ["누락자료 체크리스트", "고객 안내문"]),
+        ("call-center-agent", "after-call-work", ["상담 요약", "이관 메모", "후속조치 등록 문장"]),
+        ("data-analyst", "why-did-it-drop", ["원인 후보 트리", "SQL 초안", "이해관계자 설명문"]),
+        ("graphic-designer", "revision-boundary", ["수정 범위표", "정중한 추가비 안내문"]),
+        ("hr-manager", "resume-screening-rationale", ["후보자 요약표", "면접 확인 질문"]),
+        ("journalist", "press-release-triage", ["보도자료 선별표", "추가취재 질문"]),
+        ("junior-developer", "unknown-codebase-context", ["수정 영향도 맵", "PR 설명문 초안"]),
+        ("marketer", "weekly-report-story", ["주간 성과 해석표", "다음 실험 3개", "보고서 문장"]),
+        ("nurse", "charting-fatigue", ["차팅 문장 초안", "누락 확인 리스트"]),
+        ("office-admin", "request-chasing", ["요청 추적 보드", "리마인드 메시지"]),
+        ("paralegal", "case-timeline", ["사건 타임라인", "증거목록", "변호사 검토 질문"]),
+        ("sales-rep", "pre-call-brief", ["3분 미팅 브리프", "발견 질문 7개"]),
+        ("teacher", "differentiated-materials", ["수준별 활동지", "채점 루브릭"]),
+        ("translator", "mtpe-quality-trap", ["번역 QA 리포트", "수정 우선순위"]),
+        ("video-editor", "revision-chaos", ["타임코드별 수정 체크리스트", "클라이언트 회신문"]),
+    ]
+    for job_id, pain_id, markers in cases:
+        md = fulfillment.generate(scores[job_id], pain_id, sample=True)
+        for marker in markers:
+            assert marker in md, (job_id, marker)
+        assert "sample@example.com" not in md                            # 전용 샘플도 연락처 마스킹
+        assert "결과물 초안 작성" not in md                               # 공통 샘플 테이블로 퇴행 금지
+    dev_md = fulfillment.generate(scores["junior-developer"], "unknown-codebase-context", sample=True)
+    assert "micro-itch 산출물 조정" in dev_md
+    assert "entrypoint / likely_file / reason / unknown / first_probe_command" in dev_md
+    assert "change_summary / why / risk / test_command / rollback_note" in dev_md
+
+
+def test_fulfillment_templates_cover_all_top_job_pains():
+    scores = ScoringEngine(JOBS).score([], now=NOW)
+    for job in scores.values():
+        pain = painmap.build(job, limit=1)["pains"][0]
+        md = fulfillment.generate(job, pain["pain_id"])
+        assert job["job_name_ko"] in md
+        assert pain["artifact_ko"] in md
+        assert "금지/가드레일" in md
+        assert "자동화된 전문 판단" in md
+
+
+def test_fulfillment_builds_from_stored_pain_intent():
+    import tempfile
+    old = store.PAIN_INTENT_FILE
+    tf = tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False)
+    tf.close()
+    store.PAIN_INTENT_FILE = tf.name
+    try:
+        store.append_pain_intent({
+            "contact": "realuser@example.com",
+            "job": "marketer",
+            "pain_id": "weekly-report-story",
+            "role_type": "employee",
+            "sample_available": "redacted",
+            "situation": "주간 리포트에서 원인 설명과 다음 실험을 한 장으로 정리해야 합니다.",
+            "micro_itches": ["보고서는 많이 쓰지만 다음 주 실험으로 연결되지 않는다."],
+        })
+        row = fulfillment.select_intent("latest", job_id="marketer")
+        md = fulfillment.build_from_intent(row)
+        assert "마케터 pain 파일럿 이행서" in md
+        assert "주간 리포트에서 원인 설명" in md
+        assert "보고서는 많이 쓰지만 다음 주 실험으로 연결되지 않는다." in md
+        assert "micro-itch 우선순위" in md
+        assert "이번 납품은 '보고서는 많이 쓰지만 다음 주 실험으로 연결되지 않는다.'" in md
+        assert "micro-itch 산출물 조정" in md
+        assert "hypothesis / action / owner / success_metric / stop_rule" in md
+        assert "주간 성과 해석표" in md
+        assert "re***@example.com" in md
+        assert "realuser@example.com" not in md
+        assert "자동화된 전문 판단" in md
+    finally:
+        store.PAIN_INTENT_FILE = old
+        os.unlink(tf.name)
+
+
+def test_fulfillment_intent_selection_is_safe():
+    import tempfile
+    old = store.PAIN_INTENT_FILE
+    tf = tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False)
+    tf.close()
+    store.PAIN_INTENT_FILE = tf.name
+    try:
+        store.append_pain_intent({
+            "contact": "a@example.com", "job": "video-editor", "pain_id": "revision-chaos",
+            "role_type": "freelancer", "sample_available": "yes", "situation": "첫 요청",
+        })
+        store.append_pain_intent({
+            "contact": "b@example.com", "job": "video-editor", "pain_id": "revision-chaos",
+            "role_type": "freelancer", "sample_available": "yes", "situation": "둘째 요청",
+        })
+        assert fulfillment.select_intent("1")["situation"] == "첫 요청"
+        assert fulfillment.select_intent("-1")["situation"] == "둘째 요청"
+        for bad in ["0", "999", "nope"]:
+            raised = False
+            try:
+                fulfillment.select_intent(bad)
+            except ValueError:
+                raised = True
+            assert raised, bad
+        raised = False
+        try:
+            fulfillment.select_intent("latest", job_id="marketer")
+        except ValueError:
+            raised = True
+        assert raised
+    finally:
+        store.PAIN_INTENT_FILE = old
+        os.unlink(tf.name)
+
+
+def test_fulfillment_queue_import_status_and_render():
+    import tempfile
+    old_intent = store.PAIN_INTENT_FILE
+    old_queue = store.FULFILLMENT_FILE
+    intent = tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False)
+    queue = tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False)
+    intent.close()
+    queue.close()
+    os.unlink(queue.name)
+    store.PAIN_INTENT_FILE = intent.name
+    store.FULFILLMENT_FILE = queue.name
+    try:
+        micro = pain_probe.get("video-editor")["micro_itches_ko"][0]
+        store.append_pain_intent({
+            "contact": "queueuser@example.com",
+            "job": "video-editor",
+            "pain_id": "revision-chaos",
+            "role_type": "freelancer",
+            "sample_available": "redacted",
+            "situation": "수정 요청이 흩어져 버전 관리가 어렵습니다.",
+            "micro_itches": [micro],
+        })
+        new_jobs = fulfillment_queue.import_intents()
+        assert len(new_jobs) == 1
+        assert new_jobs[0]["micro_itches"] == [micro]
+        assert fulfillment_queue.import_intents() == []                 # 중복 import 방지
+        job = fulfillment_queue.next_job()
+        assert job["status"] == "queued"
+        assert job["due_at"] and job["sla_business_days"] == 3
+        assert job["fulfillment_id"].startswith("fq_")
+        md = fulfillment_queue.render_job(job["fulfillment_id"])
+        assert "수정 요청이 흩어져 버전 관리" in md
+        assert "micro-itch 산출물 조정" in md
+        assert "qu***@example.com" in md
+        assert "queueuser@example.com" not in md
+        updated = fulfillment_queue.set_status(job["fulfillment_id"], "working", note="자료 확인 중")
+        assert updated["status"] == "working"
+        assert updated["notes"] == "자료 확인 중"
+        assert fulfillment_queue.next_job() is None
+        updated = fulfillment_queue.set_status(job["fulfillment_id"], "delivered")
+        assert updated["history"][-1]["status"] == "delivered"
+    finally:
+        store.PAIN_INTENT_FILE = old_intent
+        store.FULFILLMENT_FILE = old_queue
+        for path in (intent.name, queue.name):
+            if os.path.exists(path):
+                os.unlink(path)
+
+
+def test_fulfillment_queue_sla_due_date_and_overdue():
+    friday = "2026-06-19T09:00:00+00:00"  # Friday
+    assert fulfillment_queue.add_business_days(friday, 3).startswith("2026-06-24")  # next Wednesday
+    open_row = {"status": "working", "due_at": "2026-06-20T00:00:00+00:00"}
+    done_row = {"status": "delivered", "due_at": "2026-06-20T00:00:00+00:00"}
+    assert fulfillment_queue.is_overdue(open_row, now="2026-06-21T00:00:00+00:00")
+    assert not fulfillment_queue.is_overdue(done_row, now="2026-06-21T00:00:00+00:00")
+
+
+def test_fulfillment_queue_next_prioritizes_earliest_due():
+    import tempfile
+    old_queue = store.FULFILLMENT_FILE
+    queue = tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False)
+    queue.close()
+    rows = [
+        {"fulfillment_id": "fq_late", "status": "queued", "due_at": "2026-06-25T18:00:00+00:00",
+         "created_at": "2026-06-20T00:00:00+00:00"},
+        {"fulfillment_id": "fq_early", "status": "queued", "due_at": "2026-06-22T18:00:00+00:00",
+         "created_at": "2026-06-21T00:00:00+00:00"},
+        {"fulfillment_id": "fq_working", "status": "working", "due_at": "2026-06-01T18:00:00+00:00",
+         "created_at": "2026-06-01T00:00:00+00:00"},
+    ]
+    with open(queue.name, "w", encoding="utf-8") as f:
+        for row in rows:
+            f.write(__import__("json").dumps(row, ensure_ascii=False) + "\n")
+    store.FULFILLMENT_FILE = queue.name
+    try:
+        assert fulfillment_queue.next_job()["fulfillment_id"] == "fq_early"
+    finally:
+        store.FULFILLMENT_FILE = old_queue
+        os.unlink(queue.name)
+
+
+def test_fulfillment_queue_operational_report_counts_bottlenecks():
+    import tempfile
+    old_payments = store.PAYMENTS_FILE
+    old_queue = store.FULFILLMENT_FILE
+    payments = tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False)
+    payments.close()
+    queue = tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False)
+    queue.close()
+    memo_path = queue.name + ".md"
+    memo_dir = queue.name + "_reports"
+    video_micro = pain_probe.get("video-editor")["micro_itches_ko"][0]
+    marketer_micro = pain_probe.get("marketer")["micro_itches_ko"][0]
+    rows = [
+        {"fulfillment_id": "fq_overdue", "status": "working", "due_at": "2026-06-18T18:00:00+00:00",
+         "created_at": "2026-06-15T00:00:00+00:00", "job": "video-editor", "pain_id": "revision-chaos",
+         "micro_itches": [video_micro]},
+        {"fulfillment_id": "fq_today", "status": "queued", "due_at": "2026-06-20T18:00:00+00:00",
+         "created_at": "2026-06-18T00:00:00+00:00", "job": "video-editor", "pain_id": "revision-chaos",
+         "micro_itches": [video_micro]},
+        {"fulfillment_id": "fq_later", "status": "queued", "due_at": "2026-06-24T18:00:00+00:00",
+         "created_at": "2026-06-19T00:00:00+00:00", "job": "marketer", "pain_id": "weekly-report-story",
+         "micro_itches": [marketer_micro]},
+        {"fulfillment_id": "fq_done", "status": "delivered", "due_at": "2026-06-01T18:00:00+00:00",
+         "created_at": "2026-05-29T00:00:00+00:00", "job": "sales-rep", "pain_id": "pre-call-brief",
+         "micro_itches": [video_micro]},
+    ]
+    with open(queue.name, "w", encoding="utf-8") as f:
+        import json
+        for row in rows:
+            f.write(json.dumps(row, ensure_ascii=False) + "\n")
+    store.PAYMENTS_FILE = payments.name
+    store.FULFILLMENT_FILE = queue.name
+    try:
+        store.save_payment("order-missing", "video-editor", 39000, "paid", extra={
+            "src": "webhook",
+            "pain_release_job": "video-editor",
+            "pain_release_pain": "revision-chaos",
+            "fulfillment_id": "fq_pay_missing",
+            "kickoff_path": os.path.join(memo_dir, "missing.md"),
+        })
+        rep = fulfillment_queue.operational_report(now="2026-06-20T09:00:00+00:00", limit=2)
+        assert rep["total"] == 4
+        assert rep["open"] == 3
+        assert rep["overdue"] == 1
+        assert rep["due_today"] == 1
+        assert rep["status_counts"]["delivered"] == 1
+        assert rep["by_job"]["video-editor"] == 2
+        assert rep["by_pain"]["video-editor/revision-chaos"] == 2
+        assert rep["by_micro_itch"][f"video-editor::{video_micro}"] == 2
+        assert rep["by_micro_itch"][f"marketer::{marketer_micro}"] == 1
+        assert rep["micro_actions"][0]["job"] == "video-editor"
+        assert rep["micro_actions"][0]["count"] == 2
+        assert rep["micro_actions"][0]["artifact_slot_ko"] == "수정 체크리스트 상단"
+        assert rep["micro_actions"][0]["template_fields_ko"] == "source / timecode_or_scene / original_request / normalized_request / status"
+        assert video_micro in rep["micro_actions"][0]["first_question_ko"]
+        assert "마지막으로 터진 실제 상황" in rep["micro_actions"][0]["first_question_ko"]
+        assert rep["micro_actions"][1]["job"] == "marketer"
+        assert rep["micro_actions"][1]["template_fields_ko"] == "metric / change / segment / cause_candidate / confidence / next_check"
+        assert [r["fulfillment_id"] for r in rep["next"]] == ["fq_overdue", "fq_today"]
+        assert rep["paid_reconciliation"]["paid_pain_orders"] == 1
+        assert rep["paid_reconciliation"]["ok"] == 0
+        assert rep["paid_reconciliation"]["issue_counts"]["missing_queue"] == 1
+        assert rep["paid_reconciliation"]["issue_counts"]["missing_kickoff"] == 1
+        md = fulfillment_queue.report_markdown(now="2026-06-20T09:00:00+00:00", limit=2)
+        assert "# pain 파일럿 운영 메모 - 2026-06-20" in md
+        assert "paid pain orders/ok/issues: 1 / 0 / 2" in md
+        assert "## paid pain 이행 이슈" in md
+        assert "missing_queue" in md and "missing_kickoff" in md
+        assert "## 다음 운영 액션" in md
+        assert "source / timecode_or_scene / original_request / normalized_request / status" in md
+        assert "마지막으로 터진 실제 상황" in md
+        saved = fulfillment_queue.save_report_memo(
+            out_path=memo_path,
+            now="2026-06-20T09:00:00+00:00",
+            limit=2,
+        )
+        assert saved == memo_path
+        with open(memo_path, encoding="utf-8") as f:
+            saved_md = f.read()
+        assert saved_md == md
+        os.makedirs(memo_dir, exist_ok=True)
+        older_path = os.path.join(memo_dir, "2026-06-19.md")
+        with open(older_path, "w", encoding="utf-8") as f:
+            f.write(
+                "# pain 파일럿 운영 메모 - 2026-06-19\n\n"
+                "- total/open/overdue/due_today: 2 / 1 / 0 / 0\n\n"
+                "## micro-itch별 open\n\n"
+                f"- video-editor::{video_micro}: 1\n"
+            )
+        latest_path = os.path.join(memo_dir, "2026-06-20.md")
+        fulfillment_queue.save_report_memo(
+            out_path=latest_path,
+            now="2026-06-20T09:00:00+00:00",
+            limit=2,
+        )
+        weekly = fulfillment_queue.weekly_summary(report_dir=memo_dir, days=7)
+        assert weekly["snapshots"] == 2
+        assert weekly["open_delta"] == 2
+        assert weekly["overdue_delta"] == 1
+        assert weekly["top_pains"]["video-editor/revision-chaos"] == 2
+        assert weekly["top_micro_itches"][f"video-editor::{video_micro}"] == 3
+        assert weekly["paid_latest"]["orders"] == 1
+        assert weekly["paid_latest"]["issues"] == 2
+        assert weekly["paid_issue_counts"]["missing_queue"] == 1
+        assert weekly["paid_issue_counts"]["missing_kickoff"] == 1
+        assert weekly["paid_issue_delta"] == 2
+        assert weekly["productization_priorities"][0]["job"] == "video-editor"
+        assert weekly["productization_priorities"][0]["pain_id"] == "revision-chaos"
+        assert weekly["productization_priorities"][0]["demand_count"] == 3
+        assert weekly["productization_priorities"][0]["artifact_slot_ko"] == "수정 체크리스트 상단"
+        assert weekly["productization_priorities"][0]["template_fields_ko"] == "source / timecode_or_scene / original_request / normalized_request / status"
+        assert "pain-offer" in weekly["productization_priorities"][0]["next_product_move_ko"]
+        weekly_md = fulfillment_queue.weekly_summary_markdown(report_dir=memo_dir, days=7)
+        assert "pain 파일럿 주간 운영 요약" in weekly_md
+        assert "open 변화: +2" in weekly_md
+        assert "paid pain 이행 경고" in weekly_md
+        assert "최신 paid pain orders/ok/issues: 1 / 0 / 2" in weekly_md
+        assert "reconcile-paid" in weekly_md
+        assert "다음 주 제품화 우선순위" in weekly_md
+        assert "수정 체크리스트 상단" in weekly_md
+        draft = fulfillment_queue.productization_draft_markdown(report_dir=memo_dir, days=7, limit=1)
+        assert "# 다음 주 micro-itch 제품화 초안" in draft
+        assert "video-editor narrow pain-offer" in draft
+        assert "/pain-offer?job=video-editor&pain=revision-chaos" in draft
+        assert "Hero headline:" in draft
+        assert video_micro in draft
+        assert "수정 체크리스트 상단" in draft
+        assert "source / timecode_or_scene / original_request / normalized_request / status" in draft
+        assert "이 반복 업무 줄이기 파일럿 신청" in draft
+        product_path = os.path.join(memo_dir, "productization-2026-06-20.md")
+        saved_product = fulfillment_queue.save_productization_draft(
+            report_dir=memo_dir,
+            out_path=product_path,
+            now="2026-06-20T09:00:00+00:00",
+            days=7,
+            limit=1,
+        )
+        assert saved_product == product_path
+        with open(product_path, encoding="utf-8") as f:
+            assert f.read() == draft
+        assert len(fulfillment_queue.memo_snapshots(report_dir=memo_dir, days=7)) == 2
+        preview_dir = os.path.join(memo_dir, "preview")
+        preview_paths = fulfillment_queue.save_productization_previews(
+            report_dir=memo_dir,
+            out_dir=preview_dir,
+            now="2026-06-20T09:00:00+00:00",
+            days=7,
+            limit=1,
+        )
+        assert os.path.join(preview_dir, "01-video-editor-revision-chaos.html") in preview_paths
+        assert os.path.join(preview_dir, "index.md") in preview_paths
+        with open(os.path.join(preview_dir, "01-video-editor-revision-chaos.html"), encoding="utf-8") as f:
+            preview_html = f.read()
+        assert report.PAIN_OFFER_NAME in preview_html
+        assert video_micro in preview_html
+        assert "수정 체크리스트 상단" in preview_html
+        with open(os.path.join(preview_dir, "index.md"), encoding="utf-8") as f:
+            preview_index = f.read()
+        assert "video-editor / revision-chaos" in preview_index
+        assert "01-video-editor-revision-chaos.html" in preview_index
+    finally:
+        store.PAYMENTS_FILE = old_payments
+        store.FULFILLMENT_FILE = old_queue
+        for path in (payments.name, queue.name, memo_path):
+            if os.path.exists(path):
+                os.unlink(path)
+        if os.path.isdir(memo_dir):
+            for name in os.listdir(memo_dir):
+                path = os.path.join(memo_dir, name)
+                if os.path.isdir(path):
+                    shutil.rmtree(path)
+                else:
+                    os.unlink(path)
+            os.rmdir(memo_dir)
+
+
+def test_server_offer_recommendation_uses_productized_micro_itch():
+    import tempfile
+    old_report_dir = store.FULFILLMENT_REPORT_DIR
+    old_intent = store.PAIN_INTENT_FILE
+    memo_dir = tempfile.mkdtemp()
+    intent_file = tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False)
+    intent_file.close()
+    video_micro = pain_probe.get("video-editor")["micro_itches_ko"][0]
+    intent_micro = pain_probe.get("video-editor")["micro_itches_ko"][1]
+    try:
+        store.FULFILLMENT_REPORT_DIR = memo_dir
+        store.PAIN_INTENT_FILE = intent_file.name
+        with open(os.path.join(memo_dir, "2026-06-20.md"), "w", encoding="utf-8") as f:
+            f.write(
+                "# pain 파일럿 운영 메모 - 2026-06-20\n\n"
+                "- total/open/overdue/due_today: 4 / 4 / 0 / 0\n\n"
+                "## micro-itch별 open\n\n"
+                f"- video-editor::{video_micro}: 4\n"
+            )
+        assert fulfillment_queue.productized_micro_itches("video-editor", limit=1) == [video_micro]
+        assert server._recommended_micro_itches("video-editor", "revision-chaos", limit=1) == [video_micro]
+        job = ScoringEngine(JOBS).score([], now=NOW)["video-editor"]
+        pain = painmap.build(job, limit=1)["pains"][0]
+        h = report.pain_offer_html(job, pain["pain_id"], micro_itches=[video_micro])
+        assert video_micro in h
+        assert "수정 체크리스트 상단" in h
+        store.append_pain_intent({
+            "ts": "2026-06-20T10:00:00Z",
+            "contact": "specific@example.com",
+            "job": "video-editor",
+            "pain_id": "revision-chaos",
+            "role_type": "freelancer",
+            "sample_available": "yes",
+            "situation": "충돌하는 수정 요청을 정리해야 합니다.",
+            "micro_itches": [intent_micro],
+        })
+        assert server._recommended_micro_itches("video-editor", "revision-chaos", limit=1) == [intent_micro]
+    finally:
+        store.FULFILLMENT_REPORT_DIR = old_report_dir
+        store.PAIN_INTENT_FILE = old_intent
+        if os.path.exists(intent_file.name):
+            os.unlink(intent_file.name)
+        if os.path.isdir(memo_dir):
+            shutil.rmtree(memo_dir)
+
+
+def test_fulfillment_queue_rejects_bad_status_and_unknown_id():
+    import tempfile
+    old_queue = store.FULFILLMENT_FILE
+    queue = tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False)
+    queue.close()
+    store.FULFILLMENT_FILE = queue.name
+    try:
+        for args in [("missing", "working"), ("missing", "bad")]:
+            raised = False
+            try:
+                fulfillment_queue.set_status(args[0], args[1])
+            except ValueError:
+                raised = True
+            assert raised, args
+    finally:
+        store.FULFILLMENT_FILE = old_queue
+        if os.path.exists(queue.name):
+            os.unlink(queue.name)
+
+
+def test_fulfillment_rejects_unknown_pain():
+    job = ScoringEngine(JOBS).score([], now=NOW)["video-editor"]
+    raised = False
+    try:
+        fulfillment.generate(job, "not-a-pain")
+    except ValueError:
+        raised = True
+    assert raised
 
 
 # ── server ────────────────────────────────────────────────────────────
@@ -281,6 +1131,108 @@ def test_server_report_quick_reply_not_deadend():
         if old:
             os.environ["GEMINI_API_KEY"] = old
         _clear_users()
+
+
+def _with_temp_pain_intents(fn):
+    import tempfile
+    old = store.PAIN_INTENT_FILE
+    tf = tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False)
+    tf.close()
+    store.PAIN_INTENT_FILE = tf.name
+    try:
+        fn()
+    finally:
+        store.PAIN_INTENT_FILE = old
+        os.unlink(tf.name)
+
+
+def test_server_pain_intent_validates_and_stores_once():
+    def body():
+        job = ScoringEngine(JOBS).score([], now=NOW)["video-editor"]
+        pid = painmap.build(job, limit=1)["pains"][0]["pain_id"]
+        valid_micro = pain_probe.get("video-editor")["micro_itches_ko"][1]
+        assert server._micro_itches_from_indexes("video-editor", ["2", "999", "bad"]) == [valid_micro]
+        payload = {"contact": "a@example.com", "job": "video-editor", "pain_id": pid,
+                   "role_type": "freelancer", "sample_available": "redacted",
+                   "situation": "수정 요청이 흩어집니다", "offer_type": "pain-pack",
+                   "micro_itches": [valid_micro, "임의 조작 문장"], "consent": True}
+        code, obj = server.handle_pain_intent(payload, "1.2.3.4")
+        assert code == 200 and obj["ok"] is True
+        assert store.pain_intent_count() == 1
+        assert pain_intents.rows()[0]["offer_type"] == "pain-pack"
+        assert pain_intents.rows()[0]["micro_itches"] == [valid_micro]   # atlas 밖 문장 저장 금지
+        assert server._recommended_micro_itches("video-editor", pid) == [valid_micro]
+        code, obj = server.handle_pain_intent(payload, "1.2.3.4")
+        assert code == 200 and obj["ok"] is True
+        assert store.pain_intent_count() == 1                       # contact+job+pain 중복 제거
+    _with_temp_pain_intents(body)
+
+
+def test_server_pain_intent_rejects_bad_inputs():
+    def body():
+        good = {"contact": "a@example.com", "job": "video-editor", "pain_id": "nope",
+                "role_type": "employee", "sample_available": "yes", "consent": True}
+        assert server.handle_pain_intent({**good, "consent": False}, "1.1.1.1")[0] == 400
+        assert server.handle_pain_intent({**good, "contact": "bad contact"}, "1.1.1.1")[0] == 400
+        assert server.handle_pain_intent({**good, "job": "no-job"}, "1.1.1.1")[0] == 400
+        assert server.handle_pain_intent(good, "1.1.1.1")[0] == 400       # pain_id 검증
+        assert server.handle_pain_intent({**good, "hp_url": "bot"}, "1.1.1.1")[0] == 200
+        assert store.pain_intent_count() == 0                             # honeypot은 저장 안 함
+    _with_temp_pain_intents(body)
+
+
+def test_pain_intents_rank_and_masking():
+    def body():
+        rows = [
+            {"ts": "2026-06-06T00:00:00Z", "contact": "alpha@example.com",
+             "job": "video-editor", "pain_id": "revision-chaos",
+             "role_type": "freelancer", "sample_available": "redacted",
+             "situation": "수정요청이 흩어집니다",
+             "micro_itches": ["수정 요청이 카톡, 메일, 댓글, 캡처 이미지에 흩어져 타임라인에 다시 꽂아야 한다."]},
+            {"ts": "2026-06-06T00:01:00Z", "contact": "beta@example.com",
+             "job": "video-editor", "pain_id": "revision-chaos",
+             "role_type": "employee", "sample_available": "yes",
+             "situation": "타임코드 정리가 어렵습니다",
+             "micro_itches": ["수정 요청이 카톡, 메일, 댓글, 캡처 이미지에 흩어져 타임라인에 다시 꽂아야 한다.",
+                              "타임코드 없이 '여기 좀 빠르게' 같은 피드백이 와서 영상을 다시 훑어야 한다."]},
+            {"ts": "2026-06-06T00:02:00Z", "contact": "gamma@example.com",
+             "job": "marketer", "pain_id": "weekly-report-story",
+             "role_type": "employee", "sample_available": "no",
+             "situation": ""},
+        ]
+        for r in rows:
+            store.append_pain_intent(r)
+        ranked = pain_intents.ranked_pains(pain_intents.rows())
+        assert ranked[0]["job"] == "video-editor"
+        assert ranked[0]["pain_id"] == "revision-chaos"
+        assert ranked[0]["count"] == 2 and ranked[0]["unique_contacts"] == 2
+        micro = pain_intents.ranked_micro_itches(pain_intents.rows())
+        assert micro[0]["job"] == "video-editor"
+        assert micro[0]["count"] == 2 and micro[0]["unique_contacts"] == 2
+        rec = pain_intents.recommended_micro_itches("video-editor", "revision-chaos")
+        assert rec[0] == "수정 요청이 카톡, 메일, 댓글, 캡처 이미지에 흩어져 타임라인에 다시 꽂아야 한다."
+        assert len(rec) == 2
+        assert pain_intents.recommended_micro_itches("video-editor", "other-pain", fallback_to_job=False) == []
+        assert pain_intents.recommended_micro_itches("video-editor", "other-pain") == rec
+        assert pain_intents.recommended_micro_itches("no-job") == []
+        assert pain_intents._mask("alpha@example.com") == "al***@example.com"
+        assert pain_intents._csv_safe("=cmd") == "'=cmd"                 # CSV 수식 인젝션 방어
+    _with_temp_pain_intents(body)
+
+
+def test_pain_intents_summary_empty(capture=None):
+    import io
+    old = sys.stdout
+    def body():
+        sys.stdout = io.StringIO()
+        try:
+            pain_intents.summary()
+            out = sys.stdout.getvalue()
+        finally:
+            sys.stdout = old
+        assert "총 pain intents: 0" in out
+        assert "결제 아님" in out
+    _with_temp_pain_intents(body)
 
 
 # ── store ─────────────────────────────────────────────────────────────
@@ -413,7 +1365,12 @@ def test_payment_status_classify():
 
 def test_payment_amount_validation():
     old = server.PAYMENT_EXPECTED_AMOUNT
+    old_pain_url = server.PAIN_PAYMENT_URL
+    old_pain_amount = server.PAIN_PAYMENT_EXPECTED_AMOUNT
+    old_allowed = server.PAYMENT_ALLOWED_AMOUNTS
     try:
+        server.PAIN_PAYMENT_URL = ""
+        server.PAYMENT_ALLOWED_AMOUNTS = ""
         server.PAYMENT_EXPECTED_AMOUNT = 99000
         assert server._finalize_pay_status("paid", 99000) == "paid"
         assert server._finalize_pay_status("paid", 0) == "failed"      # 0원
@@ -422,10 +1379,161 @@ def test_payment_amount_validation():
         assert server._finalize_pay_status("paid", True) == "failed"   # bool 차단
         assert server._finalize_pay_status("paid", 50000) == "failed"  # 기대금액 불일치
         assert server._finalize_pay_status("refunded", 99000) == "refunded"  # paid 외엔 그대로
+        server.PAIN_PAYMENT_URL = "https://pay.example/pain"
+        server.PAIN_PAYMENT_EXPECTED_AMOUNT = 39000
+        assert server._finalize_pay_status("paid", 39000) == "paid"    # pain 파일럿 링크 켠 경우만 허용
+        server.PAYMENT_ALLOWED_AMOUNTS = "99000,29000"
+        assert server._finalize_pay_status("paid", 29000) == "paid"    # 명시 목록 우선
+        assert server._finalize_pay_status("paid", 39000) == "failed"
         server.PAYMENT_EXPECTED_AMOUNT = 0
+        server.PAYMENT_ALLOWED_AMOUNTS = ""
+        server.PAIN_PAYMENT_URL = ""
         assert server._finalize_pay_status("paid", 12345) == "paid"    # 기대금액 미설정+양수→통과
     finally:
         server.PAYMENT_EXPECTED_AMOUNT = old
+        server.PAIN_PAYMENT_URL = old_pain_url
+        server.PAIN_PAYMENT_EXPECTED_AMOUNT = old_pain_amount
+        server.PAYMENT_ALLOWED_AMOUNTS = old_allowed
+
+
+def test_payment_paid_pain_creates_fulfillment_job_and_kickoff():
+    import tempfile
+    old_payments = store.PAYMENTS_FILE
+    old_queue = store.FULFILLMENT_FILE
+    old_report_dir = store.FULFILLMENT_REPORT_DIR
+    old_release_job = server.PAIN_RELEASE_JOB
+    old_release_pain = server.PAIN_RELEASE_PAIN
+    old_pain_amount = server.PAIN_PAYMENT_EXPECTED_AMOUNT
+    payments = tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False)
+    payments.close()
+    queue = tempfile.NamedTemporaryFile(suffix=".jsonl", delete=False)
+    queue.close()
+    report_dir = tempfile.mkdtemp()
+    try:
+        store.PAYMENTS_FILE = payments.name
+        store.FULFILLMENT_FILE = queue.name
+        store.FULFILLMENT_REPORT_DIR = report_dir
+        server.PAIN_RELEASE_JOB = "video-editor"
+        server.PAIN_RELEASE_PAIN = "revision-chaos"
+        server.PAIN_PAYMENT_EXPECTED_AMOUNT = 39000
+        meta = server._paid_pain_fulfillment_meta(
+            "order-pain-1",
+            39000,
+            {"customerEmail": "paid@example.com"},
+            "paid",
+        )
+        assert meta["pain_release_job"] == "video-editor"
+        assert meta["pain_release_pain"] == "revision-chaos"
+        assert meta["fulfillment_id"].startswith("fq_pay_")
+        assert os.path.exists(meta["kickoff_path"])
+        jobs = fulfillment_queue.read_jobs()
+        assert len(jobs) == 1
+        assert jobs[0]["payment_order_id"] == "order-pain-1"
+        assert jobs[0]["payment_amount"] == 39000
+        assert jobs[0]["offer_type"] == "pain-paid"
+        assert jobs[0]["status"] == "queued"
+        with open(meta["kickoff_path"], encoding="utf-8") as f:
+            kickoff = f.read()
+        assert "고객에게 보낼 자료 요청 메시지" in kickoff
+        assert "paid@example.com" not in kickoff
+        assert "pa***@example.com" in kickoff
+        store.save_payment("order-pain-1", "video-editor", 39000, "paid", extra={
+            "src": "webhook",
+            "pain_release_job": "video-editor",
+            "pain_release_pain": "revision-chaos",
+            "fulfillment_id": meta["fulfillment_id"],
+            "kickoff_path": meta["kickoff_path"],
+        })
+        rec = fulfillment_queue.paid_reconciliation(now="2026-06-20T09:00:00+00:00")
+        assert rec["paid_pain_orders"] == 1
+        assert rec["ok"] == 1
+        assert rec["rows"][0]["order_id"] == "order-pain-1"
+        assert rec["rows"][0]["queue_status"] == "queued"
+        assert rec["rows"][0]["kickoff_exists"] is True
+        assert rec["rows"][0]["checkpoint_done_count"] == 0
+        assert rec["rows"][0]["next_checkpoint"] == "kickoff_sent"
+        assert rec["rows"][0]["issues"] == []
+        rec_md = fulfillment_queue.paid_reconciliation_markdown(now="2026-06-20T09:00:00+00:00")
+        assert "paid pain 주문 이행 대조" in rec_md
+        assert "order-pain-1" in rec_md
+        assert "fq_pay_" in rec_md
+        assert "0/4 kickoff 발송" in rec_md
+        cp1 = fulfillment_queue.set_checkpoint(
+            "order-pain-1",
+            "kickoff_sent",
+            note="자료 요청 메일 발송",
+            ts="2026-06-20T10:00:00+00:00",
+        )
+        assert cp1["checkpoints"]["kickoff_sent"]["note"] == "자료 요청 메일 발송"
+        assert cp1["status"] == "queued"
+        cp2 = fulfillment_queue.set_checkpoint(
+            meta["fulfillment_id"],
+            "materials_received",
+            ts="2026-06-21T10:00:00+00:00",
+        )
+        assert cp2["checkpoints"]["materials_received"]["ts"] == "2026-06-21T10:00:00+00:00"
+        rec_cp = fulfillment_queue.paid_reconciliation(now="2026-06-21T11:00:00+00:00")
+        first_row = [r for r in rec_cp["rows"] if r["order_id"] == "order-pain-1"][0]
+        assert first_row["checkpoint_done_count"] == 2
+        assert first_row["next_checkpoint"] == "draft_ready"
+        assert first_row["checkpoint_summary"] == "2/4 초안 준비"
+        cp_done = fulfillment_queue.set_checkpoint(
+            "order-pain-1",
+            "final_delivered",
+            ts="2026-06-22T10:00:00+00:00",
+        )
+        assert cp_done["status"] == "delivered"
+        store.save_payment("order-missing", "video-editor", 39000, "paid", extra={
+            "src": "webhook",
+            "pain_release_job": "video-editor",
+            "pain_release_pain": "revision-chaos",
+            "fulfillment_id": "fq_pay_missing",
+            "kickoff_path": os.path.join(report_dir, "missing.md"),
+        })
+        rec2 = fulfillment_queue.paid_reconciliation(now="2026-06-20T09:00:00+00:00")
+        assert rec2["paid_pain_orders"] == 2
+        assert rec2["ok"] == 1
+        assert rec2["issue_counts"]["missing_queue"] == 1
+        assert rec2["issue_counts"]["missing_kickoff"] == 1
+        repairs = fulfillment_queue.repair_paid_releases(["order-missing"], now="2026-06-20T09:00:00+00:00")
+        assert len(repairs) == 1
+        assert repairs[0]["order_id"] == "order-missing"
+        assert repairs[0]["fulfillment_id"].startswith("fq_pay_")
+        assert "missing_queue" in repairs[0]["before_issues"]
+        assert "missing_kickoff" in repairs[0]["before_issues"]
+        assert repairs[0]["after_issues"] == []
+        assert os.path.exists(repairs[0]["kickoff_path"])
+        rec3 = fulfillment_queue.paid_reconciliation(now="2026-06-20T09:00:00+00:00")
+        assert rec3["paid_pain_orders"] == 2
+        assert rec3["ok"] == 2
+        assert rec3["issue_counts"] == {}
+        assert len(fulfillment_queue.read_jobs()) == 2
+        repeat = fulfillment_queue.repair_paid_releases(["order-missing"], now="2026-06-20T09:00:00+00:00")
+        assert repeat[0]["after_issues"] == []
+        assert len(fulfillment_queue.read_jobs()) == 2
+        meta2 = server._paid_pain_fulfillment_meta(
+            "order-pain-1",
+            39000,
+            {"customerEmail": "paid@example.com"},
+            "paid",
+        )
+        assert meta2["fulfillment_id"] == meta["fulfillment_id"]
+        assert len(fulfillment_queue.read_jobs()) == 2
+        assert server._paid_pain_fulfillment_meta("career-order", 99000, {}, "paid") == {}
+        assert server._paid_pain_fulfillment_meta("failed-order", 39000, {}, "failed") == {}
+    finally:
+        store.PAYMENTS_FILE = old_payments
+        store.FULFILLMENT_FILE = old_queue
+        store.FULFILLMENT_REPORT_DIR = old_report_dir
+        server.PAIN_RELEASE_JOB = old_release_job
+        server.PAIN_RELEASE_PAIN = old_release_pain
+        server.PAIN_PAYMENT_EXPECTED_AMOUNT = old_pain_amount
+        if os.path.exists(payments.name):
+            os.unlink(payments.name)
+        if os.path.exists(queue.name):
+            os.unlink(queue.name)
+        if os.path.isdir(report_dir):
+            shutil.rmtree(report_dir)
 
 
 # ── 캘리브레이션 어댑터 (R7 — 손추정→실데이터, 정직성 불가침) ──────────────

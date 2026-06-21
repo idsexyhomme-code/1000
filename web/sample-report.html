@@ -24,12 +24,22 @@ body{background:#000;color:var(--text-primary);font-family:"Pretendard Variable"
 .insight-icon{margin-right:6px;font-size:14px;}
 .insight-desc{font-size:14px;color:var(--text-primary);line-height:1.4;word-break:keep-all;letter-spacing:-.3px;}
 .section-title{font-size:18px;font-weight:700;margin-bottom:16px;letter-spacing:-.4px;}
-.task-section,.news-section{margin-bottom:36px;}
+.task-section,.news-section,.pain-section{margin-bottom:36px;}
 .task-item{display:flex;align-items:center;margin-bottom:14px;}
 .task-label{width:64px;font-size:14px;color:var(--text-secondary);letter-spacing:-.3px;}
 .task-track{flex:1;height:8px;background:var(--bg-elevate);border-radius:4px;margin:0 12px;position:relative;overflow:hidden;}
 .task-bar{position:absolute;top:0;left:0;bottom:0;border-radius:4px;}
 .task-value{width:24px;text-align:right;font-size:14px;font-weight:600;}
+.pain-note{font-size:12.5px;color:var(--text-secondary);margin:-4px 0 14px;line-height:1.55;word-break:keep-all;}
+.pain-card{background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:14px;padding:16px;margin-bottom:12px;}
+.pain-top{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px;}
+.pain-label{font-size:11px;font-weight:700;color:#34d399;background:rgba(52,211,153,.12);border-radius:6px;padding:3px 7px;white-space:nowrap;}
+.pain-task{font-size:11.5px;color:var(--text-tertiary);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pain-title{font-size:15px;font-weight:700;color:var(--text-primary);letter-spacing:-.3px;line-height:1.45;margin-bottom:7px;word-break:keep-all;}
+.pain-moment{font-size:13px;color:var(--text-secondary);line-height:1.55;letter-spacing:-.2px;word-break:keep-all;margin-bottom:10px;}
+.pain-artifact{font-size:13px;color:var(--text-primary);line-height:1.55;background:var(--bg-elevate);border-radius:10px;padding:10px 12px;word-break:keep-all;}
+.pain-artifact b{color:#fcd34d;}
+.pain-link{display:block;margin-top:10px;color:#d4d4d8;background:rgba(255,255,255,.04);border:1px solid var(--bg-elevate);border-radius:10px;padding:10px 12px;text-align:center;text-decoration:none;font-size:13px;font-weight:700;letter-spacing:-.2px;}
 .news-card{background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:14px;padding:16px;margin-bottom:12px;text-decoration:none;display:block;}
 .news-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
 .news-badge{padding:4px 8px;border-radius:6px;font-size:11px;font-weight:600;letter-spacing:-.2px;}
@@ -46,6 +56,8 @@ body{background:#000;color:var(--text-primary);font-family:"Pretendard Variable"
 .cta-btn{display:inline-block;background:var(--text-primary);color:var(--bg-base);padding:14px 28px;border-radius:30px;font-size:15px;font-weight:700;text-decoration:none;letter-spacing:-.3px;}
 .share-btn{width:100%;background:var(--bg-elevate);color:var(--text-primary);border:1px solid var(--border-color);padding:16px;border-radius:16px;font-size:16px;font-weight:600;margin-bottom:24px;cursor:pointer;letter-spacing:-.3px;}
 .footer-text{font-size:12px;color:var(--text-tertiary);line-height:1.6;text-align:justify;word-break:keep-all;letter-spacing:-.2px;}
+.legal-links{text-align:center;font-size:12px;color:var(--text-tertiary);margin:16px 0 0;line-height:1.6;}
+.legal-links a{color:var(--text-secondary);text-decoration:none;margin:0 5px;}
 .ap-section{margin-bottom:32px;}
 .ap-item{background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:14px;padding:14px 16px;margin-bottom:10px;}
 .ap-h{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;letter-spacing:-.3px;line-height:1.4;}
@@ -71,7 +83,8 @@ body{background:#000;color:var(--text-primary);font-family:"Pretendard Variable"
       <div class="insight-desc">사운드·믹싱, 현장 디렉팅·기획 등 사람 강점 영역으로 무게를 옮기면 방어력이 높아집니다.</div></div>
   </div>
   <div class="task-section"><h2 class="section-title">📊 내 업무별 AI 압력 (높을수록 자동화 신호 ↑)</h2><div class="task-item"><div class="task-label">자막 생성</div><div class="task-track"><div class="task-bar" style="width:82.0%;background:linear-gradient(90deg,#9f1239,#fb7185)"></div></div><div class="task-value">82.0</div></div><div class="task-item"><div class="task-label">컷 편집</div><div class="task-track"><div class="task-bar" style="width:76.8%;background:linear-gradient(90deg,#9f1239,#fb7185)"></div></div><div class="task-value">76.8</div></div><div class="task-item"><div class="task-label">썸네일·그래픽</div><div class="task-track"><div class="task-bar" style="width:74.0%;background:linear-gradient(90deg,#b45309,#f59e0b)"></div></div><div class="task-value">74.0</div></div><div class="task-item"><div class="task-label">색보정</div><div class="task-track"><div class="task-bar" style="width:52.0%;background:linear-gradient(90deg,#b45309,#f59e0b)"></div></div><div class="task-value">52.0</div></div><div class="task-item"><div class="task-label">사운드·믹싱</div><div class="task-track"><div class="task-bar" style="width:48.0%;background:linear-gradient(90deg,#5b21b6,#8b5cf6)"></div></div><div class="task-value">48.0</div></div><div class="task-item"><div class="task-label">현장 디렉팅·기획</div><div class="task-track"><div class="task-bar" style="width:22.0%;background:linear-gradient(90deg,#1d4ed8,#3b82f6)"></div></div><div class="task-value">22.0</div></div></div>
-  <div class="news-section"><h2 class="section-title">🔎 오늘 점수를 움직인 근거</h2><a href="https://example.com/n1" target="_blank" rel="noopener" class="news-card"><div class="news-meta"><span class="news-badge badge-official">공식</span><span class="news-link-text">원문보기 ↗</span></div><h3 class="news-title">OpenAI, 영상 자동편집 모델 정식 출시 + 유료 고객사 확보</h3><p class="news-reason">컷편집 자동화 정식기능 + 유료고객 도입신호</p></a></div>
+  <div class="pain-section"><h2 class="section-title">🩹 진짜 가려운 업무</h2><p class="pain-note">실제 사용자 인터뷰 전 가설입니다. 유료 판단 근거가 아니라 문제 발견용입니다.</p><div class="pain-card"><div class="pain-top"><span class="pain-label">제품 가설</span><span class="pain-task">컷 편집, 자막 생성, 사운드·믹싱</span></div><h3 class="pain-title">클라이언트 수정 요청이 흩어져 버전 관리가 무너지는 순간</h3><p class="pain-moment">카톡, 메일, 댓글로 온 수정사항을 타임라인 기준으로 다시 정리해야 할 때</p><div class="pain-artifact"><b>만들어줄 결과물</b><br>타임코드별 수정 체크리스트 + 클라이언트 회신문</div><a class="pain-link" href="/pain?job=video-editor&pain=revision-chaos">내 상황으로 좁히기 →</a></div><div class="pain-card"><div class="pain-top"><span class="pain-label">제품 가설</span><span class="pain-task">컷 편집, 자막 생성, 썸네일·그래픽</span></div><h3 class="pain-title">긴 영상을 쇼츠 여러 개로 쪼개는 반복 노동</h3><p class="pain-moment">하이라이트 후보, 자막, 제목, 썸네일 문구를 매번 새로 뽑아야 할 때</p><div class="pain-artifact"><b>만들어줄 결과물</b><br>쇼츠 후보 5개 + 제목/자막/썸네일 문구</div><a class="pain-link" href="/pain?job=video-editor&pain=shorts-repurpose">내 상황으로 좁히기 →</a></div><div class="pain-card"><div class="pain-top"><span class="pain-label">제품 가설</span><span class="pain-task">현장 디렉팅·기획, 색보정, 썸네일·그래픽</span></div><h3 class="pain-title">내 편집이 단순 컷 노동이 아니라 기획 역량이라는 걸 증명하기 어려움</h3><p class="pain-moment">단가 협상이나 포트폴리오 설명에서 &#x27;왜 내가 필요한지&#x27; 말해야 할 때</p><div class="pain-artifact"><b>만들어줄 결과물</b><br>포트폴리오 케이스 스터디 + 단가 방어 문장</div><a class="pain-link" href="/pain?job=video-editor&pain=portfolio-defense">내 상황으로 좁히기 →</a></div></div>
+  <div class="news-section"><h2 class="section-title">🔎 오늘 점수를 움직인 근거</h2><a href="https://example.com/n1" target="_blank" rel="noopener" class="news-card"><div class="news-meta"><span class="news-badge badge-official">공식</span><span class="news-link-text">원문보기 ↗</span></div><h3 class="news-title">OpenAI, 영상 자동편집 모델 정식 출시 + 유료 고객사 확보</h3><p class="news-reason">컷편집 자동화 정식기능 + 유료고객으로 도입신호 상승</p></a></div>
   <div class="ap-section"><h2 class="section-title">🧭 이번 주 액션플랜</h2><p class="ap-sub">매주 제안하는 커리어 방향이에요. 이 방향을 <b>실제 내 이력서 결과물</b>로 만들고 싶다면 아래 재설계 패키지를 활용하세요.</p><div class="ap-item"><div class="ap-h"><span class="ap-tag tag-defend">방어</span>&#x27;OpenAI&#x27; 흡수해 &#x27;컷 편집&#x27; 초벌 워크플로 1개 만들기<span class="ap-free">이번 주 핵심 방향</span></div><div class="ap-step">&#x27;OpenAI&#x27;를 &#x27;컷 편집&#x27;의 초벌 단계에 적용해 이번 주 1건 처리해본다</div><div class="ap-meta">중급 · 주 4.0h · &#x27;컷 편집&#x27;의 자동화 압력을 도구 흡수로 상쇄해 생산성 단가를 방어</div></div><div class="ap-item locked"><div class="ap-h"><span class="ap-tag tag-pivot">전환</span>&#x27;현장 디렉팅·기획&#x27; 비중 늘려 고가치 업무로 시간 전환하기</div><div class="ap-lock">🔒<div>이 방향을 <b>내 이력서 요약·성과 불릿 초안</b>으로 바꾸는 건 재설계 패키지에서 — 운영자가 직접 검토해 반영해요(결과물).</div></div></div><div class="ap-item locked"><div class="ap-h"><span class="ap-tag tag-pivot">전환</span>&#x27;사운드·믹싱&#x27; 비중 늘려 고가치 업무로 시간 전환하기</div><div class="ap-lock">🔒<div>이 방향을 <b>내 이력서 요약·성과 불릿 초안</b>으로 바꾸는 건 재설계 패키지에서 — 운영자가 직접 검토해 반영해요(결과물).</div></div></div></div>
   <div class="cta-card"><div class="cta-icon">🛡️</div>
     <h3 class="cta-title">위 방향, 내 이력서로 만들까요?</h3>
@@ -87,4 +100,5 @@ body{background:#000;color:var(--text-primary);font-family:"Pretendard Variable"
   </script>
   <a href="/" style="display:block;text-align:center;color:var(--text-secondary);font-size:13px;margin:2px 0 18px;text-decoration:none">🔎 내 직업도 확인하기 →</a>
   <p class="footer-text">※ 본 지수는 공개된 AI 뉴스를 정해진 원칙으로 계량화한 <b>참고 지표</b>입니다. 특정 개인·기업의 대체를 단정하지 않으며, 모든 변동의 근거를 공개합니다.</p>
+  <p class="legal-links"><a href="/privacy">개인정보처리방침</a> · <a href="/terms">이용약관</a></p>
 </div></body></html>

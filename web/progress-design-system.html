@@ -1,0 +1,229 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>커리어 시그널 작업 상태 보드</title>
+<style>
+:root{
+  --bg:#f6f7f8;
+  --ink:#111318;
+  --muted:#737780;
+  --line:#e4e7eb;
+  --panel:#ffffff;
+  --black:#111318;
+  --teal:#2ac1bc;
+  --blue:#3182f6;
+  --amber:#f5b638;
+  --red:#ff4c5f;
+  --green:#00c471;
+  --purple:#6f5cff;
+}
+*{box-sizing:border-box}
+body{
+  margin:0;
+  background:var(--bg);
+  color:var(--ink);
+  font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;
+  line-height:1.45;
+}
+button,a{font:inherit}
+.page{max-width:1440px;margin:0 auto;padding:32px 32px 56px}
+.topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:28px}
+.brand{font-size:13px;font-weight:800;letter-spacing:-.02em}
+.steps{display:flex;gap:8px;align-items:center}
+.step{display:flex;gap:7px;align-items:center;padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:#fff;color:var(--muted);font-size:12px;font-weight:700}
+.step b{display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:#111318;color:#fff;font-size:11px}
+.step.active{color:var(--ink);box-shadow:0 1px 0 rgba(0,0,0,.04)}
+.actions{display:flex;gap:8px}
+.pill{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 13px;color:var(--ink);text-decoration:none;font-size:12px;font-weight:800}
+.pill.dark{background:#111318;color:#fff;border-color:#111318}
+.hero{display:grid;grid-template-columns:minmax(0,1.15fr) 430px;gap:24px;align-items:stretch;margin-bottom:26px}
+.hero-main{min-height:520px;display:flex;flex-direction:column;justify-content:space-between}
+.eyebrow{font-size:13px;color:var(--muted);font-weight:750;margin:0 0 8px}
+h1{font-size:64px;line-height:.95;letter-spacing:-.06em;margin:0 0 18px;max-width:780px}
+.lead{font-size:19px;color:#4b515b;letter-spacing:-.025em;max-width:720px;margin:0}
+.summary{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:44px}
+.metric{background:#fff;border:1px solid var(--line);border-radius:8px;padding:16px;min-height:110px}
+.metric .n{font-size:34px;line-height:1;font-weight:900;letter-spacing:-.04em}
+.metric .t{font-size:13px;color:var(--muted);font-weight:750;margin-top:9px}
+.reference{background:#fff;border:1px solid var(--line);border-radius:8px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.reference-head{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.reference-title{font-size:13px;font-weight:900}
+.reference img{width:100%;height:328px;object-fit:cover;object-position:top;border-radius:7px;border:1px solid var(--line);background:#eef1f4}
+.reference-note{font-size:13px;color:var(--muted);margin:0}
+.filters{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0 18px}
+.filter{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 13px;font-size:12px;font-weight:850;color:#4b515b;cursor:pointer}
+.filter.active{background:#111318;color:#fff;border-color:#111318}
+.grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px}
+.card{background:#fff;border:1px solid var(--line);border-radius:8px;overflow:hidden;min-height:210px;display:flex;flex-direction:column}
+.swatch{height:82px;padding:12px;display:flex;justify-content:space-between;align-items:flex-start;color:#fff}
+.swatch.black{background:var(--black)}.swatch.teal{background:var(--teal)}.swatch.blue{background:var(--blue)}.swatch.amber{background:var(--amber);color:#111318}.swatch.red{background:var(--red)}.swatch.green{background:var(--green)}.swatch.purple{background:var(--purple)}
+.badge{font-size:10px;font-weight:900;border:1px solid rgba(255,255,255,.5);border-radius:999px;padding:4px 7px;text-transform:uppercase}
+.swatch.amber .badge{border-color:rgba(0,0,0,.22)}
+.icon{width:42px;height:42px;border-radius:8px;background:rgba(255,255,255,.9);color:#111318;display:grid;place-items:center;font-weight:950;font-size:14px}
+.body{padding:14px 14px 16px;display:flex;flex-direction:column;gap:10px;flex:1}
+.k{font-size:11px;color:var(--muted);font-weight:800}
+.title{font-size:18px;font-weight:900;letter-spacing:-.035em;margin:0}
+.desc{font-size:13px;color:#5d636d;margin:0;word-break:keep-all}
+.cmd{margin-top:auto;border:1px solid var(--line);background:#fafbfc;border-radius:8px;padding:10px 11px;font-size:12px;font-weight:800;color:#2f3540;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cmd[data-copy]{cursor:pointer}
+.roadmap{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}
+.band{background:#fff;border:1px solid var(--line);border-radius:8px;padding:18px}
+.band h2{font-size:18px;margin:0 0 12px;letter-spacing:-.03em}
+.list{display:grid;gap:10px}
+.row{display:grid;grid-template-columns:140px 1fr;gap:12px;padding:11px 0;border-top:1px solid var(--line)}
+.row:first-child{border-top:0}
+.row b{font-size:13px}
+.row span{font-size:13px;color:#5d636d}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#111318;color:#fff;border-radius:999px;padding:10px 14px;font-size:12px;font-weight:800;opacity:0;pointer-events:none;transition:.18s}
+.toast.show{opacity:1}
+@media(max-width:980px){
+  .page{padding:22px 16px 42px}
+  .topbar,.hero{display:block}
+  .steps,.actions{margin-top:12px}
+  h1{font-size:42px}
+  .reference{margin-top:20px}
+  .summary,.grid,.roadmap{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<main class="page">
+  <header class="topbar">
+    <div class="brand">career-signal.progress</div>
+    <nav class="steps" aria-label="progress steps">
+      <div class="step active"><b>1</b> Reference</div>
+      <div class="step active"><b>2</b> Organize</div>
+      <div class="step"><b>3</b> Export</div>
+    </nav>
+    <div class="actions">
+      <a class="pill" href="./sample-fulfillment-catalog.md">Catalog</a>
+      <a class="pill dark" href="./progress-design-system.png">PNG Export</a>
+    </div>
+  </header>
+
+  <section class="hero" aria-label="current build status">
+    <div class="hero-main">
+      <div>
+        <p class="eyebrow">Design source: oh-my-design builder style</p>
+        <h1>현재 작업은 P45까지 완료되었습니다.</h1>
+        <p class="lead">서비스는 이제 직업별 가려움 발굴에서 pain-paid 결제, 이행 큐, kickoff, 복구, 체크포인트 추적까지 이어지는 운영 흐름을 갖췄습니다.</p>
+      </div>
+      <div class="summary">
+        <div class="metric"><div class="n">72</div><div class="t">core tests passed</div></div>
+        <div class="metric"><div class="n">15</div><div class="t">대표 직업군 pain coverage</div></div>
+        <div class="metric"><div class="n">P45</div><div class="t">latest completed milestone</div></div>
+      </div>
+    </div>
+    <aside class="reference" aria-label="reference capture">
+      <div class="reference-head">
+        <div class="reference-title">Reference capture</div>
+        <span class="pill">oh-my-design.kr/builder</span>
+      </div>
+      <img src="./assets/oh-my-design-builder.png" alt="oh-my-design builder reference screenshot">
+      <p class="reference-note">밝은 캔버스, 상단 스텝, 필터 칩, 컬러 스와치 카드 그리드, 짧은 Export 액션 구조를 차용했습니다.</p>
+    </aside>
+  </section>
+
+  <div class="filters" aria-label="milestone filters">
+    <button class="filter active" data-filter="all">All</button>
+    <button class="filter" data-filter="discovery">Pain Discovery</button>
+    <button class="filter" data-filter="offer">Offer</button>
+    <button class="filter" data-filter="payment">Payment</button>
+    <button class="filter" data-filter="ops">Fulfillment Ops</button>
+    <button class="filter" data-filter="next">Next</button>
+  </div>
+
+  <section class="grid" aria-label="milestone cards">
+    <article class="card" data-cat="discovery">
+      <div class="swatch teal"><span class="badge">Done</span><span class="icon">P31</span></div>
+      <div class="body"><div class="k">micro-itch ops</div><h2 class="title">병목을 운영 액션으로 연결</h2><p class="desc">선택된 작은 가려움별 산출물 위치, 필수 칸, 첫 확인 질문을 큐 리포트에서 바로 확인.</p><div class="cmd" data-copy="python3 src/fulfillment_queue.py report">fulfillment_queue.py report</div></div>
+    </article>
+    <article class="card" data-cat="discovery">
+      <div class="swatch green"><span class="badge">Done</span><span class="icon">P34</span></div>
+      <div class="body"><div class="k">weekly memory</div><h2 class="title">운영 메모 기반 주간 요약</h2><p class="desc">저장된 운영 메모에서 open, overdue, pain, micro-itch 병목 추세를 다시 읽음.</p><div class="cmd" data-copy="python3 src/fulfillment_queue.py weekly">fulfillment_queue.py weekly</div></div>
+    </article>
+    <article class="card" data-cat="offer">
+      <div class="swatch amber"><span class="badge">Done</span><span class="icon">P36</span></div>
+      <div class="body"><div class="k">productization</div><h2 class="title">주간 1위 가려움을 오퍼 카피로</h2><p class="desc">병목 micro-itch를 랜딩 headline, promise, CTA, scope guard로 정리.</p><div class="cmd" data-copy="python3 src/fulfillment_queue.py productize">productize</div></div>
+    </article>
+    <article class="card" data-cat="offer">
+      <div class="swatch blue"><span class="badge">Done</span><span class="icon">P38</span></div>
+      <div class="body"><div class="k">preview export</div><h2 class="title">pain-offer HTML preview</h2><p class="desc">실결제 전 후보별 오퍼 화면을 파일로 뽑아 문구, 범위, CTA를 검토.</p><div class="cmd" data-copy="python3 src/fulfillment_queue.py productize-preview">productize-preview</div></div>
+    </article>
+    <article class="card" data-cat="payment">
+      <div class="swatch purple"><span class="badge">Done</span><span class="icon">P39</span></div>
+      <div class="body"><div class="k">release guard</div><h2 class="title">pain-paid 오픈 전 guard</h2><p class="desc">release job, pain, preview, 법무 링크, 샘플 이행서까지 통과해야 결제 공개.</p><div class="cmd" data-copy="python3 src/launch_preflight.py --mode pain-paid">launch_preflight --mode pain-paid</div></div>
+    </article>
+    <article class="card" data-cat="payment">
+      <div class="swatch red"><span class="badge">Done</span><span class="icon">P41</span></div>
+      <div class="body"><div class="k">paid webhook</div><h2 class="title">결제 웹훅 → 큐/kickoff 자동 연결</h2><p class="desc">서명검증 paid 주문은 order_id 기반 fq_pay 작업과 kickoff 문서를 자동 생성.</p><div class="cmd" data-copy="/webhook/payment">/webhook/payment</div></div>
+    </article>
+    <article class="card" data-cat="ops">
+      <div class="swatch black"><span class="badge">Done</span><span class="icon">P42</span></div>
+      <div class="body"><div class="k">reconciliation</div><h2 class="title">결제·큐·kickoff 대조</h2><p class="desc">paid pain 주문, 큐 작업, kickoff 파일, overdue, id mismatch를 한 표에서 확인.</p><div class="cmd" data-copy="python3 src/fulfillment_queue.py reconcile-paid">reconcile-paid</div></div>
+    </article>
+    <article class="card" data-cat="ops">
+      <div class="swatch blue"><span class="badge">Done</span><span class="icon">P43</span></div>
+      <div class="body"><div class="k">daily warning</div><h2 class="title">운영 메모/주간 요약에 paid 경고</h2><p class="desc">memo와 weekly만 봐도 결제 후 이행 누락이 자동으로 보이게 연결.</p><div class="cmd" data-copy="python3 src/fulfillment_queue.py memo">memo</div></div>
+    </article>
+    <article class="card" data-cat="ops">
+      <div class="swatch green"><span class="badge">Done</span><span class="icon">P44</span></div>
+      <div class="body"><div class="k">repair</div><h2 class="title">누락 주문 멱등 복구</h2><p class="desc">이슈 주문의 큐/kickoff와 payment metadata를 안전하게 복구.</p><div class="cmd" data-copy="python3 src/fulfillment_queue.py repair-paid --all">repair-paid --all</div></div>
+    </article>
+    <article class="card" data-cat="ops">
+      <div class="swatch teal"><span class="badge">Latest</span><span class="icon">P45</span></div>
+      <div class="body"><div class="k">checkpoint</div><h2 class="title">주문별 이행 체크포인트</h2><p class="desc">kickoff 발송, 자료 수신, 초안 준비, 최종 전달을 주문 단위로 추적.</p><div class="cmd" data-copy="python3 src/fulfillment_queue.py checkpoint ORDER_ID kickoff_sent">checkpoint ORDER_ID</div></div>
+    </article>
+    <article class="card" data-cat="next">
+      <div class="swatch amber"><span class="badge">Next</span><span class="icon">N1</span></div>
+      <div class="body"><div class="k">next gap</div><h2 class="title">체크포인트 지연 경고</h2><p class="desc">paid 후 24시간 내 kickoff 미발송, kickoff 후 48시간 내 자료 미수신 같은 운영 경보.</p><div class="cmd">next: checkpoint delay alert</div></div>
+    </article>
+    <article class="card" data-cat="next">
+      <div class="swatch black"><span class="badge">Export</span><span class="icon">K</span></div>
+      <div class="body"><div class="k">keynote-ready</div><h2 class="title">16:9 PNG로 바로 옮기기</h2><p class="desc">이 페이지 첫 화면은 Keynote/발표 자료에 넣기 쉬운 슬라이드 구조로 정리.</p><div class="cmd">progress-design-system.png</div></div>
+    </article>
+  </section>
+
+  <section class="roadmap">
+    <div class="band">
+      <h2>운영 흐름</h2>
+      <div class="list">
+        <div class="row"><b>1. Pain 발견</b><span>직업군별 업무 고통과 micro-itch 수집</span></div>
+        <div class="row"><b>2. Offer 검증</b><span>제품화 후보를 pain-offer preview로 검토</span></div>
+        <div class="row"><b>3. 결제 연결</b><span>signed webhook만 paid로 인정하고 큐/kickoff 생성</span></div>
+        <div class="row"><b>4. 이행 운영</b><span>대조, 복구, 체크포인트로 고객 전달까지 추적</span></div>
+      </div>
+    </div>
+    <div class="band">
+      <h2>검증 상태</h2>
+      <div class="list">
+        <div class="row"><b>테스트</b><span>python3 tests/test_core.py → 72 passed</span></div>
+        <div class="row"><b>문서</b><span>README, DEPLOY, catalog, PROJECT 갱신</span></div>
+        <div class="row"><b>현재 명령</b><span>reconcile-paid, repair-paid, checkpoint</span></div>
+        <div class="row"><b>다음 작업</b><span>체크포인트 지연 경고와 운영 알림 강화</span></div>
+      </div>
+    </div>
+  </section>
+</main>
+<div class="toast" id="toast">Copied</div>
+<script>
+const filters=[...document.querySelectorAll('.filter')];
+const cards=[...document.querySelectorAll('.card')];
+filters.forEach(btn=>btn.addEventListener('click',()=>{
+  filters.forEach(x=>x.classList.remove('active'));
+  btn.classList.add('active');
+  const f=btn.dataset.filter;
+  cards.forEach(card=>{card.style.display=(f==='all'||card.dataset.cat===f)?'flex':'none';});
+}));
+const toast=document.getElementById('toast');
+document.querySelectorAll('[data-copy]').forEach(el=>el.addEventListener('click',async()=>{
+  try{await navigator.clipboard.writeText(el.dataset.copy);toast.textContent='Copied: '+el.dataset.copy;}
+  catch(e){toast.textContent=el.dataset.copy;}
+  toast.classList.add('show');
+  setTimeout(()=>toast.classList.remove('show'),1400);
+}));
+</script>
+</body>
+</html>

@@ -42,6 +42,9 @@ data/actionplan_cache.json
 data/notified.json
 data/events_archive/
 data/interest.jsonl
+data/pain_intent.jsonl
+data/fulfillment_jobs.jsonl
+data/fulfillment_reports/
 data/payments.jsonl
 # PII 파생물(CSV export·백업) 커밋 방지 — interest/payments 원본 + 모든 csv/백업
 *.csv

@@ -1,0 +1,164 @@
+<!doctype html><html lang="ko"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='88'%3E%F0%9F%93%A1%3C/text%3E%3C/svg%3E"><title>개인정보처리방침 · 커리어 시그널</title>
+<style>
+:root{--bg-base:#09090b;--bg-surface:#18181b;--bg-elevate:#27272a;--border-color:#3f3f46;
+--text-primary:#fafafa;--text-secondary:#a1a1aa;--text-tertiary:#8b8b94;
+--color-clear:#3b82f6;--color-pcloudy:#8b5cf6;--color-cloudy:#f59e0b;--color-typhoon:#e11d48;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+body{background:#000;color:var(--text-primary);font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,system-ui,Roboto,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;display:flex;justify-content:center;line-height:1.5;}
+.app-container{width:100%;max-width:460px;background:var(--bg-base);min-height:100vh;padding:24px 20px 48px;}
+.hero-card{background:linear-gradient(145deg,#18181b,#131316);border:1px solid var(--bg-elevate);border-radius:24px;padding:32px 20px 24px;text-align:center;margin-bottom:24px;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 8px 24px rgba(0,0,0,.4);}
+.hero-emoji{font-size:48px;margin-bottom:16px;line-height:1;}
+.hero-title{font-size:24px;font-weight:700;margin-bottom:8px;letter-spacing:-.5px;}
+.hero-subtitle{font-size:15px;color:var(--text-secondary);margin-bottom:32px;letter-spacing:-.3px;word-break:keep-all;}
+.gauge-wrapper{position:relative;width:100%;max-width:280px;margin:0 auto;}
+.gauge-svg{width:100%;height:auto;overflow:visible;}
+.insight-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:32px;}
+.insight-card{background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:16px;padding:16px;}
+.insight-header{display:flex;align-items:center;font-size:13px;font-weight:600;margin-bottom:8px;}
+.insight-header.threat{color:#fca5a5;}
+.insight-header.opp{color:#6ee7b7;}
+.insight-icon{margin-right:6px;font-size:14px;}
+.insight-desc{font-size:14px;color:var(--text-primary);line-height:1.4;word-break:keep-all;letter-spacing:-.3px;}
+.section-title{font-size:18px;font-weight:700;margin-bottom:16px;letter-spacing:-.4px;}
+.task-section,.news-section,.pain-section{margin-bottom:36px;}
+.task-item{display:flex;align-items:center;margin-bottom:14px;}
+.task-label{width:64px;font-size:14px;color:var(--text-secondary);letter-spacing:-.3px;}
+.task-track{flex:1;height:8px;background:var(--bg-elevate);border-radius:4px;margin:0 12px;position:relative;overflow:hidden;}
+.task-bar{position:absolute;top:0;left:0;bottom:0;border-radius:4px;}
+.task-value{width:24px;text-align:right;font-size:14px;font-weight:600;}
+.pain-note{font-size:12.5px;color:var(--text-secondary);margin:-4px 0 14px;line-height:1.55;word-break:keep-all;}
+.pain-card{background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:14px;padding:16px;margin-bottom:12px;}
+.pain-top{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px;}
+.pain-label{font-size:11px;font-weight:700;color:#34d399;background:rgba(52,211,153,.12);border-radius:6px;padding:3px 7px;white-space:nowrap;}
+.pain-task{font-size:11.5px;color:var(--text-tertiary);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pain-title{font-size:15px;font-weight:700;color:var(--text-primary);letter-spacing:-.3px;line-height:1.45;margin-bottom:7px;word-break:keep-all;}
+.pain-moment{font-size:13px;color:var(--text-secondary);line-height:1.55;letter-spacing:-.2px;word-break:keep-all;margin-bottom:10px;}
+.pain-artifact{font-size:13px;color:var(--text-primary);line-height:1.55;background:var(--bg-elevate);border-radius:10px;padding:10px 12px;word-break:keep-all;}
+.pain-artifact b{color:#fcd34d;}
+.pain-link{display:block;margin-top:10px;color:#d4d4d8;background:rgba(255,255,255,.04);border:1px solid var(--bg-elevate);border-radius:10px;padding:10px 12px;text-align:center;text-decoration:none;font-size:13px;font-weight:700;letter-spacing:-.2px;}
+.news-card{background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:14px;padding:16px;margin-bottom:12px;text-decoration:none;display:block;}
+.news-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.news-badge{padding:4px 8px;border-radius:6px;font-size:11px;font-weight:600;letter-spacing:-.2px;}
+.badge-official{background:rgba(59,130,246,.15);color:#60a5fa;}
+.badge-vendor{background:rgba(139,92,246,.15);color:#a78bfa;}
+.news-link-text{font-size:12px;color:var(--text-tertiary);}
+.news-title{font-size:15px;font-weight:600;color:var(--text-primary);margin-bottom:6px;letter-spacing:-.3px;line-height:1.4;}
+.news-reason{font-size:13px;color:var(--text-secondary);letter-spacing:-.2px;}
+.cta-card{background:linear-gradient(145deg,rgba(245,158,11,.08),rgba(225,29,72,.03));border:1px solid rgba(245,158,11,.2);border-radius:20px;padding:28px 20px;text-align:center;margin-bottom:36px;}
+.cta-icon{font-size:28px;margin-bottom:12px;}
+.cta-title{font-size:16px;font-weight:700;margin-bottom:8px;letter-spacing:-.3px;}
+.cta-text{font-size:15px;font-weight:500;color:var(--text-secondary);line-height:1.5;margin-bottom:20px;word-break:keep-all;letter-spacing:-.3px;}
+.cta-highlight{color:#fcd34d;}
+.cta-btn{display:inline-block;background:var(--text-primary);color:var(--bg-base);padding:14px 28px;border-radius:30px;font-size:15px;font-weight:700;text-decoration:none;letter-spacing:-.3px;}
+.share-btn{width:100%;background:var(--bg-elevate);color:var(--text-primary);border:1px solid var(--border-color);padding:16px;border-radius:16px;font-size:16px;font-weight:600;margin-bottom:24px;cursor:pointer;letter-spacing:-.3px;}
+.footer-text{font-size:12px;color:var(--text-tertiary);line-height:1.6;text-align:justify;word-break:keep-all;letter-spacing:-.2px;}
+.legal-links{text-align:center;font-size:12px;color:var(--text-tertiary);margin:16px 0 0;line-height:1.6;}
+.legal-links a{color:var(--text-secondary);text-decoration:none;margin:0 5px;}
+.ap-section{margin-bottom:32px;}
+.ap-item{background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:14px;padding:14px 16px;margin-bottom:10px;}
+.ap-h{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;letter-spacing:-.3px;line-height:1.4;}
+.ap-tag{font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;flex-shrink:0;}
+.tag-defend{background:rgba(245,158,11,.15);color:#fbbf24;}
+.tag-pivot{background:rgba(59,130,246,.15);color:#60a5fa;}
+.ap-step{font-size:13px;color:var(--text-secondary);margin-top:8px;line-height:1.5;word-break:keep-all;}
+.ap-meta{font-size:12px;color:var(--text-tertiary);margin-top:6px;}
+.ap-sub{font-size:12.5px;color:var(--text-secondary);margin:-2px 2px 14px;line-height:1.55;word-break:keep-all;}
+.ap-free{font-size:10.5px;font-weight:700;color:#34d399;background:rgba(52,211,153,.12);padding:2px 7px;border-radius:6px;margin-left:auto;flex-shrink:0;}
+.ap-lock{font-size:12.5px;color:var(--text-secondary);margin-top:10px;line-height:1.55;word-break:keep-all;display:flex;gap:7px;align-items:flex-start;background:var(--bg-elevate);border-radius:10px;padding:10px 12px;}
+
+.legal-page{background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:16px;padding:18px 16px;margin-bottom:14px;}
+.legal-page h2{font-size:16px;margin:20px 0 8px;letter-spacing:-.3px;}
+.legal-page h2:first-child{margin-top:0;}
+.legal-page p,.legal-page li{font-size:13px;color:var(--text-secondary);line-height:1.65;word-break:keep-all;margin:6px 0;}
+.legal-page ul{padding-left:18px;margin:6px 0 10px;}
+.legal-page table{width:100%;border-collapse:collapse;margin:10px 0 14px;font-size:12.5px;color:var(--text-secondary);}
+.legal-page th,.legal-page td{border:1px solid var(--bg-elevate);padding:8px;vertical-align:top;line-height:1.5;text-align:left;}
+.legal-page th{color:var(--text-primary);background:rgba(255,255,255,.03);font-weight:700;}
+.legal-warn{background:rgba(245,158,11,.10);border:1px solid rgba(245,158,11,.25);border-radius:12px;padding:12px 13px;color:#fcd34d;font-size:12.5px;line-height:1.6;margin-bottom:14px;word-break:keep-all;}
+.legal-ref a{color:var(--text-secondary);}
+</style></head><body><div class="app-container">
+  <a href="/" style="display:block;text-align:center;color:var(--text-secondary);font-size:14px;margin:4px 0 16px;text-decoration:none">← 처음으로</a>
+  <div class="hero-card"><div class="hero-emoji">🔐</div>
+    <h1 class="hero-title">개인정보처리방침</h1>
+    <p class="hero-subtitle">커리어 시그널 개인정보 처리 기준<br><span style="font-size:12px;color:var(--text-tertiary)">시행일: 2026-06-20</span></p>
+  </div>
+  <div class="legal-warn">초안입니다. 배포 전 운영자는 빈 사업자 정보, 실제 수집항목, 보유기간, 위탁사, 결제/자료수집 흐름을 서비스 운영 사실에 맞게 채우고 법률 검토를 받아야 합니다.</div>
+  <div class="legal-page">
+    <h2>1. 개인정보처리자</h2>
+    <p>[필수 입력] 운영자/상호은(는) 커리어 시그널를 운영하며, 정보주체의 개인정보를 다음 목적과 범위에서 처리합니다.</p>
+    <ul>
+      <li>상호/성명: [필수 입력] 운영자/상호</li>
+      <li>주소: [필수 입력] 사업장 주소</li>
+      <li>문의/삭제 요청: [필수 입력] privacy@example.com</li>
+      <li>개인정보 보호책임자: [필수 입력] 개인정보 보호책임자</li>
+    </ul>
+
+    <h2>2. 개인정보의 처리 목적</h2>
+    <table>
+      <tr><th>구분</th><th>목적</th></tr>
+      <tr><td>리포트/직업 선택</td><td>사용자가 선택한 직업군에 대한 AI 압력 참고 리포트 제공</td></tr>
+      <tr><td>오픈 안내·사전신청</td><td>정식 오픈, 파일럿 진행 여부, 결제 또는 자료 제출 안내</td></tr>
+      <tr><td>pain 파일럿</td><td>사용자가 제출한 업무 고통 상황을 바탕으로 컨시어지 산출물 초안 작성 및 전달</td></tr>
+      <tr><td>결제·환불</td><td>결제 확인, 계약 이행, 환불·분쟁 대응, 법령상 보관 의무 이행</td></tr>
+      <tr><td>보안·남용 방지</td><td>중복 신청, 스팸, 비정상 요청 탐지. IP는 원칙적으로 비밀키 기반 해시로만 처리합니다.</td></tr>
+    </table>
+
+    <h2>3. 처리하는 개인정보 항목</h2>
+    <table>
+      <tr><th>수집 경로</th><th>항목</th></tr>
+      <tr><td>/offer 사전신청</td><td>연락처(이메일 또는 카카오 오픈채팅 ID), 선택 직업군, 신청 시각, IP 해시(설정 시)</td></tr>
+      <tr><td>/pain, /pain-offer</td><td>연락처, 직업군, 선택한 pain, 현재 일하는 형태, 실제 상황 설명, 샘플 제공 가능 여부, 신청 시각, IP 해시(설정 시)</td></tr>
+      <tr><td>실결제/이행</td><td>[필수 입력] 결제자 이름, 이메일/전화, 주문번호, 결제금액/상태, 이력서·포트폴리오·업무 자료·인터뷰 답변 등 실제 이행에 필요한 자료</td></tr>
+    </table>
+
+    <h2>4. 개인정보의 처리 및 보유 기간</h2>
+    <ul>
+      <li>사전신청/오픈 안내: 정식 오픈 후 6개월 또는 삭제 요청 시까지</li>
+      <li>pain 파일럿 신청 및 이행 자료: 파일럿 종료 후 6개월 또는 삭제 요청 시까지. 다만 분쟁·정산 대응에 필요한 최소 정보는 관계 법령상 기간 동안 보관할 수 있습니다.</li>
+      <li>결제·계약·환불 관련 기록: 전자상거래 등 관련 법령에서 정한 보관기간이 있는 경우 그 기간</li>
+      <li>보안 로그/IP 해시: 남용 방지 목적 달성 후 지체 없이 파기하거나, 운영상 필요한 최소 기간만 보관</li>
+    </ul>
+
+    <h2>5. 제3자 제공</h2>
+    <p>운영자는 원칙적으로 정보주체의 개인정보를 제3자에게 제공하지 않습니다. 다만 법령상 의무, 수사기관의 적법한 요청, 정보주체의 별도 동의가 있는 경우에는 필요한 범위에서 제공할 수 있습니다.</p>
+
+    <h2>6. 개인정보 처리위탁</h2>
+    <table>
+      <tr><th>수탁자</th><th>위탁업무</th></tr>
+      <tr><td>[필수 입력] 결제대행사/PG</td><td>결제 처리, 결제 확인, 환불 처리</td></tr>
+      <tr><td>[필수 입력] 호스팅/서버 제공자</td><td>서버 호스팅, 데이터 저장, 보안 모니터링</td></tr>
+      <tr><td>[필수 입력] 이메일/폼/알림 도구</td><td>오픈 안내, 자료 수집, 결과물 전달</td></tr>
+    </table>
+
+    <h2>7. 정보주체의 권리와 행사방법</h2>
+    <p>정보주체는 개인정보 열람, 정정, 삭제, 처리정지, 동의 철회를 요청할 수 있습니다. 요청은 [필수 입력] privacy@example.com로 접수하며, 운영자는 본인 확인 후 법령상 정당한 사유가 없는 한 지체 없이 처리합니다.</p>
+
+    <h2>8. 파기 절차 및 방법</h2>
+    <p>처리 목적이 달성되거나 보유기간이 지난 개인정보는 지체 없이 파기합니다. 전자 파일은 복구하기 어렵도록 삭제하고, 출력물이 있는 경우 분쇄 또는 이에 준하는 방식으로 파기합니다.</p>
+
+    <h2>9. 안전성 확보 조치</h2>
+    <ul>
+      <li>런타임 개인정보 파일은 저장소에 커밋하지 않도록 .gitignore로 분리합니다.</li>
+      <li>원시 IP는 기본 저장하지 않고, 비밀키가 설정된 경우 해시값만 저장합니다.</li>
+      <li>결제 완료 집계는 서명 검증된 서버 간 웹훅만 인정합니다.</li>
+      <li>이력서·포트폴리오·업무자료는 이행에 필요한 최소 범위만 수집합니다.</li>
+    </ul>
+
+    <h2>10. 자동화된 결정 및 전문 판단</h2>
+    <p>AI 압력지수와 pain 추천은 참고용 제품 가설 및 리포트입니다. 개인에 대한 채용, 평가, 의료, 법률, 세무, 회계 등 전문 판단을 자동 결정하지 않으며, 유료 산출물도 운영자의 검토를 전제로 합니다.</p>
+
+    <h2>11. 고충처리 및 문의</h2>
+    <p>개인정보 관련 문의, 삭제, 동의 철회, 분쟁 접수는 [필수 입력] privacy@example.com로 연락해 주세요.</p>
+
+    <h2>12. 공식 참고 출처</h2>
+    <p class="legal-ref">본 초안은 개인정보보호위원회/개인정보 포털의 작성지침과 국가법령정보센터의 개인정보 보호법·시행령 공개 항목을 참고해 구성했습니다. 최신 법령·가이드 확인 후 운영 사실에 맞게 수정해야 합니다.</p>
+    <ul class="legal-ref">
+      <li><a href="https://www.privacy.go.kr/front/bbs/bbsView.do?bbsNo=BBSMSTR_000000000049&bbscttNo=20885" target="_blank" rel="noopener">2026 개인정보 처리방침 작성지침</a></li>
+      <li><a href="https://www.law.go.kr/LSW//lsLinkCommonInfo.do?ancYnChk=&chrClsCd=010202&lsJoLnkSeq=1020398435" target="_blank" rel="noopener">개인정보 보호법 제30조</a></li>
+      <li><a href="https://www.law.go.kr/LSW//lsLinkCommonInfo.do?chrClsCd=010202&lspttninfSeq=67001" target="_blank" rel="noopener">개인정보 보호법 시행령 제31조</a></li>
+    </ul>
+  </div>
+  <p class="legal-links"><a href="/privacy">개인정보처리방침</a> · <a href="/terms">이용약관</a></p>
+</div></body></html>

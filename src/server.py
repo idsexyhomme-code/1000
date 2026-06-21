@@ -25,6 +25,10 @@ from urllib.parse import parse_qs, urlsplit
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 import notify
+import fulfillment_queue
+import pain_intents
+import painmap
+import pain_probe
 import pipeline
 import report
 import store
@@ -52,6 +56,9 @@ WEBHOOK_TOKEN = os.environ.get("WEBHOOK_TOKEN", "")  # 설정 시 /webhook은 ?t
 REPORT_BASE_URL = os.environ.get("REPORT_BASE_URL", "")  # 예: https://api.example.com (리포트 링크용)
 CHANNEL_URL = os.environ.get("CHANNEL_URL", "")          # 카카오 채널 추가 링크(공유 바이럴용)
 PAYMENT_URL = os.environ.get("PAYMENT_URL", "")          # 설정 시 /offer가 실결제 버튼, 미설정 시 사전예약 수집
+PAIN_PAYMENT_URL = os.environ.get("PAIN_PAYMENT_URL", "")  # 설정 시 /pain-offer가 실결제 버튼으로 전환
+PAIN_RELEASE_JOB = os.environ.get("PAIN_RELEASE_JOB", "")
+PAIN_RELEASE_PAIN = os.environ.get("PAIN_RELEASE_PAIN", "")
 # 결제 웹훅 서명검증 — 이 시크릿 없으면 'paid'(진짜 지불주체)로 절대 확정하지 않음(정직성 불가침).
 PAYMENT_WEBHOOK_SECRET = os.environ.get("PAYMENT_WEBHOOK_SECRET", "")
 PAYMENT_SIG_HEADER = os.environ.get("PAYMENT_SIG_HEADER", "X-Signature")  # PG가 보내는 HMAC 서명 헤더명(배포 시 PG에 맞춤)
@@ -74,12 +81,151 @@ def _valid_contact(c: str) -> bool:
     return len(c) >= 3                # 카카오 오픈채팅 ID류
 
 
+def _ip_hmac(ip: str) -> str:
+    """IP 평문 저장 금지. 비밀 솔트 없으면 빈 문자열."""
+    return (hmac.new(INTEREST_SALT.encode(), str(ip).encode(),
+                     hashlib.sha256).hexdigest()[:12] if INTEREST_SALT else "")
+
+
+def _valid_micro_itches(job_id: str, raw) -> list[str]:
+    """클라이언트가 보낸 micro-itch는 직업군 atlas에 있는 문장만 저장한다."""
+    if isinstance(raw, str):
+        raw = [raw]
+    if not isinstance(raw, list):
+        return []
+    allowed = set((pain_probe.get(job_id) or {}).get("micro_itches_ko", []))
+    out: list[str] = []
+    for item in raw[:12]:
+        s = str(item or "").strip()[:180]
+        if s and s in allowed and s not in out:
+            out.append(s)
+        if len(out) >= 6:
+            break
+    return out
+
+
+def _micro_itches_from_indexes(job_id: str, raw_indexes) -> list[str]:
+    """URL query의 mi=1&mi=2 값을 atlas 문장으로 복원한다."""
+    atlas = (pain_probe.get(job_id) or {}).get("micro_itches_ko", [])
+    out: list[str] = []
+    if isinstance(raw_indexes, str):
+        raw_indexes = [raw_indexes]
+    if not isinstance(raw_indexes, list):
+        return out
+    for raw in raw_indexes[:12]:
+        try:
+            idx = int(str(raw).strip())
+        except Exception:
+            continue
+        if 1 <= idx <= len(atlas):
+            item = atlas[idx - 1]
+            if item not in out:
+                out.append(item)
+        if len(out) >= 6:
+            break
+    return out
+
+
+def _recommended_micro_itches(job_id: str, pain_id: str = "", limit: int = 2) -> list[str]:
+    """저장된 aggregate 기준 추천 micro-itch. PII 원문은 반환하지 않는다."""
+    try:
+        pain_specific = pain_intents.recommended_micro_itches(
+            job_id, pain_id, limit=limit, fallback_to_job=False,
+        )
+        if pain_specific:
+            return pain_specific
+    except Exception:
+        pass
+    try:
+        productized = fulfillment_queue.productized_micro_itches(job_id, limit=limit)
+        if productized:
+            return productized
+    except Exception:
+        pass
+    try:
+        return pain_intents.recommended_micro_itches(job_id, pain_id, limit=limit)
+    except Exception:
+        return []
+
+
+def handle_pain_intent(body: dict, ip: str = "") -> tuple[int, dict]:
+    """직업별 가려움 온보딩 제출 검증/저장.
+
+    기존 /offer/interest와 다른 지표다. 여기서는 '어떤 고통을 제품화할지'를 검증한다.
+    """
+    if not isinstance(body, dict):
+        return 400, {"ok": False}
+    if str(body.get("hp_url", "")).strip():      # honeypot: 봇은 저장하지 않고 조용히 성공
+        return 200, {"ok": True}
+    if not body.get("consent"):
+        return 400, {"ok": False, "error": "consent required"}
+    contact = str(body.get("contact", "")).strip()[:120]
+    if not _valid_contact(contact):
+        return 400, {"ok": False, "error": "invalid contact"}
+    job = str(body.get("job", ""))[:60]
+    if job not in JOBS:
+        return 400, {"ok": False, "error": "invalid job"}
+    res = _cached_scores().get(job)
+    pain_id = str(body.get("pain_id", ""))[:80]
+    if not painmap.get(res, pain_id):
+        return 400, {"ok": False, "error": "invalid pain"}
+    role = str(body.get("role_type", ""))[:40]
+    if role not in {"employee", "freelancer", "jobseeker", "lead"}:
+        role = "unknown"
+    sample = str(body.get("sample_available", ""))[:40]
+    if sample not in {"yes", "redacted", "no"}:
+        sample = "unknown"
+    offer_type = str(body.get("offer_type", "pain-intake"))[:40]
+    if offer_type not in {"pain-intake", "pain-pack"}:
+        offer_type = "pain-intake"
+    situation = str(body.get("situation", "")).strip()[:600]
+    micro_itches = _valid_micro_itches(job, body.get("micro_itches", []))
+    store.append_pain_intent({
+        "contact": contact,
+        "job": job,
+        "pain_id": pain_id,
+        "role_type": role,
+        "sample_available": sample,
+        "situation": situation,
+        "micro_itches": micro_itches,
+        "offer_type": offer_type,
+        "iph": _ip_hmac(ip),
+    })
+    return 200, {"ok": True}
+
+
 # 결제 상태 매핑 — terminal-paid 이벤트만 좁게 인정(Codex fix: approved/authorized=승인≠캡처 제외).
 # 배포 시 실제 PG의 '결제완료' 이벤트 값에 맞춰 조정(토스=DONE). 모르는 값=failed(보수적).
 _PAY_SUCCESS = {"done", "paid", "completed"}
 _PAY_REFUND = {"canceled", "cancelled", "refunded", "partial_canceled", "aborted", "chargeback"}
 # 서명검증을 통과해도 이 금액과 다르면 paid로 인정하지 않음(무료/테스트/타상품 이벤트 차단).
 PAYMENT_EXPECTED_AMOUNT = int(os.environ.get("PAYMENT_EXPECTED_AMOUNT", "99000") or 0)
+PAIN_PAYMENT_EXPECTED_AMOUNT = int(os.environ.get("PAIN_PAYMENT_EXPECTED_AMOUNT", "39000") or 0)
+PAYMENT_ALLOWED_AMOUNTS = os.environ.get("PAYMENT_ALLOWED_AMOUNTS", "")
+
+
+def _payment_allowed_amounts() -> set[int]:
+    """paid로 인정할 결제 금액 목록.
+
+    기본은 범용 커리어 패키지 99,000원만. pain 파일럿 결제 링크를 켠 경우에만
+    pain 금액을 추가한다. 여러 상품을 동시에 열 때는 PAYMENT_ALLOWED_AMOUNTS="99000,39000"처럼 명시.
+    """
+    if PAYMENT_ALLOWED_AMOUNTS.strip():
+        vals = set()
+        for part in PAYMENT_ALLOWED_AMOUNTS.split(","):
+            try:
+                n = int(part.strip())
+            except ValueError:
+                continue
+            if n > 0:
+                vals.add(n)
+        return vals
+    vals = set()
+    if PAYMENT_EXPECTED_AMOUNT > 0:
+        vals.add(int(PAYMENT_EXPECTED_AMOUNT))
+    if PAIN_PAYMENT_URL and PAIN_PAYMENT_EXPECTED_AMOUNT > 0:
+        vals.add(int(PAIN_PAYMENT_EXPECTED_AMOUNT))
+    return vals
 
 
 def _classify_pay_status(s: str) -> str:
@@ -98,9 +244,53 @@ def _finalize_pay_status(status: str, amount) -> str:
         return status
     if isinstance(amount, bool) or not isinstance(amount, (int, float)) or amount <= 0:
         return "failed"
-    if PAYMENT_EXPECTED_AMOUNT and int(amount) != PAYMENT_EXPECTED_AMOUNT:
+    allowed = _payment_allowed_amounts()
+    if allowed and int(amount) not in allowed:
         return "failed"
     return "paid"
+
+
+def _payment_contact(body: dict) -> str:
+    for key in ("contact", "customerEmail", "customer_email", "email", "buyerEmail", "buyer_email"):
+        val = str(body.get(key, "")).strip()[:120]
+        if _valid_contact(val):
+            return val
+    return ""
+
+
+def _paid_pain_fulfillment_meta(order_id: str, amount, body: dict, status: str) -> dict:
+    if status != "paid":
+        return {}
+    if not PAIN_RELEASE_JOB or not PAIN_RELEASE_PAIN:
+        return {}
+    if not PAIN_PAYMENT_EXPECTED_AMOUNT or amount != PAIN_PAYMENT_EXPECTED_AMOUNT:
+        return {}
+    try:
+        micro_itches = _recommended_micro_itches(PAIN_RELEASE_JOB, PAIN_RELEASE_PAIN)
+        contact = _payment_contact(body)
+        job = fulfillment_queue.enqueue_paid_release(
+            order_id=order_id,
+            job_id=PAIN_RELEASE_JOB,
+            pain_id=PAIN_RELEASE_PAIN,
+            amount=amount,
+            contact=contact,
+            micro_itches=micro_itches,
+        )
+        kickoff_path = fulfillment_queue.save_paid_release_kickoff(
+            order_id=order_id,
+            job_id=PAIN_RELEASE_JOB,
+            pain_id=PAIN_RELEASE_PAIN,
+            contact=contact,
+            micro_itches=micro_itches,
+        )
+        return {
+            "pain_release_job": PAIN_RELEASE_JOB,
+            "pain_release_pain": PAIN_RELEASE_PAIN,
+            "fulfillment_id": job.get("fulfillment_id", ""),
+            "kickoff_path": kickoff_path,
+        }
+    except Exception as e:
+        return {"fulfillment_error": str(e)[:160]}
 
 
 def _payment_sig_ok(raw: bytes, sig: str) -> bool:
@@ -249,11 +439,19 @@ class Handler(BaseHTTPRequestHandler):
         if parts.path in ("/", ""):     # 웹 진입점 — 직업 그리드(공유 바이럴 루프 완성)
             return self._send(200, report.landing_html(JOBS).encode("utf-8"),
                               "text/html; charset=utf-8")
+        if parts.path == "/privacy":
+            return self._send(200, report.privacy_html().encode("utf-8"),
+                              "text/html; charset=utf-8")
+        if parts.path == "/terms":
+            return self._send(200, report.terms_html().encode("utf-8"),
+                              "text/html; charset=utf-8")
         if parts.path == "/health":
             # presale_leads = 사전예약 리드 수(무료 연락처, 중복제거). ★리드≠지불.
+            # pain_intents = 어떤 업무 고통을 해결하고 싶은지 남긴 수요 신호. ★지불 아님.
             # paid_customers = 서명검증된 웹훅으로 'paid' 확정된 주문 수(=진짜 WTP). reported는 제외.
             return self._json(200, {"ok": True, "jobs": list(JOBS),
                                     "presale_leads": store.interest_count(),
+                                    "pain_intents": store.pain_intent_count(),
                                     "paid_customers": store.paid_count()})
         if parts.path == "/report":
             q = parse_qs(parts.query)
@@ -277,6 +475,35 @@ class Handler(BaseHTTPRequestHandler):
                 return self._not_found()
             res = _cached_scores().get(jid)
             return self._send(200, report.detail_html(res).encode("utf-8"),
+                              "text/html; charset=utf-8")
+        if parts.path == "/pain":       # 가려움 기반 온보딩 — 어떤 결과물을 원하는지 검증
+            q = parse_qs(parts.query)
+            jid = (q.get("job") or [None])[0]
+            if not jid and q.get("user"):
+                jid = store.get_user_job(q["user"][0])
+            if jid not in JOBS:
+                return self._not_found()
+            pain_id = (q.get("pain") or [""])[0][:80]
+            res = _cached_scores().get(jid)
+            recommended = _recommended_micro_itches(jid, pain_id)
+            return self._send(200, report.pain_intake_html(
+                res, pain_id, recommended_micro_itches=recommended,
+            ).encode("utf-8"),
+                              "text/html; charset=utf-8")
+        if parts.path == "/pain-offer":  # 특정 업무 고통 1개를 줄이는 좁은 파일럿 오퍼
+            q = parse_qs(parts.query)
+            jid = (q.get("job") or [None])[0]
+            if not jid and q.get("user"):
+                jid = store.get_user_job(q["user"][0])
+            if jid not in JOBS:
+                return self._not_found()
+            pain_id = (q.get("pain") or [""])[0][:80]
+            res = _cached_scores().get(jid)
+            micro_itches = _micro_itches_from_indexes(jid, q.get("mi", []))
+            if not micro_itches:
+                micro_itches = _recommended_micro_itches(jid, pain_id)
+            return self._send(200, report.pain_offer_html(res, pain_id, PAIN_PAYMENT_URL or None,
+                                                          micro_itches=micro_itches).encode("utf-8"),
                               "text/html; charset=utf-8")
         if parts.path == "/offer":      # AI 대응 스프린트 사전판매(런칭=지불주체 테스트)
             q = parse_qs(parts.query)
@@ -343,15 +570,20 @@ class Handler(BaseHTTPRequestHandler):
             job = str(body.get("job", ""))[:60]
             # IP 평문 저장 금지. 비밀 솔트(INTEREST_SALT/없으면 WEBHOOK_TOKEN)로 HMAC →
             # 솔트 없으면 아예 저장 안 함(무염 SHA256은 IP 사전대입으로 역추적 가능하므로).
-            iph = (hmac.new(INTEREST_SALT.encode(), self.client_address[0].encode(),
-                            hashlib.sha256).hexdigest()[:12] if INTEREST_SALT else "")
             store.append_interest({                # 중복(contact+job)이면 내부에서 skip
                 "contact": contact,
                 "job": job if job in JOBS else "",
                 "price_shown": str(body.get("price_shown", ""))[:20],
-                "iph": iph,
+                "iph": _ip_hmac(self.client_address[0]),
             })
             return self._json(200, {"ok": True})
+        if parts.path == "/pain/intent":  # 가려움별 수요 신호 수집(사전신청, 결제 아님)
+            try:
+                body = json.loads(raw or b"{}")
+            except Exception:
+                return self._json(400, {"ok": False})
+            code, obj = handle_pain_intent(body, self.client_address[0])
+            return self._json(code, obj)
         if parts.path == "/webhook/payment":
             # PG 서버→서버 웹훅. 'paid' 확정은 오직 여기서, 서명검증 통과 시에만(정직성 불가침).
             if not PAYMENT_WEBHOOK_SECRET:
@@ -375,10 +607,16 @@ class Handler(BaseHTTPRequestHandler):
             # 금액 검증까지 통과해야 paid(서명O라도 금액 0/음수/기대불일치면 failed로 강등 — 정직성).
             status = _finalize_pay_status(_classify_pay_status(str(body.get("status", ""))), amount)
             job = str(body.get("job") or body.get("orderName") or "")[:60]
+            fulfillment_meta = _paid_pain_fulfillment_meta(order_id, amount, body, status)
+            payment_job = fulfillment_meta.get("pain_release_job") or (job if job in JOBS else "")
             # 멱등: append-only + _reduce_payments가 order_id별 상태랭크로 축약 → 웹훅 재전송 안전.
-            store.save_payment(order_id, job if job in JOBS else "", amount, status,
-                               extra={"src": "webhook"})
-            return self._json(200, {"ok": True, "status": status})
+            extra = {"src": "webhook"}
+            extra.update(fulfillment_meta)
+            store.save_payment(order_id, payment_job, amount, status, extra=extra)
+            res = {"ok": True, "status": status}
+            if fulfillment_meta.get("fulfillment_id"):
+                res["fulfillment_id"] = fulfillment_meta["fulfillment_id"]
+            return self._json(200, res)
         self._send(404, b"not found", "text/plain; charset=utf-8")
 
     def log_message(self, *a):  # 조용히

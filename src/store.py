@@ -238,6 +238,56 @@ def interest_count() -> int:
     return n
 
 
+# ── 직업별 가려움 의사 수집 (pain map 검증 = 어떤 문제에 돈/시간을 쓰는가) ─────
+PAIN_INTENT_FILE = os.path.join(_DATA, "pain_intent.jsonl")  # 연락처/상황 포함 → .gitignore 필수
+FULFILLMENT_FILE = os.path.join(_DATA, "fulfillment_jobs.jsonl")  # pain 이행 작업 큐 → .gitignore 필수
+FULFILLMENT_REPORT_DIR = os.path.join(_DATA, "fulfillment_reports")  # 운영 메모 → .gitignore 필수
+_PAIN_INTENT_LOCK = threading.Lock()
+
+
+def append_pain_intent(rec: dict) -> bool:
+    """가려움 기반 온보딩 의사 1건 적재.
+
+    기존 사전예약 리드와 분리한다. 리드는 '패키지에 관심 있음', pain intent는
+    '어떤 업무 고통을 해결하고 싶은지'를 검증하는 정성/정량 신호다.
+    중복 기준은 (contact, job, pain_id)로 둔다.
+    """
+    _ensure()
+    rec = dict(rec)
+    rec.setdefault("ts", datetime.now(timezone.utc).isoformat())
+    key = (_norm_contact(rec.get("contact", "")), rec.get("job", ""), rec.get("pain_id", ""))
+    with _PAIN_INTENT_LOCK:
+        if os.path.exists(PAIN_INTENT_FILE):
+            for ln in open(PAIN_INTENT_FILE, encoding="utf-8"):
+                if not ln.strip():
+                    continue
+                try:
+                    p = json.loads(ln)
+                except Exception:
+                    continue
+                if (_norm_contact(p.get("contact", "")), p.get("job", ""), p.get("pain_id", "")) == key:
+                    return False
+        with open(PAIN_INTENT_FILE, "a", encoding="utf-8") as f:
+            f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+    return True
+
+
+def pain_intent_count() -> int:
+    if not os.path.exists(PAIN_INTENT_FILE):
+        return 0
+    n = 0
+    with _PAIN_INTENT_LOCK:
+        for ln in open(PAIN_INTENT_FILE, encoding="utf-8"):
+            if not ln.strip():
+                continue
+            try:
+                json.loads(ln)
+                n += 1
+            except Exception:
+                pass
+    return n
+
+
 # ── 결제 검증 (진짜 지불주체 = 서명검증된 웹훅으로만 확정) ──────────────
 # ★정직성/보안: success 리다이렉트(클라이언트 조작 가능)는 'reported'까지만. 'paid'는
 # 서명검증된 웹훅(또는 PG confirm API)으로만. 솔트/시크릿 없으면 paid로 절대 세지 않음.
@@ -291,6 +341,27 @@ def payment_status_counts() -> dict:
     for e in _reduce_payments().values():
         c[e.get("status", "?")] = c.get(e.get("status", "?"), 0) + 1
     return c
+
+
+def payment_records(*, final: bool = True) -> list[dict]:
+    """결제 이벤트 조회. 기본은 order_id별 최종 상태만 반환한다."""
+    if final:
+        rows = list(_reduce_payments().values())
+        return sorted(rows, key=lambda r: (str(r.get("ts", "")), str(r.get("order_id", ""))))
+    if not os.path.exists(PAYMENTS_FILE):
+        return []
+    out = []
+    with _PAYMENTS_LOCK:
+        for ln in open(PAYMENTS_FILE, encoding="utf-8"):
+            if not ln.strip():
+                continue
+            try:
+                row = json.loads(ln)
+            except Exception:
+                continue
+            if isinstance(row, dict):
+                out.append(row)
+    return out
 
 
 NOTIFIED_FILE = os.path.join(_DATA, "notified.json")  # 직무별 마지막 알림 스냅샷 ts (중복 알림 방지)
