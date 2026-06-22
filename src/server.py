@@ -747,5 +747,6 @@ def serve(port: int = 8000, host: str = "127.0.0.1"):
 
 
 if __name__ == "__main__":
-    serve(int(sys.argv[1]) if len(sys.argv) > 1 else 8000,
-          host=os.environ.get("HOST", "127.0.0.1"))
+    # 포트: argv 우선, 없으면 PORT env(Render/Railway/Fly가 주입), 그래도 없으면 8000.
+    port = int(sys.argv[1]) if len(sys.argv) > 1 else int(os.environ.get("PORT", 8000))
+    serve(port, host=os.environ.get("HOST", "127.0.0.1"))

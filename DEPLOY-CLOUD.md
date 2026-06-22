@@ -13,6 +13,8 @@
 → 비용 0, 데이터 안전. **트래픽 검증 단계엔 이게 정답.**
 
 ## 옵션 B — 완전 클라우드 (Mac 불필요): Render
+**🆕 원클릭:** repo에 `render.yaml` Blueprint가 있음 → render.com → New → **Blueprint** → repo 선택하면
+아래 1~4단계가 자동 적용됨(start command·health check·env 자리 포함). 디스크만 수동(아래 5번).
 **단, 데이터 보존하려면 Persistent Disk(유료 ~월 $1~)가 필수.** 없으면 재시작 때 펀널·점수 리셋.
 1. render.com → New → **Web Service** → repo `idsexyhomme-code/1000` 연결
 2. Runtime: **Python 3** / Build Command: (비움 — stdlib라 설치 없음)

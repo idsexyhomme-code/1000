@@ -1,0 +1,32 @@
+# 커리어 시그널 백엔드 — Render 원클릭 Blueprint (DEPLOY-CLOUD.md 옵션 B)
+# 사용: GitHub repo 연결 → Render가 이 파일 자동 감지 → Apply.
+# 의존성 0(표준 라이브러리만)이라 빌드 단계 없음. server.py가 HOST env + $PORT 지원.
+#
+# ⚠️ 정직 주의(무료 플랜): 무료 web service는 재배포/슬립마다 디스크가 초기화됩니다.
+#   data/ 의 런타임 파일(users.json·outbox·funnel 로그·scores)은 휘발됩니다.
+#   → 구독자/펀널을 영구 보존하려면: plan을 starter로 올리고 아래 disk 블록 주석 해제 +
+#     store._DATA를 DATA_DIR env로 분리(현재는 repo 상대 경로 — 디스크 마운트 시 리팩터 필요).
+#   검증 단계(트래픽 보기 전)에는 무료로 충분.
+services:
+  - type: web
+    name: career-signal
+    runtime: python
+    plan: free
+    region: singapore          # 한국 사용자 지연 최소(가까운 리전)
+    buildCommand: ""           # 의존성 0 — 빌드 불필요
+    startCommand: HOST=0.0.0.0 python3 src/server.py $PORT
+    healthCheckPath: /api/wr/health
+    envVars:
+      - key: PYTHON_VERSION
+        value: "3.12.0"
+      # 리포트 절대링크용(배포 후 실제 URL로): https://<app>.onrender.com
+      - key: REPORT_BASE_URL
+        sync: false
+      # Gemini 라이브 채점/카피가 필요할 때만(없으면 폴백). 대시보드에서 입력.
+      - key: GEMINI_API_KEY
+        sync: false
+    # ── 영속 디스크(유료 starter+) — 구독자/펀널 보존 시 주석 해제 ──
+    # disk:
+    #   name: career-signal-data
+    #   mountPath: /var/data       # + store DATA_DIR=/var/data 분리 필요
+    #   sizeGB: 1
