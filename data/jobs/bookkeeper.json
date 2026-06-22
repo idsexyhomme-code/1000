@@ -1,0 +1,67 @@
+{
+  "job_id": "bookkeeper",
+  "job_name_ko": "부기·경리원",
+  "job_name_en": "Bookkeeper",
+  "baseline": {
+    "index": 72,
+    "ci": 12,
+    "source": "O*NET 43-3031(Bookkeeping, Accounting, and Auditing Clerks) + 업무비중 추정 (캘리브레이션 필요)",
+    "note": "베이스라인은 임의값 금지. 사무·반복 비중이 높아 directional하게 높게 잡되 손추정(calibrated:false) — O*NET·워크넷 캘리브레이션 필요. AIOE 43-3031 z=1.04로 직업-레벨 앵커 가능.",
+    "calibrated": false,
+    "index_anchor": {
+      "anchored_index": 74,
+      "soc": "43-3031",
+      "soc_confidence": "high",
+      "percentile": 76.6,
+      "divergence_from_estimate": 2,
+      "source": "Felten, Raj & Seamans (2021) AI Occupational Exposure (AIOE), github.com/AIOE-Data/AIOE — O*NET-SOC 상대 노출(z-score)",
+      "method": "anchored = round(0.5*percentile + 0.5*손추정). raw 점수는 라이선스로 미저장.",
+      "scope": "직업-레벨 참고치 앵커만. 표시 점수는 태스크 baseline 롤업이라 아직 미반영 — 태스크-레벨 캘리브레이션 필요.",
+      "as_of": "2026-06-22"
+    }
+  },
+  "tasks": [
+    {
+      "task_id": "journal-entry",
+      "name_ko": "전표 입력·분개",
+      "weight": 0.22,
+      "baseline": 85,
+      "ci": 8
+    },
+    {
+      "task_id": "reconciliation",
+      "name_ko": "계정·통장 대사",
+      "weight": 0.2,
+      "baseline": 78,
+      "ci": 10
+    },
+    {
+      "task_id": "invoicing-ar-ap",
+      "name_ko": "청구·매입매출 처리",
+      "weight": 0.16,
+      "baseline": 72,
+      "ci": 10
+    },
+    {
+      "task_id": "payroll",
+      "name_ko": "급여 계산·4대보험",
+      "weight": 0.14,
+      "baseline": 70,
+      "ci": 12
+    },
+    {
+      "task_id": "expense-categorization",
+      "name_ko": "경비 분류·증빙 정리",
+      "weight": 0.13,
+      "baseline": 75,
+      "ci": 10
+    },
+    {
+      "task_id": "month-end-close",
+      "name_ko": "월말 결산 보조",
+      "weight": 0.15,
+      "baseline": 45,
+      "ci": 12
+    }
+  ]
+}
