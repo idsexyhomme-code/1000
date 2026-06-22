@@ -1,0 +1,99 @@
+<!doctype html><html lang="ko"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='88'%3E%F0%9F%93%A1%3C/text%3E%3C/svg%3E"><title>영상편집자 상세 분석 · 커리어 시그널</title>
+<style>
+:root{--bg-base:#09090b;--bg-surface:#18181b;--bg-elevate:#27272a;--border-color:#3f3f46;
+--text-primary:#fafafa;--text-secondary:#a1a1aa;--text-tertiary:#8b8b94;
+--color-clear:#3b82f6;--color-pcloudy:#8b5cf6;--color-cloudy:#f59e0b;--color-typhoon:#e11d48;}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale;}
+body{background:#000;color:var(--text-primary);font-family:"Pretendard Variable",Pretendard,-apple-system,BlinkMacSystemFont,system-ui,Roboto,"Apple SD Gothic Neo","Noto Sans KR","Malgun Gothic",sans-serif;display:flex;justify-content:center;line-height:1.5;}
+.app-container{width:100%;max-width:460px;background:var(--bg-base);min-height:100vh;padding:24px 20px 48px;}
+.hero-card{background:linear-gradient(145deg,#18181b,#131316);border:1px solid var(--bg-elevate);border-radius:24px;padding:32px 20px 24px;text-align:center;margin-bottom:24px;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 8px 24px rgba(0,0,0,.4);}
+.hero-emoji{font-size:48px;margin-bottom:16px;line-height:1;}
+.hero-title{font-size:24px;font-weight:700;margin-bottom:8px;letter-spacing:-.5px;}
+.hero-subtitle{font-size:15px;color:var(--text-secondary);margin-bottom:32px;letter-spacing:-.3px;word-break:keep-all;}
+.gauge-wrapper{position:relative;width:100%;max-width:280px;margin:0 auto;}
+.gauge-svg{width:100%;height:auto;overflow:visible;}
+.insight-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:32px;}
+.insight-card{background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:16px;padding:16px;}
+.insight-header{display:flex;align-items:center;font-size:13px;font-weight:600;margin-bottom:8px;}
+.insight-header.threat{color:#fca5a5;}
+.insight-header.opp{color:#6ee7b7;}
+.insight-icon{margin-right:6px;font-size:14px;}
+.insight-desc{font-size:14px;color:var(--text-primary);line-height:1.4;word-break:keep-all;letter-spacing:-.3px;}
+.section-title{font-size:18px;font-weight:700;margin-bottom:16px;letter-spacing:-.4px;}
+.task-section,.news-section,.pain-section{margin-bottom:36px;}
+.task-item{display:flex;align-items:center;margin-bottom:14px;}
+.task-label{width:64px;font-size:14px;color:var(--text-secondary);letter-spacing:-.3px;}
+.task-track{flex:1;height:8px;background:var(--bg-elevate);border-radius:4px;margin:0 12px;position:relative;overflow:hidden;}
+.task-bar{position:absolute;top:0;left:0;bottom:0;border-radius:4px;}
+.task-value{width:24px;text-align:right;font-size:14px;font-weight:600;}
+.pain-note{font-size:12.5px;color:var(--text-secondary);margin:-4px 0 14px;line-height:1.55;word-break:keep-all;}
+.pain-card{background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:14px;padding:16px;margin-bottom:12px;}
+.pain-top{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:10px;}
+.pain-label{font-size:11px;font-weight:700;color:#34d399;background:rgba(52,211,153,.12);border-radius:6px;padding:3px 7px;white-space:nowrap;}
+.pain-task{font-size:11.5px;color:var(--text-tertiary);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.pain-title{font-size:15px;font-weight:700;color:var(--text-primary);letter-spacing:-.3px;line-height:1.45;margin-bottom:7px;word-break:keep-all;}
+.pain-moment{font-size:13px;color:var(--text-secondary);line-height:1.55;letter-spacing:-.2px;word-break:keep-all;margin-bottom:10px;}
+.pain-artifact{font-size:13px;color:var(--text-primary);line-height:1.55;background:var(--bg-elevate);border-radius:10px;padding:10px 12px;word-break:keep-all;}
+.pain-artifact b{color:#fcd34d;}
+.pain-link{display:block;margin-top:10px;color:#d4d4d8;background:rgba(255,255,255,.04);border:1px solid var(--bg-elevate);border-radius:10px;padding:10px 12px;text-align:center;text-decoration:none;font-size:13px;font-weight:700;letter-spacing:-.2px;}
+.news-card{background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:14px;padding:16px;margin-bottom:12px;text-decoration:none;display:block;}
+.news-meta{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.news-badge{padding:4px 8px;border-radius:6px;font-size:11px;font-weight:600;letter-spacing:-.2px;}
+.badge-official{background:rgba(59,130,246,.15);color:#60a5fa;}
+.badge-vendor{background:rgba(139,92,246,.15);color:#a78bfa;}
+.news-link-text{font-size:12px;color:var(--text-tertiary);}
+.news-title{font-size:15px;font-weight:600;color:var(--text-primary);margin-bottom:6px;letter-spacing:-.3px;line-height:1.4;}
+.news-reason{font-size:13px;color:var(--text-secondary);letter-spacing:-.2px;}
+.cta-card{background:linear-gradient(145deg,rgba(245,158,11,.08),rgba(225,29,72,.03));border:1px solid rgba(245,158,11,.2);border-radius:20px;padding:28px 20px;text-align:center;margin-bottom:36px;}
+.cta-icon{font-size:28px;margin-bottom:12px;}
+.cta-title{font-size:16px;font-weight:700;margin-bottom:8px;letter-spacing:-.3px;}
+.cta-text{font-size:15px;font-weight:500;color:var(--text-secondary);line-height:1.5;margin-bottom:20px;word-break:keep-all;letter-spacing:-.3px;}
+.cta-highlight{color:#fcd34d;}
+.cta-btn{display:inline-block;background:var(--text-primary);color:var(--bg-base);padding:14px 28px;border-radius:30px;font-size:15px;font-weight:700;text-decoration:none;letter-spacing:-.3px;}
+.share-btn{width:100%;background:var(--bg-elevate);color:var(--text-primary);border:1px solid var(--border-color);padding:16px;border-radius:16px;font-size:16px;font-weight:600;margin-bottom:24px;cursor:pointer;letter-spacing:-.3px;}
+.footer-text{font-size:12px;color:var(--text-tertiary);line-height:1.6;text-align:justify;word-break:keep-all;letter-spacing:-.2px;}
+.legal-links{text-align:center;font-size:12px;color:var(--text-tertiary);margin:16px 0 0;line-height:1.6;}
+.legal-links a{color:var(--text-secondary);text-decoration:none;margin:0 5px;}
+.ap-section{margin-bottom:32px;}
+.ap-item{background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:14px;padding:14px 16px;margin-bottom:10px;}
+.ap-h{font-size:15px;font-weight:600;display:flex;align-items:center;gap:8px;letter-spacing:-.3px;line-height:1.4;}
+.ap-tag{font-size:11px;font-weight:700;padding:2px 7px;border-radius:6px;flex-shrink:0;}
+.tag-defend{background:rgba(245,158,11,.15);color:#fbbf24;}
+.tag-pivot{background:rgba(59,130,246,.15);color:#60a5fa;}
+.ap-step{font-size:13px;color:var(--text-secondary);margin-top:8px;line-height:1.5;word-break:keep-all;}
+.ap-meta{font-size:12px;color:var(--text-tertiary);margin-top:6px;}
+.ap-sub{font-size:12.5px;color:var(--text-secondary);margin:-2px 2px 14px;line-height:1.55;word-break:keep-all;}
+.ap-free{font-size:10.5px;font-weight:700;color:#34d399;background:rgba(52,211,153,.12);padding:2px 7px;border-radius:6px;margin-left:auto;flex-shrink:0;}
+.ap-lock{font-size:12.5px;color:var(--text-secondary);margin-top:10px;line-height:1.55;word-break:keep-all;display:flex;gap:7px;align-items:flex-start;background:var(--bg-elevate);border-radius:10px;padding:10px 12px;}
+
+.dd-sec{background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:16px;padding:18px 16px;margin-bottom:14px;}
+.dd-h{font-size:16px;font-weight:700;margin-bottom:4px;letter-spacing:-.3px;}
+.dd-src{font-size:11px;color:var(--text-tertiary);margin-bottom:12px;}
+.dd-row{display:flex;align-items:center;margin-bottom:10px;font-size:14px;}
+.dd-row .n{width:104px;color:var(--text-secondary);flex-shrink:0;letter-spacing:-.3px;}
+.dd-track{flex:1;height:7px;background:var(--bg-elevate);border-radius:4px;margin:0 10px;overflow:hidden;}
+.dd-track i{display:block;height:100%;border-radius:4px;}
+.dd-v{width:30px;text-align:right;font-weight:600;}
+.dd-tl .it{border-left:2px solid var(--bg-elevate);padding:0 0 12px 14px;margin-left:4px;}
+.dd-stage{font-size:11px;font-weight:700;color:#fbbf24;}.dd-date{font-size:11px;color:var(--text-tertiary);margin-left:6px;}
+.dd-tl a{color:var(--text-primary);text-decoration:none;font-size:13px;font-weight:600;display:block;margin-top:3px;line-height:1.4;}
+.dd-pending{background:rgba(245,158,11,.07);border:1px dashed rgba(245,158,11,.3);border-radius:12px;padding:14px;font-size:13px;color:var(--text-secondary);line-height:1.5;}
+.dd-pending b{color:#fbbf24;}
+.dd-chip{display:inline-block;background:var(--bg-elevate);border-radius:8px;padding:7px 12px;margin:4px 5px 0 0;font-size:13px;}
+.dd-back{display:block;text-align:center;color:var(--text-secondary);font-size:14px;margin:6px 0 18px;text-decoration:none;}
+.dd-note{font-size:12px;color:var(--text-tertiary);margin-top:10px;line-height:1.5;}
+</style></head><body><div class="app-container">
+  <a class="dd-back" href="/report?job=video-editor">← 요약으로 돌아가기</a>
+  <div class="hero-card"><div class="hero-emoji">🔬</div>
+    <h1 class="hero-title">영상편집자 상세 분석</h1>
+    <p class="hero-subtitle">업무별 근거를 깊게 — 분량이 아니라 근거로.</p></div>
+  <div class="dd-sec"><div class="dd-h">📊 과업별 자동화율</div><div class="dd-src">직무-태스크 baseline (손추정) — O*NET·워크넷 연동 시 calibrated로 격상</div><div class="dd-row"><span class="n">자막 생성</span><span class="dd-track"><i style="width:82.0%;background:linear-gradient(90deg,#9f1239,#fb7185)"></i></span><span class="dd-v">82.0</span></div><div class="dd-row"><span class="n">썸네일·그래픽</span><span class="dd-track"><i style="width:74.0%;background:linear-gradient(90deg,#b45309,#f59e0b)"></i></span><span class="dd-v">74.0</span></div><div class="dd-row"><span class="n">컷 편집</span><span class="dd-track"><i style="width:70.0%;background:linear-gradient(90deg,#b45309,#f59e0b)"></i></span><span class="dd-v">70.0</span></div><div class="dd-row"><span class="n">색보정</span><span class="dd-track"><i style="width:52.0%;background:linear-gradient(90deg,#b45309,#f59e0b)"></i></span><span class="dd-v">52.0</span></div><div class="dd-row"><span class="n">사운드·믹싱</span><span class="dd-track"><i style="width:48.0%;background:linear-gradient(90deg,#5b21b6,#8b5cf6)"></i></span><span class="dd-v">48.0</span></div><div class="dd-row"><span class="n">현장 디렉팅·기획</span><span class="dd-track"><i style="width:22.0%;background:linear-gradient(90deg,#1d4ed8,#3b82f6)"></i></span><span class="dd-v">22.0</span></div><div class="dd-note" style="margin-top:14px;border-top:1px solid var(--bg-elevate);padding-top:12px">🔗 <b>외부 노출 앵커</b>: 이 직무는 AI 노출 상위 <b>p73.8</b> (직무 간 상대순위) · 참고 index <b>66</b><br>출처: Felten/Eloundou/Frey-Osborne 등 O*NET-SOC 기반 외부 노출(사용자 제공 CSV) · SOC 27-4032/high<br>※ 외부 점수는 직무 간 <b>상대 AI 노출</b>(z-score)이라 우리 압력지수와 같은 척도가 아닙니다 — 직접 대입 않고 상대순위로만 앵커링(anchored = round(0.5*percentile + 0.5*손추정). raw 점수는 라이선스로 미저장.). 표시 점수는 여전히 손추정(calibrated:false) — 태스크-레벨 데이터 연동 전까지.</div></div><div class="dd-sec"><div class="dd-h">🗓️ 기술 상용화 타임라인</div><div class="dd-src">크롤링 뉴스 근거(성숙도·날짜)</div><div class="dd-pending">아직 이 직무에 결박된 근거 뉴스가 없습니다(배치 누적 시 채워짐).</div></div><div class="dd-sec"><div class="dd-h">🧭 전이경로 — 어디로 무게를 옮길까</div><div class="dd-src">직무 내 저압력 업무 (현 baseline)</div><div><span class="dd-chip">🛡️ 현장 디렉팅·기획 (22.0)</span><span class="dd-chip">🛡️ 사운드·믹싱 (48.0)</span></div><div class="dd-note">인접 직무 전이경로(어디로 옮기면 안전한가)는 링크드인 커리어 이동 데이터 연동 필요</div></div><div class="dd-sec"><div class="dd-h">📈 실시간 채용 트렌드</div><div class="dd-pending"><b>데이터 연동 필요</b> — 채용 API 연동 시 — 최근 6개월 해당 직무 공고 증감률 + &#x27;AI 활용&#x27; 우대조건 변화 표시.</div></div><div class="dd-sec"><div class="dd-h">💰 임금 타격 예측</div><div class="dd-pending"><b>데이터 연동 필요</b> — 연봉 데이터 연동 시 — AI 도입에 따른 평균 임금 하락 압력 + 프리미엄 스킬 보유 시 임금 격차.</div></div>
+  <div class="dd-sec"><div class="dd-h">🧪 방법론 & 한계 (투명 공개)</div>
+    <div class="dd-note">· 압력지수는 공개 AI뉴스를 정해진 5요인 루브릭으로 계량화한 <b>참고 지표</b>입니다(예측 아님).<br>
+    · 현재 baseline은 <b>손추정(calibrated: false)</b> — O*NET·채용·임금 데이터 연동으로 보정 예정.<br>
+    · 모든 변동은 출처·신뢰도를 동반하며, 근거 없는 처방은 생성하지 않습니다(개인 자동판정 아님, 개인정보보호법 §37-2).</div></div>
+  <p class="footer-text">※ 본 지수는 공개된 AI 뉴스를 정해진 원칙으로 계량화한 <b>참고 지표</b>입니다. 특정 개인·기업의 대체를 단정하지 않으며, 모든 변동의 근거를 공개합니다.</p>
+  <p class="legal-links"><a href="/privacy">개인정보처리방침</a> · <a href="/terms">이용약관</a></p>
+</div></body></html>

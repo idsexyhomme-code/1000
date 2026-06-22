@@ -350,9 +350,20 @@ def detail_html(job_result: dict, deep: dict | None = None) -> str:
         rows += (f'<div class="dd-row"><span class="n">{_e(t["name_ko"])}</span>'
                  f'<span class="dd-track"><i style="width:{pct}%;background:linear-gradient(90deg,{grad},{solid})"></i></span>'
                  f'<span class="dd-v">{_e(t["automation_pct"])}</span></div>')
+    anc = ab.get("anchor")
+    if anc:
+        anchor_html = (
+            f'<div class="dd-note" style="margin-top:14px;border-top:1px solid var(--bg-elevate);padding-top:12px">'
+            f'🔗 <b>외부 노출 앵커</b>: 이 직무는 AI 노출 상위 <b>p{anc.get("percentile","?")}</b> '
+            f'(직무 간 상대순위) · 참고 index <b>{anc.get("anchored_index","?")}</b>'
+            f'<br>출처: {_e(anc.get("source",""))} · SOC {_e(anc.get("soc",""))}/{_e(anc.get("soc_confidence",""))}'
+            f'<br>※ 외부 점수는 직무 간 <b>상대 AI 노출</b>(z-score)이라 우리 압력지수와 같은 척도가 아닙니다 — '
+            f'직접 대입 않고 상대순위로만 앵커링({_e(anc.get("method",""))}). '
+            f'표시 점수는 여전히 손추정(calibrated:false) — 태스크-레벨 데이터 연동 전까지.</div>')
+    else:
+        anchor_html = '<div class="dd-note">※ 현재 손추정(미보정) — O*NET·워크넷 실데이터 연동 시 정밀 수치로 격상됩니다.</div>'
     sec_auto = (f'<div class="dd-sec"><div class="dd-h">📊 과업별 자동화율</div>'
-                f'<div class="dd-src">{_e(ab["source"])}</div>{rows}'
-                f'<div class="dd-note">※ 현재 손추정(미보정) — O*NET·워크넷 실데이터 연동 시 정밀 수치로 격상됩니다.</div></div>')
+                f'<div class="dd-src">{_e(ab["source"])}</div>{rows}{anchor_html}</div>')
 
     # 2) 기술 상용화 타임라인
     tl = deep["timeline"]

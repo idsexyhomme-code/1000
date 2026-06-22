@@ -22,14 +22,33 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import store
 
 _MATURITY_STAGE = {0: "논문", 1: "데모", 2: "베타", 3: "정식출시(GA)"}
+_JOBS_DIR = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "data", "jobs")
+
+
+def _load_anchor(job_id: str):
+    """job 파일의 baseline.index_anchor(외부 AIOE 노출 앵커)를 로드. 없으면 None.
+    scoring 결과는 baseline을 안 담으므로 calibrate가 적용한 앵커를 파일에서 직접 읽는다."""
+    if not job_id:
+        return None
+    path = os.path.join(_JOBS_DIR, f"{job_id}.json")
+    if not os.path.exists(path):
+        return None
+    try:
+        import json
+        with open(path, encoding="utf-8") as f:
+            return json.load(f).get("baseline", {}).get("index_anchor")
+    except Exception:
+        return None
 
 
 def automation_breakdown(job_result: dict) -> dict:
-    """과업별 자동화율 — task baseline 기반. 현재 손추정(calibrated:false)임을 정직 표기."""
+    """과업별 자동화율 — task baseline 기반. 표시 점수는 손추정(calibrated:false), 단 직업-레벨
+    외부 노출 앵커(AIOE)가 있으면 참고치로 함께 노출(정직한 외부 결박 근거)."""
     tasks = sorted(job_result.get("tasks", []), key=lambda t: -t.get("index", 0))
     return {
         "calibrated": False,
         "source": "직무-태스크 baseline (손추정) — O*NET·워크넷 연동 시 calibrated로 격상",
+        "anchor": _load_anchor(job_result.get("job_id", "")),
         "tasks": [{"name_ko": t.get("name_ko", ""), "automation_pct": t.get("index", 0),
                    "ci": t.get("ci", 10), "weather": t.get("weather", "")} for t in tasks],
     }

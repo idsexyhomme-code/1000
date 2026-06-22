@@ -7,7 +7,18 @@
     "ci": 10,
     "source": "O*NET 29-1141 + 워크넷 + 채용공고 업무비중 추정 (캘리브레이션 필요)",
     "note": "손추정 — O*NET·워크넷 캘리브레이션 필요",
-    "calibrated": false
+    "calibrated": false,
+    "index_anchor": {
+      "anchored_index": 46,
+      "soc": "29-1141",
+      "soc_confidence": "high",
+      "percentile": 57.2,
+      "divergence_from_estimate": 12,
+      "source": "Felten/Eloundou/Frey-Osborne 등 O*NET-SOC 기반 외부 노출(사용자 제공 CSV)",
+      "method": "anchored = round(0.5*percentile + 0.5*손추정). raw 점수는 라이선스로 미저장.",
+      "scope": "직업-레벨 참고치 앵커만. 표시 점수는 태스크 baseline 롤업이라 아직 미반영 — 태스크-레벨 캘리브레이션 필요.",
+      "as_of": "2026-06-22"
+    }
   },
   "tasks": [
     {

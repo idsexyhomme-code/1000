@@ -470,6 +470,28 @@ def test_deepdive_hiring_wage_live_adapter():
         deepdive._fetch_hiring, deepdive._fetch_wage = orig_h, orig_w
 
 
+def test_calibration_anchor_honest_when_applied():
+    """앵커가 적용된 직무는 detail에 외부 노출 근거를 보여주되, calibrated:false·상대순위 면책을 유지."""
+    import json as _json
+    job = ScoringEngine(JOBS).score([], now=NOW)["video-editor"]
+    anc = deepdive._load_anchor("video-editor")
+    deep = deepdive.build(job)
+    assert deep["automation"]["calibrated"] is False                     # 앵커 있어도 표시점수는 미보정
+    if anc:  # 캘리브레이션이 적용된 환경에서만 (CSV는 gitignore라 클린 체크아웃에선 None)
+        assert "percentile" in anc and anc.get("soc")
+        h = report.detail_html(job, deep)
+        assert "외부 노출 앵커" in h and f"p{anc['percentile']}" in h     # 진짜 외부 근거 노출
+        assert "상대 AI 노출" in h and "calibrated:false" in h            # 척도 면책 + 과대표기 방지
+
+
+def test_calibrate_prefers_aioe_soc_vintage():
+    """job_soc_map의 aioe_soc(2010 SOC 빈티지)가 있으면 조회에 우선 사용된다(빈티지 불일치 정직 처리)."""
+    import json as _json
+    smap = _json.load(open(os.path.join(_ROOT, "data", "calibration", "job_soc_map.json")))["map"]
+    assert smap["junior-developer"].get("aioe_soc") == "15-1132"          # 2018 15-1252 → AIOE 15-1132
+    assert smap["data-analyst"]["confidence"] == "medium"                 # Data Scientist 약한 프록시 정직 표기
+
+
 def test_painmap_schema_and_job_task_links():
     errors = painmap.validate_against_jobs(server.JOBS)
     assert errors == []

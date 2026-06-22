@@ -112,7 +112,8 @@ def calibrate_job(job: dict, soc: str, exposure: dict, confidence: str = "high",
 def run(data_path: str, apply: bool = False, apply_medium: bool = False) -> dict:
     exposure = load_exposure(data_path)
     soc_map = json.load(open(SOC_MAP, encoding="utf-8"))["map"]
-    citation = "Felten/Eloundou/Frey-Osborne 등 O*NET-SOC 기반 외부 노출(사용자 제공 CSV)"
+    citation = ("Felten, Raj & Seamans (2021) AI Occupational Exposure (AIOE), "
+                "github.com/AIOE-Data/AIOE — O*NET-SOC 상대 노출(z-score)")
     summary = {"anchored": [], "skipped_no_data": [], "skipped_no_soc": [], "skipped_medium": []}
     if not exposure:
         print(f"⚠️ 외부 노출 데이터 없음({data_path}). 앵커링할 게 없습니다(직무 baseline은 손추정 그대로).\n"
@@ -128,7 +129,8 @@ def run(data_path: str, apply: bool = False, apply_medium: bool = False) -> dict
         if not m:
             summary["skipped_no_soc"].append(jid)
             continue
-        out = calibrate_job(job, m["soc"], exposure, m.get("confidence", "high"), citation, apply_medium)
+        lookup_soc = m.get("aioe_soc", m["soc"])  # AIOE 2010 SOC 빈티지 등가 우선, 없으면 캐노니컬 soc
+        out = calibrate_job(job, lookup_soc, exposure, m.get("confidence", "high"), citation, apply_medium)
         if out is None:
             summary["skipped_no_data"].append(f"{jid}({m['soc']})")
             continue
