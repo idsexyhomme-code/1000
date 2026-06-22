@@ -438,6 +438,17 @@ def render_html(job: dict, strat: dict | None = None, action_plan: dict | None =
     drivers = job.get("top_drivers", [])
     drv_html = "".join(_driver(d) for d in drivers) or '<p class="news-reason">오늘은 새 근거가 없습니다.</p>'
     head_task = (job.get("headline_task") or (tasks[0] if tasks else {})).get("name_ko", "핵심 업무")
+    # 외부 데이터 교차참조 신뢰 배지 — 앵커된 직무만(과대표기 없이 손추정 명시) → 신뢰+상세 클릭(리텐션)
+    import deepdive
+    _anchor = deepdive._load_anchor(job.get("job_id", ""))
+    trust_badge = (
+        f'<div style="text-align:center;font-size:12.5px;color:var(--text-secondary);'
+        f'background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.2);'
+        f'border-radius:12px;padding:10px 12px;margin:0 0 12px;line-height:1.55;word-break:keep-all">'
+        f'🔗 이 직무의 AI 노출은 외부 공개데이터 <b>AIOE</b>(Felten 2021)로 교차참조 — '
+        f'직무 간 노출 상위 <b>p{_anchor.get("percentile","?")}</b>. '
+        f'<span style="color:var(--text-tertiary)">표시 점수는 아직 손추정(미보정) · 근거는 상세에서</span></div>'
+    ) if _anchor else ''
     if action_plan is None:        # 기본은 결정적 폴백(빠름·무비용). 배치가 캐시한 Gemini 플랜은 호출측이 주입.
         import actionplan
         action_plan = actionplan.make_action_plan(job, use_gemini=False)
@@ -484,6 +495,7 @@ def render_html(job: dict, strat: dict | None = None, action_plan: dict | None =
   <div class="news-section"><h2 class="section-title">🔎 오늘 점수를 움직인 근거</h2>{drv_html}</div>
   {ap_html}
   {cta_html}
+  {trust_badge}
   <a href="/detail?job={_e(job.get('job_id',''))}" style="display:block;text-align:center;background:var(--bg-elevate);color:var(--text-primary);padding:13px;border-radius:14px;margin:0 0 12px;text-decoration:none;font-size:14px;font-weight:600;letter-spacing:-.3px">🔬 더 깊은 상세 분석 보기 →</a>
   <button class="share-btn" onclick="csShare()">📲 내 전략가 타입 공유하기</button>
   <script>

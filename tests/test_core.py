@@ -484,6 +484,17 @@ def test_calibration_anchor_honest_when_applied():
         assert "상대 AI 노출" in h and "calibrated:false" in h            # 척도 면책 + 과대표기 방지
 
 
+def test_render_trust_badge_only_when_anchored_and_honest():
+    """메인 리포트 신뢰배지: 앵커된 직무만 노출, 외부데이터 교차참조 + 손추정 면책(과대표기 금지)."""
+    job = ScoringEngine(JOBS).score([], now=NOW)["video-editor"]
+    h = report.render_html(job)
+    anc = deepdive._load_anchor("video-editor")
+    if anc:  # 캘리브레이션 적용 환경(CSV gitignore라 클린 체크아웃에선 None → 배지 없음이 정상)
+        assert "AIOE" in h and f"p{anc['percentile']}" in h                # 외부 근거 교차참조 노출
+        assert "손추정" in h                                              # 면책: 표시점수 미보정 명시
+        assert "/detail?job=video-editor" in h                            # 상세로 유도(리텐션)
+
+
 def test_calibrate_prefers_aioe_soc_vintage():
     """job_soc_map의 aioe_soc(2010 SOC 빈티지)가 있으면 조회에 우선 사용된다(빈티지 불일치 정직 처리)."""
     import json as _json
