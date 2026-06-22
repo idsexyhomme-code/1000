@@ -90,9 +90,11 @@ _FAVICON = ("<link rel=\"icon\" href=\"data:image/svg+xml,"
 
 
 def _og_image_meta() -> str:
-    """og:image는 절대 URL 필요 → REPORT_BASE_URL 설정 시에만 출력(정적파일은 reverse proxy가 /static/ 서빙)."""
-    base = os.environ.get("REPORT_BASE_URL", "")
-    return f'<meta property="og:image" content="{_e(base)}/static/og.png">' if base else ""
+    """og:image는 실제 호스팅된 절대 URL이 있을 때만 출력 — 깨진 링크 미리보기(viral 레버 훼손) 방지.
+    OG_IMAGE_URL(https://… 절대경로)을 명시 설정한 경우에만 emit. 미설정이면 아무것도 안 냄(정직).
+    (이전엔 REPORT_BASE_URL+/static/og.png를 가정했으나 해당 파일·라우트가 없어 배포 시 깨졌음.)"""
+    url = os.environ.get("OG_IMAGE_URL", "").strip()
+    return f'<meta property="og:image" content="{_e(url)}">' if url.startswith(("http://", "https://")) else ""
 
 _CSS = """
 :root{--bg-base:#09090b;--bg-surface:#18181b;--bg-elevate:#27272a;--border-color:#3f3f46;

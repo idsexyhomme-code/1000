@@ -486,6 +486,26 @@ def test_calibration_anchor_honest_when_applied():
         assert "상대 AI 노출" in h and "calibrated:false" in h            # 척도 면책 + 과대표기 방지
 
 
+def test_og_image_no_broken_ref():
+    """og:image는 OG_IMAGE_URL(절대 호스팅 URL) 설정 시에만 — REPORT_BASE_URL만으론 깨진 /static/og.png 안 냄."""
+    job = ScoringEngine(JOBS).score([], now=NOW)["video-editor"]
+    saved = {k: os.environ.get(k) for k in ("REPORT_BASE_URL", "OG_IMAGE_URL")}
+    try:
+        os.environ["REPORT_BASE_URL"] = "https://api.example.com"
+        os.environ.pop("OG_IMAGE_URL", None)
+        h = report.render_html(job)
+        assert "/static/og.png" not in h and "og:image" not in h          # 깨진 참조 0
+        os.environ["OG_IMAGE_URL"] = "https://cdn.example.com/og.png"
+        h2 = report.render_html(job)
+        assert 'og:image" content="https://cdn.example.com/og.png"' in h2  # 명시 URL일 때만 emit
+    finally:
+        for k, v in saved.items():
+            if v is None:
+                os.environ.pop(k, None)
+            else:
+                os.environ[k] = v
+
+
 def test_render_trust_badge_only_when_anchored_and_honest():
     """메인 리포트 신뢰배지: 앵커된 직무만 노출, 외부데이터 교차참조 + 손추정 면책(과대표기 금지)."""
     job = ScoringEngine(JOBS).score([], now=NOW)["video-editor"]

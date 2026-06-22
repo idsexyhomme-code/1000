@@ -22,6 +22,10 @@ services:
       # 리포트 절대링크용(배포 후 실제 URL로): https://<app>.onrender.com
       - key: REPORT_BASE_URL
         sync: false
+      # 공유 링크 미리보기 이미지(카톡/SNS viral 레버) — 실제 호스팅된 절대 URL일 때만 설정.
+      # 미설정이면 og:image를 아예 안 내보냄(깨진 미리보기 방지).
+      - key: OG_IMAGE_URL
+        sync: false
       # Gemini 라이브 채점/카피가 필요할 때만(없으면 폴백). 대시보드에서 입력.
       - key: GEMINI_API_KEY
         sync: false
