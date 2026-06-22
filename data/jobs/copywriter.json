@@ -1,0 +1,67 @@
+{
+  "job_id": "copywriter",
+  "job_name_ko": "카피라이터",
+  "job_name_en": "Copywriter",
+  "baseline": {
+    "index": 72,
+    "ci": 12,
+    "source": "O*NET 27-3043(Writers and Authors) + 마케팅 카피 업무비중 추정 (캘리브레이션 필요)",
+    "note": "베이스라인은 임의값 금지. LLM이 직접 글을 생성하는 직군이라 directional하게 높게 잡되 손추정(calibrated:false) — O*NET·워크넷 캘리브레이션 필요. AIOE 27-3043 z=0.99로 직업-레벨 앵커 가능. 브랜드 판단·관계 조율 업무는 낮게 유지(방어적).",
+    "calibrated": false,
+    "index_anchor": {
+      "anchored_index": 73,
+      "soc": "27-3043",
+      "soc_confidence": "high",
+      "percentile": 74.1,
+      "divergence_from_estimate": 1,
+      "source": "Felten, Raj & Seamans (2021) AI Occupational Exposure (AIOE), github.com/AIOE-Data/AIOE — O*NET-SOC 상대 노출(z-score)",
+      "method": "anchored = round(0.5*percentile + 0.5*손추정). raw 점수는 라이선스로 미저장.",
+      "scope": "직업-레벨 참고치 앵커만. 표시 점수는 태스크 baseline 롤업이라 아직 미반영 — 태스크-레벨 캘리브레이션 필요.",
+      "as_of": "2026-06-22"
+    }
+  },
+  "tasks": [
+    {
+      "task_id": "ad-copy",
+      "name_ko": "광고 카피 작성",
+      "weight": 0.22,
+      "baseline": 85,
+      "ci": 8
+    },
+    {
+      "task_id": "blog-seo-content",
+      "name_ko": "블로그·SEO 콘텐츠",
+      "weight": 0.18,
+      "baseline": 82,
+      "ci": 8
+    },
+    {
+      "task_id": "product-description",
+      "name_ko": "제품 상세·설명문",
+      "weight": 0.18,
+      "baseline": 88,
+      "ci": 6
+    },
+    {
+      "task_id": "email-newsletter",
+      "name_ko": "이메일·뉴스레터",
+      "weight": 0.14,
+      "baseline": 80,
+      "ci": 8
+    },
+    {
+      "task_id": "brand-messaging",
+      "name_ko": "브랜드 메시지·톤 설계",
+      "weight": 0.16,
+      "baseline": 45,
+      "ci": 12
+    },
+    {
+      "task_id": "client-revision",
+      "name_ko": "클라이언트 방향 조율",
+      "weight": 0.12,
+      "baseline": 40,
+      "ci": 12
+    }
+  ]
+}

@@ -7,6 +7,7 @@
     "junior-developer":  {"soc": "15-1252", "aioe_soc": "15-1132", "onet_title": "Software Developers", "confidence": "high"},
     "accountant":        {"soc": "13-2011", "onet_title": "Accountants and Auditors", "confidence": "high"},
     "bookkeeper":        {"soc": "43-3031", "onet_title": "Bookkeeping, Accounting, and Auditing Clerks", "confidence": "high"},
+    "copywriter":        {"soc": "27-3043", "onet_title": "Writers and Authors", "confidence": "high"},
     "graphic-designer":  {"soc": "27-1024", "onet_title": "Graphic Designers", "confidence": "high"},
     "journalist":        {"soc": "27-3023", "aioe_soc": "27-3022", "onet_title": "News Analysts, Reporters, and Journalists (AIOE: Reporters and Correspondents)", "confidence": "high"},
     "paralegal":         {"soc": "23-2011", "onet_title": "Paralegals and Legal Assistants", "confidence": "high"},
