@@ -480,7 +480,9 @@ def test_calibration_anchor_honest_when_applied():
     if anc:  # 캘리브레이션이 적용된 환경에서만 (CSV는 gitignore라 클린 체크아웃에선 None)
         assert "percentile" in anc and anc.get("soc")
         h = report.detail_html(job, deep)
-        assert "외부 노출 앵커" in h and f"p{anc['percentile']}" in h     # 진짜 외부 근거 노출
+        top = round(100 - float(anc["percentile"]))
+        assert "외부 노출 앵커" in h and f"상위 {top}%" in h               # 진짜 외부 근거(명확한 상위 N%)
+        assert f"백분위 {anc['percentile']}" in h                         # 백분위 원값도 투명 노출
         assert "상대 AI 노출" in h and "calibrated:false" in h            # 척도 면책 + 과대표기 방지
 
 
@@ -490,7 +492,8 @@ def test_render_trust_badge_only_when_anchored_and_honest():
     h = report.render_html(job)
     anc = deepdive._load_anchor("video-editor")
     if anc:  # 캘리브레이션 적용 환경(CSV gitignore라 클린 체크아웃에선 None → 배지 없음이 정상)
-        assert "AIOE" in h and f"p{anc['percentile']}" in h                # 외부 근거 교차참조 노출
+        top = round(100 - float(anc["percentile"]))
+        assert "AIOE" in h and f"상위 {top}%" in h                         # 외부 근거(명확한 상위 N%, '상위 p74' 오해 차단)
         assert "손추정" in h                                              # 면책: 표시점수 미보정 명시
         assert "/detail?job=video-editor" in h                            # 상세로 유도(리텐션)
 

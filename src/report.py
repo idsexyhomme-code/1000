@@ -354,8 +354,8 @@ def detail_html(job_result: dict, deep: dict | None = None) -> str:
     if anc:
         anchor_html = (
             f'<div class="dd-note" style="margin-top:14px;border-top:1px solid var(--bg-elevate);padding-top:12px">'
-            f'🔗 <b>외부 노출 앵커</b>: 이 직무는 AI 노출 상위 <b>p{anc.get("percentile","?")}</b> '
-            f'(직무 간 상대순위) · 참고 index <b>{anc.get("anchored_index","?")}</b>'
+            f'🔗 <b>외부 노출 앵커</b>: 이 직무는 AI 노출 <b>상위 {round(100 - float(anc.get("percentile", 50)))}%</b> '
+            f'(백분위 {anc.get("percentile","?")}, 직무 간 상대순위) · 참고 index <b>{anc.get("anchored_index","?")}</b>'
             f'<br>출처: {_e(anc.get("source",""))} · SOC {_e(anc.get("soc",""))}/{_e(anc.get("soc_confidence",""))}'
             f'<br>※ 외부 점수는 직무 간 <b>상대 AI 노출</b>(z-score)이라 우리 압력지수와 같은 척도가 아닙니다 — '
             f'직접 대입 않고 상대순위로만 앵커링({_e(anc.get("method",""))}). '
@@ -446,7 +446,7 @@ def render_html(job: dict, strat: dict | None = None, action_plan: dict | None =
         f'background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.2);'
         f'border-radius:12px;padding:10px 12px;margin:0 0 12px;line-height:1.55;word-break:keep-all">'
         f'🔗 이 직무의 AI 노출은 외부 공개데이터 <b>AIOE</b>(Felten 2021)로 교차참조 — '
-        f'직무 간 노출 상위 <b>p{_anchor.get("percentile","?")}</b>. '
+        f'직무 간 노출 <b>상위 {round(100 - float(_anchor.get("percentile", 50)))}%</b>. '
         f'<span style="color:var(--text-tertiary)">표시 점수는 아직 손추정(미보정) · 근거는 상세에서</span></div>'
     ) if _anchor else ''
     if action_plan is None:        # 기본은 결정적 폴백(빠름·무비용). 배치가 캐시한 Gemini 플랜은 호출측이 주입.
