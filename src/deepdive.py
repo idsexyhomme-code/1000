@@ -71,22 +71,97 @@ def pivot_paths(job_result: dict) -> dict:
     }
 
 
-# ── 외부 데이터 필요 — 정직한 스텁 (가짜 숫자 금지) ──────────────────────
+# ── 외부 데이터 어댑터 — env 엔드포인트 있으면 실호출, 없거나 실패하면 정직 스텁 ──
+# 원칙: 절대 숫자를 합성하지 않는다. 실데이터가 들어올 때만 진짜로 표기.
+def _http_get_json(url: str, timeout: float = 8.0):
+    """stdlib만으로 JSON GET. 실패 시 None (예외 삼키되 날조 안 함)."""
+    import json
+    import urllib.request
+    try:
+        req = urllib.request.Request(url, headers={"User-Agent": "career-signal/1.0"})
+        with urllib.request.urlopen(req, timeout=timeout) as r:  # noqa: S310 (env-set URL)
+            return json.loads(r.read().decode("utf-8"))
+    except Exception:
+        return None
+
+
+def _job_query(job_result: dict) -> str:
+    """채용/임금 조회용 직무 식별자(이름 우선, 없으면 id)."""
+    return (job_result.get("name_ko") or job_result.get("name")
+            or job_result.get("job_id", ""))
+
+
+def _fetch_hiring(job_result: dict):
+    """HIRING_API_URL 설정 시 실호출. 응답 스키마(필수):
+         {"trend_pct": <float, 최근 6개월 공고 증감률>,
+          "ai_pref_pct": <float, 'AI 활용' 우대조건 비율>,
+          "period": <str>, "source": <str>}
+       URL의 {job}/{key}는 치환. 미설정·실패·스키마 불일치 시 None → 정직 스텁."""
+    import urllib.parse
+    base = os.environ.get("HIRING_API_URL")
+    if not base:
+        return None
+    url = (base.replace("{job}", urllib.parse.quote(_job_query(job_result)))
+               .replace("{key}", urllib.parse.quote(os.environ.get("HIRING_API_KEY", ""))))
+    data = _http_get_json(url)
+    if not isinstance(data, dict):
+        return None
+    try:
+        return {
+            "trend_pct": float(data["trend_pct"]),
+            "ai_pref_pct": float(data["ai_pref_pct"]),
+            "period": str(data.get("period", "")),
+            "source": str(data.get("source", "")),
+        }
+    except (KeyError, TypeError, ValueError):
+        return None  # 스키마 불일치 → 가짜로 메우지 않음
+
+
+def _fetch_wage(job_result: dict):
+    """WAGE_DATA_URL 설정 시 실호출. job_id로 키된 JSON 매핑을 받아 해당 직무 추출:
+         {"<job_id>": {"median_krw": <int>, "yoy_pct": <float>,
+                        "premium_gap_pct": <float>, "source": <str>}}
+       또는 단일 객체(이미 해당 직무). 미설정·실패·해당직무 없음 시 None → 정직 스텁."""
+    url = os.environ.get("WAGE_DATA_URL")
+    if not url:
+        return None
+    data = _http_get_json(url)
+    if not isinstance(data, dict):
+        return None
+    jid = job_result.get("job_id", "")
+    row = data.get(jid) if jid in data else data  # 매핑이면 직무 추출, 아니면 단일 객체
+    if not isinstance(row, dict):
+        return None
+    try:
+        return {
+            "median_krw": int(row["median_krw"]),
+            "yoy_pct": float(row["yoy_pct"]),
+            "premium_gap_pct": float(row.get("premium_gap_pct", 0.0)),
+            "source": str(row.get("source", "")),
+        }
+    except (KeyError, TypeError, ValueError):
+        return None
+
+
 def hiring_trend(job_result: dict) -> dict:
-    """채용 수요 트렌드 — 채용 API(원티드/잡코리아 등) 연동 필요. 어댑터: HIRING_API_KEY + fetch 구현."""
+    """채용 수요 트렌드 — HIRING_API_URL 연동 시 실데이터, 아니면 정직 스텁(가짜 숫자 금지)."""
+    data = _fetch_hiring(job_result)
     return {
-        "available": bool(os.environ.get("HIRING_API_KEY")),
+        "available": data is not None,
+        "data": data,
         "note": "채용 API 연동 시 — 최근 6개월 해당 직무 공고 증감률 + 'AI 활용' 우대조건 변화 표시.",
-        "adapter": "env HIRING_API_KEY 설정 + deepdive._fetch_hiring 구현",
+        "adapter": "env HIRING_API_URL(+HIRING_API_KEY) 설정 — {job}/{key} 치환, deepdive._fetch_hiring",
     }
 
 
 def wage_impact(job_result: dict) -> dict:
-    """임금 타격 — 연봉 데이터(KOSIS/플랫폼) 연동 필요. 가짜 추정 금지."""
+    """임금 타격 — WAGE_DATA_URL 연동 시 실데이터, 아니면 정직 스텁(가짜 추정 금지)."""
+    data = _fetch_wage(job_result)
     return {
-        "available": bool(os.environ.get("WAGE_DATA_URL")),
+        "available": data is not None,
+        "data": data,
         "note": "연봉 데이터 연동 시 — AI 도입에 따른 평균 임금 하락 압력 + 프리미엄 스킬 보유 시 임금 격차.",
-        "adapter": "env WAGE_DATA_URL 설정 + deepdive._fetch_wage 구현",
+        "adapter": "env WAGE_DATA_URL 설정(job_id 키 JSON) — deepdive._fetch_wage",
     }
 
 

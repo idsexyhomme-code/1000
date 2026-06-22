@@ -443,6 +443,33 @@ def test_deepdive_and_detail_honest():
     assert "데이터 연동 필요" in h                                       # 스텁 정직 노출(패딩 아님)
 
 
+def test_deepdive_hiring_wage_live_adapter():
+    """env 엔드포인트가 있으면 실데이터 경로 작동, 실패/스키마불일치는 정직 스텁 폴백(날조 0)."""
+    job = ScoringEngine(JOBS).score([], now=NOW)["video-editor"]
+    # 1) fetch가 정상 데이터를 주면 available=True + 진짜 수치 렌더
+    orig_h, orig_w = deepdive._fetch_hiring, deepdive._fetch_wage
+    deepdive._fetch_hiring = lambda jr: {"trend_pct": -12.3, "ai_pref_pct": 41.0,
+                                         "period": "2026-01~06", "source": "원티드"}
+    deepdive._fetch_wage = lambda jr: {"median_krw": 48000000, "yoy_pct": -3.2,
+                                       "premium_gap_pct": 27.5, "source": "KOSIS"}
+    try:
+        deep = deepdive.build(job)
+        assert deep["hiring"]["available"] is True and deep["hiring"]["data"]["ai_pref_pct"] == 41.0
+        assert deep["wage"]["available"] is True and deep["wage"]["data"]["median_krw"] == 48000000
+        h = report.detail_html(job, deep)
+        assert "48,000,000원" in h and "41.0%" in h                       # 실데이터 노출
+        assert "<b>데이터 연동 필요</b>" not in h                          # 실데이터면 채용/임금 스텁 사라짐
+        # 2) fetch가 None(미설정/실패)이면 정직 스텁 유지
+        deepdive._fetch_hiring = lambda jr: None
+        deepdive._fetch_wage = lambda jr: None
+        deep2 = deepdive.build(job)
+        assert deep2["hiring"]["available"] is False and deep2["hiring"]["data"] is None
+        # 3) 스키마 불일치 응답은 None으로 거부(가짜로 안 메움)
+        assert deepdive._fetch_hiring is not orig_h  # sanity: 패치됨
+    finally:
+        deepdive._fetch_hiring, deepdive._fetch_wage = orig_h, orig_w
+
+
 def test_painmap_schema_and_job_task_links():
     errors = painmap.validate_against_jobs(server.JOBS)
     assert errors == []

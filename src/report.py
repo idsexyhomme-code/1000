@@ -376,12 +376,30 @@ def detail_html(job_result: dict, deep: dict | None = None) -> str:
               f'<div>{chips}</div>'
               f'<div class="dd-note">{_e(pv["cross_job_note"])}</div></div>')
 
-    # 4) 채용 트렌드 (스텁) / 5) 임금 타격 (스텁)
+    # 4) 채용 트렌드 / 5) 임금 타격 — 실데이터 연동 시 진짜 수치, 아니면 정직 스텁
     hr, wg = deep["hiring"], deep["wage"]
-    sec_hr = (f'<div class="dd-sec"><div class="dd-h">📈 실시간 채용 트렌드</div>'
-              f'<div class="dd-pending"><b>데이터 연동 필요</b> — {_e(hr["note"])}</div></div>')
-    sec_wg = (f'<div class="dd-sec"><div class="dd-h">💰 임금 타격 예측</div>'
-              f'<div class="dd-pending"><b>데이터 연동 필요</b> — {_e(wg["note"])}</div></div>')
+    def _dd_kv(label: str, value: str) -> str:
+        return (f'<div class="dd-row"><span class="n" style="width:auto;flex:1">{_e(label)}</span>'
+                f'<span class="dd-v" style="width:auto;min-width:64px">{_e(value)}</span></div>')
+    if hr.get("available") and hr.get("data"):
+        d = hr["data"]
+        arrow = "▲" if d["trend_pct"] >= 0 else "▼"
+        body_hr = (_dd_kv("공고 증감(최근 6개월)", f'{arrow} {abs(d["trend_pct"]):.1f}%')
+                   + _dd_kv("'AI 활용' 우대 비율", f'{d["ai_pref_pct"]:.1f}%')
+                   + f'<div class="dd-note">출처: {_e(d.get("source",""))} · 기간: {_e(d.get("period",""))}</div>')
+    else:
+        body_hr = f'<div class="dd-pending"><b>데이터 연동 필요</b> — {_e(hr["note"])}</div>'
+    sec_hr = f'<div class="dd-sec"><div class="dd-h">📈 실시간 채용 트렌드</div>{body_hr}</div>'
+    if wg.get("available") and wg.get("data"):
+        d = wg["data"]
+        arrow = "▲" if d["yoy_pct"] >= 0 else "▼"
+        body_wg = (_dd_kv("중위 연봉", f'{d["median_krw"]:,}원')
+                   + _dd_kv("전년 대비", f'{arrow} {abs(d["yoy_pct"]):.1f}%')
+                   + _dd_kv("프리미엄 스킬 임금격차", f'+{d["premium_gap_pct"]:.1f}%')
+                   + f'<div class="dd-note">출처: {_e(d.get("source",""))}</div>')
+    else:
+        body_wg = f'<div class="dd-pending"><b>데이터 연동 필요</b> — {_e(wg["note"])}</div>'
+    sec_wg = f'<div class="dd-sec"><div class="dd-h">💰 임금 타격 예측</div>{body_wg}</div>'
 
     return f"""<!doctype html><html lang="ko"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
