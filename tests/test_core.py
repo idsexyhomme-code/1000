@@ -529,6 +529,14 @@ def test_render_trust_badge_only_when_anchored_and_honest():
         assert "/detail?job=video-editor" in h                            # 상세로 유도(리텐션)
 
 
+def test_report_has_board_cta_closing_share_loop():
+    """공유 루프 폐쇄: 리포트가 압력 보드('/')로 돌아가는 명확한 CTA를 가진다(공유 방문자 → 자기 직업 찾기)."""
+    j = ScoringEngine(JOBS).score([], now=NOW)["video-editor"]
+    h = report.render_html(j)
+    assert 'href="/"' in h                                               # 보드로 복귀 링크
+    assert "압력 보드" in h and "영상편집자" in h                        # 어떤 직업 리포트인지 정직 + 보드 유도
+
+
 def test_trust_badge_flags_medium_confidence_proxy():
     """정직성: medium(대표 SOC 프록시) 앵커는 high와 같은 자신감으로 표기 금지 — 배지에 '중간 신뢰' 명시."""
     med = deepdive._load_anchor("teacher")

@@ -540,7 +540,11 @@ def render_html(job: dict, strat: dict | None = None, action_plan: dict | None =
     else if(navigator.clipboard){{navigator.clipboard.writeText(d.text+" "+d.url);alert("공유 링크를 복사했어요!");}}
     else {{window.prompt("공유 링크",d.url);}}}}
   </script>
-  <a href="/" style="display:block;text-align:center;color:var(--text-secondary);font-size:13px;margin:2px 0 18px;text-decoration:none">🔎 내 직업도 확인하기 →</a>
+  <a href="/" style="display:flex;align-items:center;gap:12px;background:var(--bg-surface);border:1px solid var(--border-color);border-radius:16px;padding:15px 16px;margin:2px 0 18px;text-decoration:none;color:var(--text-primary)">
+    <span style="font-size:24px;line-height:1;flex-shrink:0">📡</span>
+    <span style="flex:1;min-width:0"><b style="font-size:15px;letter-spacing:-.3px">이건 '{_e(job.get('job_name_ko',''))}'의 리포트예요</b><br>
+    <span style="font-size:12.5px;color:var(--text-secondary)">내 직업의 AI 압력은? 오늘의 압력 보드에서 확인 →</span></span>
+  </a>
   <p class="footer-text">※ 본 지수는 공개된 AI 뉴스를 정해진 원칙으로 계량화한 <b>참고 지표</b>입니다. 특정 개인·기업의 대체를 단정하지 않으며, 모든 변동의 근거를 공개합니다.</p>
   {_legal_links()}
 </div></body></html>"""
