@@ -379,12 +379,17 @@ function calculate(){
 /* ---------- RESULT ---------- */
 /* AIOE 외부 노출 앵커(Felten, Raj & Seamans 2021) — src/ 캘리브레이션에서 가져온 직업-레벨 상대순위.
    앵커 있는 직업만 외부 교차참조 배지를 노출(없으면 배지 없음=정직). p=percentile, c=SOC 신뢰도. */
-var AIOE={"accountant":{p:99.0,c:"high"},"bookkeeper":{p:76.6,c:"high"},"call-center-agent":{p:73.2,c:"medium"},"copywriter":{p:74.1,c:"high"},"data-analyst":{p:95.2,c:"medium"},"graphic-designer":{p:67.0,c:"high"},"hr-manager":{p:89.5,c:"high"},"journalist":{p:82.0,c:"high"},"junior-developer":{p:82.6,c:"high"},"marketer":{p:97.4,c:"medium"},"nurse":{p:57.2,c:"high"},"office-admin":{p:78.2,c:"medium"},"paralegal":{p:87.3,c:"high"},"sales-rep":{p:69.4,c:"medium"},"teacher":{p:82.1,c:"medium"},"translator":{p:78.5,c:"high"},"video-editor":{p:73.8,c:"high"}};
+var AIOE={"accountant":{p:99.0,c:"high",s:"13-2011"},"bookkeeper":{p:76.6,c:"high",s:"43-3031"},"call-center-agent":{p:73.2,c:"medium",s:"43-4051"},"copywriter":{p:74.1,c:"high",s:"27-3043"},"data-analyst":{p:95.2,c:"medium",s:"15-2041"},"graphic-designer":{p:67.0,c:"high",s:"27-1024"},"hr-manager":{p:89.5,c:"high",s:"11-3121"},"journalist":{p:82.0,c:"high",s:"27-3022"},"junior-developer":{p:82.6,c:"high",s:"15-1132"},"marketer":{p:97.4,c:"medium",s:"13-1161"},"nurse":{p:57.2,c:"high",s:"29-1141"},"office-admin":{p:78.2,c:"medium",s:"43-6014"},"paralegal":{p:87.3,c:"high",s:"23-2011"},"sales-rep":{p:69.4,c:"medium",s:"41-4012"},"teacher":{p:82.1,c:"medium",s:"25-2031"},"translator":{p:78.5,c:"high",s:"27-3091"},"video-editor":{p:73.8,c:"high",s:"27-4032"}};
 function aioeBadge(jobKey){var a=AIOE[jobKey];if(!a)return '';
  var top=Math.round(100-a.p);var proxy=a.c!=='high'?' <span style="color:#8b8b94">(proxy SOC · medium confidence)</span>':'';
- return '<div style="background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.22);border-radius:12px;padding:11px 13px;margin-bottom:4px;font-size:12.5px;color:#a1a1aa;line-height:1.55;text-align:center">'
-  +'🔗 Cross-referenced with external open data <b style="color:#c7d2fe">AIOE</b> (Felten et al. 2021): this occupation ranks <b style="color:#c7d2fe">top '+top+'%</b> for AI exposure across O*NET occupations'+proxy
-  +'. <span style="color:#8b8b94">Displayed score is still hand-estimated — see method below.</span></div>';}
+ return '<details style="background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.22);border-radius:12px;padding:11px 13px;margin-bottom:4px">'
+  +'<summary style="font-size:12.5px;color:#a1a1aa;line-height:1.55;cursor:pointer;list-style:none">'
+  +'🔗 Cross-referenced with external open data <b style="color:#c7d2fe">AIOE</b> (Felten et al. 2021): this occupation ranks <b style="color:#c7d2fe">top '+top+'%</b> for AI exposure'+proxy
+  +' <span style="color:#8b8b94">· tap for sources ▾</span></summary>'
+  +'<div style="font-size:12px;color:#a1a1aa;line-height:1.6;margin-top:9px;text-align:left">'
+  +'<div><b>Source:</b> Felten, Raj &amp; Seamans (2021), <b>AI Occupational Exposure (AIOE)</b> — github.com/AIOE-Data/AIOE. O*NET-SOC <b>'+a.s+'</b> · percentile <b>'+a.p+'</b> (rank across occupations)'+(a.c!=='high'?' · <b>proxy SOC, medium confidence</b>':'')+'.</div>'
+  +'<div style="margin-top:7px">This is <b>relative</b> AI exposure (a z-score-based ranking), <b>not a probability</b> and not on the same scale as your score — so we <b>do not</b> map it directly onto your number. We anchor only the cross-occupation <b>ranking</b>, transparently. Your displayed score is still <b>hand-estimated</b>; task-level calibration against labor data (e.g. O*NET tasks) is still needed.</div>'
+  +'</div></details>';}
 function band(s){return s<=25?["Clear","#3b82f6"]:s<=50?["Partly cloudy","#8b5cf6"]:s<=75?["Cloudy","#f59e0b"]:["Storm","#e11d48"];}
 function renderResult(){
  var j=JOBS[st.job], bid=decideBranch(), br=BRANCHES[bid];
