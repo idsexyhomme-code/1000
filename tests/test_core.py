@@ -1239,6 +1239,17 @@ def test_server_match_job():
     assert server._match_job("관련없는말") is None
 
 
+def test_server_match_job_colloquial_and_ambiguous():
+    """온보딩 활성화: 구어체/축약 입력도 단일 후보면 매치, 모호하면 None(오매칭 방지)."""
+    assert server._match_job("개발자") == "junior-developer"          # 부분 → 단일 후보
+    assert server._match_job("회계") == "accountant"
+    assert server._match_job("디자이너") == "graphic-designer"
+    assert server._match_job("상담") == "call-center-agent"
+    assert server._match_job("사") is None                            # 1자 과매칭 방지
+    assert server._match_job("사무") is None                          # 다중 후보(사무·행정직/법률사무원) → 미선택
+    assert server._match_job("") is None
+
+
 def test_server_kakao_malformed_no_crash():
     for bad in [[], None, {}, {"userRequest": None},
                 {"userRequest": {"user": "x", "utterance": 5}}]:

@@ -318,11 +318,19 @@ def _rate_ok(ip: str) -> bool:
 
 
 def _match_job(utterance: str) -> str | None:
-    """발화에서 직업 식별 (이름 부분일치 or job_id)."""
+    """발화에서 직업 식별. (1) 전체명/직업id 포함 → 매치. (2) 구어체·축약('개발자','회계')이
+    직업명에 포함되면 매치하되 **후보가 정확히 1개일 때만**(모호하면 None → 목록으로 유도, 오매칭 방지)."""
     u = (utterance or "").strip().lower()
+    if not u:
+        return None
     for jid, job in JOBS.items():
-        if jid in u or job["job_name_ko"] in utterance:
+        if jid in u or job["job_name_ko"] in (utterance or ""):
             return jid
+    core = (utterance or "").strip()
+    if len(core) >= 2:                                    # 1자(예 '사')는 과매칭이라 제외
+        cands = [jid for jid, job in JOBS.items() if core in job["job_name_ko"]]
+        if len(cands) == 1:                              # 단일 후보만 자동 등록(다중이면 사용자가 선택)
+            return cands[0]
     return None
 
 
