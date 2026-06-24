@@ -330,7 +330,7 @@ def landing_html(jobs: dict) -> str:
             f'<span class="lj-meta"><span class="lj-idx" style="color:{solid}">{_e(idx)}</span> · {_e(weather)}</span>'
             f'</span></a>')
     return f"""<!doctype html><html lang="ko"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta property="og:type" content="website"><meta property="og:site_name" content="커리어 시그널">
 <meta property="og:title" content="내 직업, AI에 얼마나 영향받을까?">
 <meta property="og:description" content="업무별 AI 압력을 근거와 함께 — 커리어 시그널">{_og_image_meta()}
@@ -446,7 +446,7 @@ def detail_html(job_result: dict, deep: dict | None = None) -> str:
     sec_wg = f'<div class="dd-sec"><div class="dd-h">💰 임금 타격 예측</div>{body_wg}</div>'
 
     return f"""<!doctype html><html lang="ko"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 {_FAVICON}<title>{name} 상세 분석 · 커리어 시그널</title>
 <style>{_CSS}{_DETAIL_CSS}</style></head><body><div class="app-container">
   <a class="dd-back" href="/report?job={jid}">← 요약으로 돌아가기</a>
@@ -509,7 +509,7 @@ def render_html(job: dict, strat: dict | None = None, action_plan: dict | None =
     og_desc = (strat.get('tagline', '') or strat.get('threat', '')
                or "내 직무가 AI에 얼마나 영향받는지 업무별로 확인하세요")
     return f"""<!doctype html><html lang="ko"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta property="og:type" content="website"><meta property="og:site_name" content="커리어 시그널">
 <meta property="og:title" content="{_e(og_title)}"><meta property="og:description" content="{_e(og_desc)}">{_og_image_meta()}
 {_FAVICON}<title>커리어 시그널 · {_e(job.get('job_name_ko',''))}</title>
@@ -621,7 +621,7 @@ def privacy_html() -> str:
     fulfillment_fields = _biz("LEGAL_FULFILLMENT_FIELDS", "[필수 입력] 결제자 이름, 이메일/전화, 주문번호, 결제금액/상태, 이력서·포트폴리오·업무 자료·인터뷰 답변 등 실제 이행에 필요한 자료")
     today = _biz("LEGAL_EFFECTIVE_DATE", "2026-06-20")
     return f"""<!doctype html><html lang="ko"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 {_FAVICON}<title>개인정보처리방침 · {_e(service)}</title>
 <style>{_CSS}{_LEGAL_CSS}</style></head><body><div class="app-container">
   <a href="/" style="display:block;text-align:center;color:var(--text-secondary);font-size:14px;margin:4px 0 16px;text-decoration:none">← 처음으로</a>
@@ -719,7 +719,7 @@ def terms_html() -> str:
     telecom = _biz("LEGAL_TELECOMMERCE_NUMBER", "[필수 입력] 통신판매업 신고번호")
     today = _biz("LEGAL_EFFECTIVE_DATE", "2026-06-20")
     return f"""<!doctype html><html lang="ko"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 {_FAVICON}<title>이용약관 · {_e(service)}</title>
 <style>{_CSS}{_LEGAL_CSS}</style></head><body><div class="app-container">
   <a href="/" style="display:block;text-align:center;color:var(--text-secondary);font-size:14px;margin:4px 0 16px;text-decoration:none">← 처음으로</a>
@@ -841,7 +841,7 @@ def pain_intake_html(job: dict, pain_id: str | None = None, recommended_micro_it
     pains = pm.get("pains") or []
     if not pains:
         return f"""<!doctype html><html lang="ko"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 {_FAVICON}<title>가려운 업무 · 커리어 시그널</title><style>{_CSS}</style></head><body><div class="app-container">
 <a href="/report?job={_e(jid)}" style="display:block;text-align:center;color:var(--text-secondary);font-size:14px;margin:4px 0 16px;text-decoration:none">← 내 리포트로</a>
 <div class="hero-card"><div class="hero-emoji">🩹</div><h1 class="hero-title">준비 중이에요</h1>
@@ -901,7 +901,7 @@ def pain_intake_html(job: dict, pain_id: str | None = None, recommended_micro_it
     job_js = json.dumps(jid, ensure_ascii=False)
     pain_js = json.dumps(pid, ensure_ascii=False)
     return f"""<!doctype html><html lang="ko"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta property="og:type" content="website"><meta property="og:site_name" content="커리어 시그널">
 <meta property="og:title" content="{_e(name)}의 진짜 가려운 업무">
 <meta property="og:description" content="AI 압력보다 더 구체적으로, 매주 반복되는 업무 고통을 결과물로 줄여보세요.">{_og_image_meta()}
@@ -993,7 +993,7 @@ def pain_offer_html(job: dict, pain_id: str, payment_url: str | None = None, mic
     pain = painmap.get(job, pain_id)
     if not pain:
         return f"""<!doctype html><html lang="ko"><head><meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 {_FAVICON}<title>{PAIN_OFFER_NAME} · 커리어 시그널</title><style>{_CSS}</style></head><body><div class="app-container">
 <a href="/report?job={_e(jid)}" style="display:block;text-align:center;color:var(--text-secondary);font-size:14px;margin:4px 0 16px;text-decoration:none">← 내 리포트로</a>
 <div class="hero-card"><div class="hero-emoji">🩹</div><h1 class="hero-title">파일럿 준비 중</h1>
@@ -1062,7 +1062,7 @@ def pain_offer_html(job: dict, pain_id: str, payment_url: str | None = None, mic
     pain_js = json.dumps(pain.get("pain_id", ""), ensure_ascii=False)
     micro_js = json.dumps(selected_micro, ensure_ascii=False)
     return f"""<!doctype html><html lang="ko"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta property="og:type" content="website"><meta property="og:site_name" content="커리어 시그널">
 <meta property="og:title" content="{_e(name)} {PAIN_OFFER_NAME}">
 <meta property="og:description" content="{_e(pain.get("artifact_ko", ""))}">{_og_image_meta()}
@@ -1127,7 +1127,7 @@ def offer_html(job: dict, payment_url: str | None = None, grounded: bool = True)
     head_task = _e((job.get("headline_task") or {}).get("name_ko") or "핵심 업무")
     if not grounded:
         return f"""<!doctype html><html lang="ko"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 {_FAVICON}<title>{OFFER_NAME} · {name}</title>
 <style>{_CSS}</style></head><body><div class="app-container">
   <a href="/report?job={jid}" style="display:block;text-align:center;color:var(--text-secondary);font-size:14px;margin:4px 0 16px;text-decoration:none">← 내 리포트로</a>
@@ -1169,7 +1169,7 @@ def offer_html(job: dict, payment_url: str | None = None, grounded: bool = True)
                 '이력서 재설계는 <b>당신 직무에 결박된 근거가 있을 때만</b> 수행하며, 근거 없는 조언은 팔지 않습니다. '
                 'AI 압력지수는 참고용 통계 지표이며 개인에 대한 자동 판정이 아닙니다.')
     return f"""<!doctype html><html lang="ko"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 {_FAVICON}<title>{OFFER_NAME} · {name}</title>
 <style>{_CSS}{_OFFER_CSS}</style></head><body><div class="app-container">
   <a class="of-back" href="/report?job={jid}">← 내 리포트로</a>
@@ -1222,7 +1222,7 @@ def payment_pending_html(job_id: str = "") -> str:
     결제 완료를 자동 확정하지 않는다(완료는 서명검증된 웹훅으로만). 사용자 오인 방지."""
     back = f"/report?job={_e(job_id)}" if job_id else "/"
     return f"""<!doctype html><html lang="ko"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 {_FAVICON}<title>결제 접수 · 커리어 시그널</title>
 <style>{_CSS}</style></head><body><div class="app-container">
   <div class="hero-card"><div class="hero-emoji">🧾</div>

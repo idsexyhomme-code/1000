@@ -546,6 +546,16 @@ def test_render_trust_badge_only_when_anchored_and_honest():
         assert "/detail?job=video-editor" in h                            # 상세로 유도(리텐션)
 
 
+def test_pages_allow_pinch_zoom_wcag_resize():
+    """접근성 WCAG 1.4.4: 저시력 사용자 핀치 확대 차단 금지. 모바일퍼스트 viewport는 유지하되 user-scalable=no 없어야."""
+    job = ScoringEngine(JOBS).score([], now=NOW)["video-editor"]
+    pages = [report.render_html(job), report.landing_html({"video-editor": job}),
+             report.detail_html(job), report.privacy_html(), report.terms_html()]
+    for h in pages:
+        assert "user-scalable=no" not in h and "maximum-scale" not in h   # 확대차단 제거
+        assert "width=device-width" in h                                  # 모바일퍼스트는 유지
+
+
 def test_report_has_board_cta_closing_share_loop():
     """공유 루프 폐쇄: 리포트가 압력 보드('/')로 돌아가는 명확한 CTA를 가진다(공유 방문자 → 자기 직업 찾기)."""
     j = ScoringEngine(JOBS).score([], now=NOW)["video-editor"]
