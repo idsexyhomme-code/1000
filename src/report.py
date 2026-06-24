@@ -38,18 +38,30 @@ _TYPE_PROMPT = """\
 """
 
 
+# 폴백 전략가 타입 — 게이지에 표시되는 weather 밴드와 '일관되게' 매핑(타입↔날씨 모순 금지).
+# 공유 #1 레버: 직업마다 다른 정체성+tagline → 친구가 "내 타입은?"으로 유입. 손추정이라 단정 금지.
+_TYPE_BY_WEATHER = {
+    "맑음": {"type_name": "인간 강점 수호자형", "emoji": "🛡️"},
+    "구름조금": {"type_name": "균형 항해사형", "emoji": "🧭"},
+    "흐림": {"type_name": "AI 파도 서퍼형", "emoji": "🏄"},
+    "태풍경보": {"type_name": "정면 재설계형", "emoji": "🔧"},
+}
+
+
 def strategist_type(job: dict, use_gemini: bool = True) -> dict:
-    tasks = job.get("tasks", [])
-    high = ", ".join(t["name_ko"] for t in tasks[:2]) or "-"
-    low = ", ".join(t["name_ko"] for t in tasks[-2:]) or "-"
+    # 압력순 정렬(태스크 입력 순서에 의존하지 않음 — 저압력을 '고압력'이라 부르는 정직성 버그 방지).
+    ranked = sorted(job.get("tasks", []), key=lambda t: -t.get("index", 0))
+    high = ", ".join(t["name_ko"] for t in ranked[:2]) or "-"
+    low = ", ".join(t["name_ko"] for t in ranked[-2:]) or "-"
     if use_gemini and os.environ.get("GEMINI_API_KEY"):
         try:
             return _gemini_type(job["job_name_ko"], high, low)
         except Exception as e:
             print(f"[report] Gemini 타입 실패→폴백: {type(e).__name__} {e}")
+    base = _TYPE_BY_WEATHER.get(job.get("weather"), {"type_name": "균형 항해사형", "emoji": "🧭"})
     return {
-        "type_name": "균형 전략가형", "emoji": "🧭",
-        "tagline": f"{high} 자동화 파도를 읽고 {low}로 중심을 잡는 타입",
+        **base,
+        "tagline": f"{high} 압력을 읽고 {low}로 중심을 잡는 타입",
         "threat": f"{high} 업무에 AI 자동화 압력이 관측됩니다.",
         "opportunity": f"{low} 등 사람 강점 영역으로 무게를 옮기면 방어력이 높아집니다.",
     }

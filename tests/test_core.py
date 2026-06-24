@@ -531,6 +531,19 @@ def test_trust_badge_flags_medium_confidence_proxy():
         assert badge and "프록시" not in badge[0]
 
 
+def test_strategist_type_consistent_with_weather_and_pressure_sorted():
+    """폴백 전략가 타입: (1) 게이지 weather 밴드와 일치(모순 금지) (2) high/low 태스크가 압력순(저압력을 고압력이라 안 부름)."""
+    results = ScoringEngine(JOBS).score([], now=NOW)
+    for jid, j in results.items():
+        s = report.strategist_type(j, use_gemini=False)            # 폴백 강제(키 없이)
+        want = report._TYPE_BY_WEATHER.get(j["weather"])
+        assert want and s["type_name"] == want["type_name"], f"{jid}: 타입↔날씨 불일치"
+        ranked = sorted(j.get("tasks", []), key=lambda t: -t.get("index", 0))
+        if len(ranked) >= 2:
+            top = ranked[0]["name_ko"]
+            assert top in s["threat"]                              # 최고압력 업무가 위협에 (정렬 정직성)
+
+
 def test_calibrate_prefers_aioe_soc_vintage():
     """job_soc_map의 aioe_soc(2010 SOC 빈티지)가 있으면 조회에 우선 사용된다(빈티지 불일치 정직 처리)."""
     import json as _json
