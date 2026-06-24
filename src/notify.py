@@ -29,18 +29,29 @@ def _delta_phrase(delta) -> str:
     return f"압력 {'상승' if delta > 0 else '완화'} ({delta:+.1f})"
 
 
+def _ellip(s: str, n: int) -> str:
+    """n자에 맞춰 자르되 잘렸으면 '…' 표기(맹목 절단 방지). n<=0이면 빈 문자열."""
+    if n <= 0:
+        return ""
+    return s if len(s) <= n else s[:max(1, n - 1)] + "…"
+
+
 def fallback_copy(snap: dict) -> str:
-    """Gemini 없이도 동작하는 결정적 템플릿 (근거+업무+날씨+행동). action_title 있으면 이번 주 할 일 노출."""
+    """Gemini 없이도 동작하는 결정적 템플릿. action_title 있으면 이번 주 할 일 노출.
+    ★변동부(액션/근거)만 예산에 맞춰 자른다 — 끝의 CTA/액션이 통째 절단으로 사라지지 않게(리텐션 보호)."""
     job = snap.get("job_name_ko", "내 직무")
     task = (snap.get("headline_task") or {}).get("name_ko", "핵심 업무")
     weather = snap.get("weather", "흐림")
     drv = (snap.get("top_drivers") or [{}])[0]
     src = drv.get("title", "최신 AI 동향")
     action = snap.get("action_title")
-    if action:   # 경고→구명조끼: 이번 주 구체 행동 1개를 푸시에 노출
-        msg = f"[{weather}] '{task}' 업무 {_delta_phrase(snap.get('delta'))}. 이번 주: {action}"
-    else:
-        msg = f"[{weather}] '{job}'의 '{task}' 업무 {_delta_phrase(snap.get('delta'))}. 근거: {src[:30]}… 대응전략 보기"
+    if action:   # 경고→구명조끼: 이번 주 구체 행동 1개. 액션이 핵심이라 prefix 보존 후 액션만 축약.
+        prefix = f"[{weather}] '{task}' 업무 {_delta_phrase(snap.get('delta'))}. 이번 주: "
+        msg = prefix + _ellip(action, MAX_LEN - len(prefix))
+    else:        # 근거 뒤 CTA '대응전략 보기'는 고정 보존, 근거(src)만 남는 예산에 맞춰 축약.
+        prefix = f"[{weather}] '{job}'의 '{task}' 업무 {_delta_phrase(snap.get('delta'))}. 근거: "
+        suffix = "… 대응전략 보기"
+        msg = prefix + _ellip(src, MAX_LEN - len(prefix) - len(suffix)).rstrip("…") + suffix
     return msg[:MAX_LEN]
 
 

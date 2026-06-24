@@ -136,6 +136,23 @@ def test_notify_surfaces_action():
     assert "이번 주" in notify.fallback_copy(snap)
 
 
+def test_notify_fallback_preserves_cta_and_action_when_long():
+    """리텐션: 긴 근거/액션이어도 끝의 CTA·액션이 통째 절단으로 사라지지 않고 길이는 MAX_LEN 이내."""
+    ML = notify.MAX_LEN
+    long_src = {"job_name_ko": "영상편집자", "weather": "태풍경보", "delta": 2.4,
+                "headline_task": {"name_ko": "컷 편집 및 자막 작업"},
+                "top_drivers": [{"title": "O" * 120}]}              # 비정상적으로 긴 근거 제목
+    m1 = notify.fallback_copy(long_src)
+    assert len(m1) <= ML and "대응전략 보기" in m1                  # CTA 보존(과거엔 절단되어 사라짐)
+    long_act = {"job_name_ko": "주니어 개발자", "weather": "흐림", "delta": -1.8,
+                "headline_task": {"name_ko": "단순 CRUD API 작성"}, "action_title": "가" * 120}
+    m2 = notify.fallback_copy(long_act)
+    assert len(m2) <= ML and "이번 주:" in m2                       # 액션 라벨 보존, 본문은 …축약
+    assert "……" not in notify.fallback_copy(                       # 짧은 근거: 이중 말줄임 없음
+        {"job_name_ko": "기자", "weather": "흐림", "delta": 1.2,
+         "headline_task": {"name_ko": "기사 작성"}, "top_drivers": [{"title": "AI 요약 도구"}]})
+
+
 # ── sender ────────────────────────────────────────────────────────────
 def _clear_outbox():
     if os.path.exists(store.OUTBOX_FILE):
