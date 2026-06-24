@@ -510,7 +510,7 @@ function renderResult(){
  if(API_BASE){try{fetch(API_BASE+'/api/quiz',{method:'POST',headers:{'Content-Type':'application/json','ngrok-skip-browser-warning':'1'},body:JSON.stringify({job:st.job,tasks:st.tasks,exp:st.exp,ai:st.ai,feel:st.feel,inst:st.inst})}).catch(function(){});}catch(e){}}
  postRefer('signup');checkRefProgress();
  window._share={t:"[The "+br.name.replace("The ","")+" "+br.em+"] "+br.line+"\nI'm a "+j.name+" — AI pressure "+score+" ("+bd[0]+"), more exposed than "+pct+"% of jobs. What's your AI Risk Type?"};
- window._card={em:br.em,type:br.name,job:j.name,score:score,band:bd[0],color:bd[1],pct:pct,line:br.line};
+ window._card={em:br.em,type:br.name,job:j.name,score:score,band:bd[0],color:bd[1],pct:pct,line:br.line,aio:AIOE[st.job]};
  // animate
  setTimeout(function(){
    document.querySelectorAll('.tbar').forEach(function(b){b.style.width=b.getAttribute('data-w')+'%';});
@@ -551,7 +551,9 @@ function downloadCard(){var c=window._card;if(!c)return;
  x.fillStyle=c.color;x.font='700 36px -apple-system,sans-serif';x.fillText(c.band.toUpperCase(),W/2,800);
  x.fillStyle='#fafafa';x.font='600 40px -apple-system,sans-serif';x.fillText(c.job,W/2,920);
  x.fillStyle='#fb7185';x.font='700 34px -apple-system,sans-serif';x.fillText('More AI-exposed than '+c.pct+'% of jobs',W/2,975);
- x.fillStyle='#71717a';x.font='30px -apple-system,sans-serif';x.fillText('📡 WorkRadar · idsexyhomme-code.github.io/1000/web/en',W/2,1040);
+ // 앵커 있는 직업만 외부 교차참조 신뢰 한 줄(없으면 미표기 — 정직). 카드는 티저, 전체 면책은 페이지에.
+ if(c.aio){x.fillStyle='#a5b4fc';x.font='600 27px -apple-system,sans-serif';x.fillText('🔗 AIOE-cross-referenced · top '+Math.round(100-c.aio.p)+'% AI exposure'+(c.aio.c!=='high'?' (proxy)':''),W/2,1009);}
+ x.fillStyle='#71717a';x.font='30px -apple-system,sans-serif';x.fillText('📡 WorkRadar · idsexyhomme-code.github.io/1000/web/en',W/2,1045);
  var a=document.createElement('a');a.download='my-ai-risk-type.png';a.href=cv.toDataURL('image/png');a.click();}
 function copyRef(){var l="https://idsexyhomme-code.github.io/1000/?ref="+refCode();
  if(navigator.share){navigator.share({title:"WorkRadar",text:"Find your AI Risk Type — which of your tasks is AI coming for? 👇",url:l}).catch(function(){});}
