@@ -342,7 +342,9 @@ def _summary_text(job_id: str) -> str:
     snap = {"job_name_ko": res["job_name_ko"], "weather": res["weather"],
             "delta": store.delta_since_prev(job_id, res["index"]),
             "headline_task": res.get("headline_task"), "top_drivers": res.get("top_drivers", [])}
-    push = notify.make_push(snap)["text"]
+    # webhook 동기 응답 경로 — Gemini 라이브콜(premium, ~40s)은 카톡 응답시간(~5s) 초과 위험.
+    # 즉시 결정적 폴백 사용. 고품질 Gemini 카피는 비동기 배치 푸시(batch.py)가 담당.
+    push = notify.make_push(snap, use_gemini=False)["text"]
     head = res.get("headline_task") or {}
     return (f"[{res['weather']}] {res['job_name_ko']} · AI 압력 {res['index']}(보조지표)\n"
             f"가장 압력 높은 업무: {head.get('name_ko','-')} {head.get('index','')}\n\n{push}")

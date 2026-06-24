@@ -1267,6 +1267,21 @@ def test_server_match_job_colloquial_and_ambiguous():
     assert server._match_job("") is None
 
 
+def test_summary_text_uses_fallback_not_live_gemini():
+    """webhook 동기 응답은 Gemini 라이브콜 금지(카톡 ~5s 타임아웃). _summary_text는 use_gemini=False로 호출."""
+    captured = {}
+    orig = notify.make_push
+    def spy(snap, use_gemini=True):
+        captured["use_gemini"] = use_gemini
+        return {"text": "요약", "source": "fallback", "guardrail_ok": True}
+    notify.make_push = spy
+    try:
+        server._summary_text("video-editor")
+    finally:
+        notify.make_push = orig
+    assert captured.get("use_gemini") is False
+
+
 def test_server_kakao_malformed_no_crash():
     for bad in [[], None, {}, {"userRequest": None},
                 {"userRequest": {"user": "x", "utterance": 5}}]:
