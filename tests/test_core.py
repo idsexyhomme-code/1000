@@ -544,6 +544,28 @@ def test_strategist_type_consistent_with_weather_and_pressure_sorted():
             assert top in s["threat"]                              # 최고압력 업무가 위협에 (정렬 정직성)
 
 
+def test_notify_cooldown_suppresses_recent_repush():
+    """리텐션/§1.6: 같은 직무 재알림 최소간격(쿨다운) — 최근 알림이면 추가 푸시 보류, 오래됐으면 허용."""
+    import tempfile
+    from datetime import datetime as _dt, timedelta as _td, timezone as _tz
+    import batch
+    old = store.NOTIFIED_FILE
+    tf = tempfile.NamedTemporaryFile(suffix=".json", delete=False)
+    tf.close()
+    store.NOTIFIED_FILE = tf.name
+    try:
+        now = _dt(2026, 6, 24, tzinfo=_tz.utc)
+        assert batch._in_cooldown("video-editor", now) is False        # 알림 이력 없음 → 쿨다운 아님
+        store.set_notified("video-editor", (now - _td(days=1)).isoformat())
+        assert batch._in_cooldown("video-editor", now) is True         # 1일 전 → 쿨다운(3일) 이내 → 보류
+        store.set_notified("video-editor", (now - _td(days=5)).isoformat())
+        assert batch._in_cooldown("video-editor", now) is False        # 5일 전 → 쿨다운 경과 → 허용
+    finally:
+        store.NOTIFIED_FILE = old
+        if os.path.exists(tf.name):
+            os.unlink(tf.name)
+
+
 def test_calibrate_prefers_aioe_soc_vintage():
     """job_soc_map의 aioe_soc(2010 SOC 빈티지)가 있으면 조회에 우선 사용된다(빈티지 불일치 정직 처리)."""
     import json as _json
