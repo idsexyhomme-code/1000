@@ -229,6 +229,17 @@ def test_report_landing_lists_jobs():
     assert "/privacy" in h and "/terms" in h                              # PII 수집 전 공개 표면
 
 
+def test_landing_board_shows_weather_and_index_consistent_with_report():
+    """압력보드: 카드에 날씨 이모지+지수 노출, 그리고 지수가 리포트 히어로(스코어)와 일치(신뢰 정합)."""
+    scored = ScoringEngine(JOBS).score([], now=NOW)
+    h = report.landing_html(scored)                                      # 스코어 결과 전달
+    emojis = [e for (_w, (e, *_)) in report.WEATHER_STYLE.items()]
+    assert any(e in h for e in emojis)                                   # 날씨 이모지 미리보기
+    ve = scored["video-editor"]
+    idx_str = str(round(ve["index"], 1) if ve["index"] % 1 else int(ve["index"]))
+    assert f'>{idx_str}</span>' in h                                     # 보드 지수 == 리포트 히어로 지수(불일치 신뢰훼손 방지)
+
+
 def test_legal_pages_are_public_templates_with_required_items():
     privacy = report.privacy_html()
     terms = report.terms_html()

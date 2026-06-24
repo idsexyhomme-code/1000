@@ -298,18 +298,37 @@ def _action_plan_html(plan: dict) -> str:
 
 
 _LANDING_CSS = """
-.lj-lead{font-size:14px;color:var(--text-secondary);text-align:center;margin:0 0 20px;word-break:keep-all;}
+.lj-lead{font-size:14px;color:var(--text-secondary);text-align:center;margin:0 0 18px;word-break:keep-all;}
 .lj-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.lj-card{display:block;background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:14px;
-padding:16px 14px;text-align:center;text-decoration:none;color:var(--text-primary);font-weight:600;font-size:15px;letter-spacing:-.3px;}
+.lj-card{display:flex;align-items:center;gap:11px;background:var(--bg-surface);border:1px solid var(--bg-elevate);
+border-left:3px solid var(--bg-elevate);border-radius:14px;padding:13px 13px;text-decoration:none;color:var(--text-primary);}
+.lj-emoji{font-size:21px;flex-shrink:0;line-height:1;}
+.lj-body{min-width:0;}
+.lj-name{font-weight:600;font-size:14.5px;letter-spacing:-.3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.lj-meta{font-size:11.5px;color:var(--text-tertiary);margin-top:2px;}
+.lj-idx{font-weight:700;}
 """
 
 
 def landing_html(jobs: dict) -> str:
-    """웹 진입점 — 직업 그리드(고압력순) → /report?job=. 공유받은 친구의 '내 직업 확인' 루프 완성."""
-    items = sorted(jobs.values(), key=lambda j: -j.get("baseline", {}).get("index", 0))
-    cards = "".join(f'<a class="lj-card" href="/report?job={_e(j["job_id"])}">{_e(j["job_name_ko"])}</a>'
-                    for j in items)
+    """웹 진입점 — 'AI 압력 보드'(고압력순, 날씨·지수 미리보기) → /report?job=. 공유받은 친구의 '내 직업 확인' 루프 완성.
+    jobs = 스코어 결과(top-level index/weather) — baseline 아님(리포트 히어로 지수와 일치 = 신뢰 정합)."""
+    import scoring
+    def _idx(j):  # 스코어 결과면 top-level index, raw config면 baseline.index (둘 다 견고)
+        v = j.get("index")
+        return float((v if v is not None else j.get("baseline", {}).get("index", 0)) or 0)
+    items = sorted(jobs.values(), key=lambda j: -_idx(j))
+    cards = []
+    for j in items:
+        idx = round(_idx(j), 1) if _idx(j) % 1 else int(_idx(j))
+        weather = j.get("weather") or scoring.to_weather(_idx(j))[0]
+        emoji, solid, _grad = WEATHER_STYLE.get(weather, ("📡", "var(--bg-elevate)", ""))
+        cards.append(
+            f'<a class="lj-card" href="/report?job={_e(j["job_id"])}" style="border-left-color:{solid}">'
+            f'<span class="lj-emoji">{emoji}</span><span class="lj-body">'
+            f'<span class="lj-name">{_e(j["job_name_ko"])}</span>'
+            f'<span class="lj-meta"><span class="lj-idx" style="color:{solid}">{_e(idx)}</span> · {_e(weather)}</span>'
+            f'</span></a>')
     return f"""<!doctype html><html lang="ko"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta property="og:type" content="website"><meta property="og:site_name" content="커리어 시그널">
@@ -321,8 +340,8 @@ def landing_html(jobs: dict) -> str:
     <h1 class="hero-title">커리어 시그널</h1>
     <p class="hero-subtitle">내 직업이 AI에 얼마나 영향받을까?<br>업무별 압력을 근거와 함께, 매일.</p>
   </div>
-  <p class="lj-lead">직업을 선택하면 업무별 AI 압력 리포트를 보여드려요.</p>
-  <div class="lj-grid">{cards}</div>
+  <p class="lj-lead">📊 오늘의 AI 압력 보드 — 직업을 누르면 업무별 리포트로.</p>
+  <div class="lj-grid">{"".join(cards)}</div>
   <p class="footer-text">※ 본 지수는 공개된 AI 뉴스를 정해진 원칙으로 계량화한 <b>참고 지표</b>입니다. 특정 개인·기업의 대체를 단정하지 않으며, 모든 변동의 근거를 공개합니다.</p>
   {_legal_links()}
 </div></body></html>"""

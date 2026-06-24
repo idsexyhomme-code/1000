@@ -460,8 +460,9 @@ class Handler(BaseHTTPRequestHandler):
         if not _rate_ok(self.client_address[0]):
             return self._send(429, b"rate limited", "text/plain; charset=utf-8")
         parts = urlsplit(self.path)
-        if parts.path in ("/", ""):     # 웹 진입점 — 직업 그리드(공유 바이럴 루프 완성)
-            return self._send(200, report.landing_html(JOBS).encode("utf-8"),
+        if parts.path in ("/", ""):     # 웹 진입점 — 압력보드(공유 바이럴 루프 완성)
+            # 스코어 결과를 넘김(baseline 아님) → 카드 지수가 리포트 히어로와 일치(신뢰 정합)
+            return self._send(200, report.landing_html(_cached_scores()).encode("utf-8"),
                               "text/html; charset=utf-8")
         if parts.path == "/privacy":
             return self._send(200, report.privacy_html().encode("utf-8"),
