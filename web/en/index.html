@@ -377,6 +377,14 @@ function calculate(){
 }
 
 /* ---------- RESULT ---------- */
+/* AIOE 외부 노출 앵커(Felten, Raj & Seamans 2021) — src/ 캘리브레이션에서 가져온 직업-레벨 상대순위.
+   앵커 있는 직업만 외부 교차참조 배지를 노출(없으면 배지 없음=정직). p=percentile, c=SOC 신뢰도. */
+var AIOE={"accountant":{p:99.0,c:"high"},"bookkeeper":{p:76.6,c:"high"},"call-center-agent":{p:73.2,c:"medium"},"copywriter":{p:74.1,c:"high"},"data-analyst":{p:95.2,c:"medium"},"graphic-designer":{p:67.0,c:"high"},"hr-manager":{p:89.5,c:"high"},"journalist":{p:82.0,c:"high"},"junior-developer":{p:82.6,c:"high"},"marketer":{p:97.4,c:"medium"},"nurse":{p:57.2,c:"high"},"office-admin":{p:78.2,c:"medium"},"paralegal":{p:87.3,c:"high"},"sales-rep":{p:69.4,c:"medium"},"teacher":{p:82.1,c:"medium"},"translator":{p:78.5,c:"high"},"video-editor":{p:73.8,c:"high"}};
+function aioeBadge(jobKey){var a=AIOE[jobKey];if(!a)return '';
+ var top=Math.round(100-a.p);var proxy=a.c!=='high'?' <span style="color:#8b8b94">(proxy SOC · medium confidence)</span>':'';
+ return '<div style="background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.22);border-radius:12px;padding:11px 13px;margin-bottom:4px;font-size:12.5px;color:#a1a1aa;line-height:1.55;text-align:center">'
+  +'🔗 Cross-referenced with external open data <b style="color:#c7d2fe">AIOE</b> (Felten et al. 2021): this occupation ranks <b style="color:#c7d2fe">top '+top+'%</b> for AI exposure across O*NET occupations'+proxy
+  +'. <span style="color:#8b8b94">Displayed score is still hand-estimated — see method below.</span></div>';}
 function band(s){return s<=25?["Clear","#3b82f6"]:s<=50?["Partly cloudy","#8b5cf6"]:s<=75?["Cloudy","#f59e0b"]:["Storm","#e11d48"];}
 function renderResult(){
  var j=JOBS[st.job], bid=decideBranch(), br=BRANCHES[bid];
@@ -431,6 +439,7 @@ function renderResult(){
  +'<div style="font-size:13px;color:#a1a1aa">Your job is more AI-exposed than</div>'
  +'<div style="font-size:30px;font-weight:800;color:'+bd[1]+';letter-spacing:-.5px">'+pct+'%</div>'
  +'<div style="font-size:12px;color:#8b8b94">of the 100+ jobs we track</div></div>'
+ +aioeBadge(st.job)
  +'<div class="sec-t">Why this score</div>'
  +'<div style="background:#18181b;border:1px solid #27272a;border-radius:14px;padding:14px 16px">'+fhtml+'</div>'
  +'<div class="sec-t">What\'s driving this</div>'
