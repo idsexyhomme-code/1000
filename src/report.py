@@ -443,12 +443,15 @@ def render_html(job: dict, strat: dict | None = None, action_plan: dict | None =
     # 외부 데이터 교차참조 신뢰 배지 — 앵커된 직무만(과대표기 없이 손추정 명시) → 신뢰+상세 클릭(리텐션)
     import deepdive
     _anchor = deepdive._load_anchor(job.get("job_id", ""))
+    # 정직성: medium(대표 SOC 프록시) 앵커는 high와 같은 자신감으로 표기하지 않는다(과대표기 금지).
+    _conf_note = (' <span style="color:var(--text-tertiary)">(대표 SOC 프록시·중간 신뢰)</span>'
+                  if _anchor and _anchor.get("soc_confidence") != "high" else '')
     trust_badge = (
         f'<div style="text-align:center;font-size:12.5px;color:var(--text-secondary);'
         f'background:rgba(99,102,241,.07);border:1px solid rgba(99,102,241,.2);'
         f'border-radius:12px;padding:10px 12px;margin:0 0 12px;line-height:1.55;word-break:keep-all">'
         f'🔗 이 직무의 AI 노출은 외부 공개데이터 <b>AIOE</b>(Felten 2021)로 교차참조 — '
-        f'직무 간 노출 <b>상위 {round(100 - float(_anchor.get("percentile", 50)))}%</b>. '
+        f'직무 간 노출 <b>상위 {round(100 - float(_anchor.get("percentile", 50)))}%</b>{_conf_note}. '
         f'<span style="color:var(--text-tertiary)">표시 점수는 아직 손추정(미보정) · 근거는 상세에서</span></div>'
     ) if _anchor else ''
     if action_plan is None:        # 기본은 결정적 폴백(빠름·무비용). 배치가 캐시한 Gemini 플랜은 호출측이 주입.

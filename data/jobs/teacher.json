@@ -7,7 +7,18 @@
     "ci": 12,
     "source": "O*NET 25-2021 + 워크넷 + 채용공고 업무비중 추정 (캘리브레이션 필요)",
     "note": "손추정 — O*NET·워크넷 캘리브레이션 필요",
-    "calibrated": false
+    "calibrated": false,
+    "index_anchor": {
+      "anchored_index": 62,
+      "soc": "25-2031",
+      "soc_confidence": "medium",
+      "percentile": 82.1,
+      "divergence_from_estimate": 21,
+      "source": "Felten, Raj & Seamans (2021) AI Occupational Exposure (AIOE), github.com/AIOE-Data/AIOE — O*NET-SOC 상대 노출(z-score)",
+      "method": "anchored = round(0.5*percentile + 0.5*손추정). raw 점수는 라이선스로 미저장.",
+      "scope": "직업-레벨 참고치 앵커만. 표시 점수는 태스크 baseline 롤업이라 아직 미반영 — 태스크-레벨 캘리브레이션 필요.",
+      "as_of": "2026-06-24"
+    }
   },
   "tasks": [
     {

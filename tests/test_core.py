@@ -518,6 +518,19 @@ def test_render_trust_badge_only_when_anchored_and_honest():
         assert "/detail?job=video-editor" in h                            # 상세로 유도(리텐션)
 
 
+def test_trust_badge_flags_medium_confidence_proxy():
+    """정직성: medium(대표 SOC 프록시) 앵커는 high와 같은 자신감으로 표기 금지 — 배지에 '중간 신뢰' 명시."""
+    med = deepdive._load_anchor("teacher")
+    if med and med.get("soc_confidence") != "high":   # 캘리브레이션 적용 환경에서만
+        h = report.render_html(ScoringEngine(JOBS).score([], now=NOW)["teacher"])
+        assert "프록시" in h and "중간 신뢰" in h                       # medium은 정직 단서 노출
+    hi = deepdive._load_anchor("video-editor")
+    if hi and hi.get("soc_confidence") == "high":     # high는 프록시 단서 없어야(과대표기 아님)
+        h2 = report.render_html(ScoringEngine(JOBS).score([], now=NOW)["video-editor"])
+        badge = [l for l in h2.split("\n") if "AIOE" in l]
+        assert badge and "프록시" not in badge[0]
+
+
 def test_calibrate_prefers_aioe_soc_vintage():
     """job_soc_map의 aioe_soc(2010 SOC 빈티지)가 있으면 조회에 우선 사용된다(빈티지 불일치 정직 처리)."""
     import json as _json
