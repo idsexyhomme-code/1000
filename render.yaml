@@ -19,6 +19,15 @@ services:
     envVars:
       - key: PYTHON_VERSION
         value: "3.12.0"
+      # 수신거부 토큰·IP HMAC 솔트 — Render가 자동 생성(시크릿). 비우지 말 것.
+      - key: INTEREST_SALT
+        generateValue: true
+      # 라이브 EN 사이트(GitHub Pages)만 CORS 허용 — 공개 퀴즈 API지만 좁혀 둠.
+      - key: WR_ALLOW_ORIGIN
+        value: "https://idsexyhomme-code.github.io"
+      # 주간메일 수신거부 링크 베이스. 미설정이면 Render 주입 RENDER_EXTERNAL_URL 자동 사용.
+      - key: WR_PUBLIC_URL
+        sync: false
       # 리포트 절대링크용(배포 후 실제 URL로): https://<app>.onrender.com
       - key: REPORT_BASE_URL
         sync: false

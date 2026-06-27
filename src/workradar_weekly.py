@@ -86,7 +86,7 @@ def build_digest(sub: dict, now: datetime | None = None) -> dict | None:
         return None
     email = sub.get("email", "")
     # 1-클릭 수신거부 URL — 배포된 백엔드(WR_PUBLIC_URL) 있으면 토큰링크, 없으면 랜딩 폴백.
-    _pub = os.environ.get("WR_PUBLIC_URL", "").rstrip("/")
+    _pub = (os.environ.get("WR_PUBLIC_URL") or os.environ.get("RENDER_EXTERNAL_URL") or "").rstrip("/")
     unsub_url = (f"{_pub}/api/unsubscribe?email={urllib.parse.quote(email)}&t={workradar.unsub_token(email)}"
                  if _pub else LANDING)
     job = workradar.JOBS[job_id]
