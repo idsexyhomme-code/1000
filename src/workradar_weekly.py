@@ -14,6 +14,7 @@ import html as _html
 import json
 import os
 import threading
+import urllib.parse
 from datetime import datetime, timezone
 
 import workradar
@@ -84,6 +85,10 @@ def build_digest(sub: dict, now: datetime | None = None) -> dict | None:
     if job_id not in workradar.JOBS:
         return None
     email = sub.get("email", "")
+    # 1-클릭 수신거부 URL — 배포된 백엔드(WR_PUBLIC_URL) 있으면 토큰링크, 없으면 랜딩 폴백.
+    _pub = os.environ.get("WR_PUBLIC_URL", "").rstrip("/")
+    unsub_url = (f"{_pub}/api/unsubscribe?email={urllib.parse.quote(email)}&t={workradar.unsub_token(email)}"
+                 if _pub else LANDING)
     job = workradar.JOBS[job_id]
     branch_id = sub.get("branch", "")
     br = workradar.BRANCHES.get(branch_id)
@@ -118,13 +123,13 @@ def build_digest(sub: dict, now: datetime | None = None) -> dict | None:
         'border-radius:24px;text-decoration:none;font-weight:700;font-size:14px">Get my full roadmap · $29 pilot →</a>'
         '<p style="font-size:11px;color:#71717a;line-height:1.5;margin-top:20px">'
         'WorkRadar is a directional reference indicator from public AI news — not a prediction, not a verdict on any person or company. '
-        f'<br>You get this because you asked for weekly updates. <a href="{_e(LANDING)}" style="color:#71717a">Manage / unsubscribe</a>.</p>'
+        f'<br>You get this because you asked for weekly updates. <a href="{_e(unsub_url)}" style="color:#71717a">Unsubscribe</a>.</p>'
         '</div>')
     text = (f"WorkRadar weekly · {wk}\n{job['name']} AI pressure {job['base']} ({bd[0]})\n"
             f"Highest pressure: {top_tasks}\n\nThis week's signal (curated): {sig.get('head','Steady this week.')}\n"
             f"{sig.get('why','')}\n{sig.get('url','')}\n\nYour path: {type_line}\n{move}\n\n"
             f"Full roadmap ($29 pilot): {PILOT_MAILTO}\n\n"
-            "Directional reference, not a prediction. Reply STOP to unsubscribe.")
+            f"Directional reference, not a prediction. Unsubscribe: {unsub_url}")
     return {"to": email, "subject": subject, "html": html, "text": text}
 
 

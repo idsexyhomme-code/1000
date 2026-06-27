@@ -9,6 +9,8 @@
 - "대체된다" 단정 금지 → 관측된 자동화 '압력/신호'.
 """
 from __future__ import annotations
+import hashlib
+import hmac
 import json
 import os
 import re
@@ -538,6 +540,43 @@ def append_subscriber(rec: dict) -> bool:
         with open(SUBS_FILE, "a", encoding="utf-8") as f:
             f.write(json.dumps(rec, ensure_ascii=False) + "\n")
     return True
+
+
+def unsub_token(email: str) -> str:
+    """수신거부 1-클릭 링크 토큰 = HMAC(secret,'unsub:'+email)[:16]. 타인 임의 해지 방지.
+    secret = env INTEREST_SALT 또는 WEBHOOK_TOKEN. 미설정이면 빈 문자열(라우트가 토큰검증 생략)."""
+    secret = os.environ.get("INTEREST_SALT") or os.environ.get("WEBHOOK_TOKEN") or ""
+    return (hmac.new(secret.encode(), ("unsub:" + (email or "").strip().lower()).encode(),
+                     hashlib.sha256).hexdigest()[:16] if secret else "")
+
+
+def unsubscribe(email: str) -> bool:
+    """구독 해지 — SUBS_FILE에서 해당 이메일 레코드 제거(원자적 재기록). 반환: 제거됐는지(=구독중이었는지).
+    CAN-SPAM/PIPA: 기능적 수신거부. 호출측(라우트)이 토큰 검증."""
+    key = _norm_email(email or "")
+    if not valid_email(key):
+        return False
+    with _SUBS_LOCK:
+        if not os.path.exists(SUBS_FILE):
+            return False
+        kept, removed = [], False
+        for ln in open(SUBS_FILE, encoding="utf-8"):
+            if not ln.strip():
+                continue
+            try:
+                p = json.loads(ln)
+            except Exception:
+                continue
+            if _norm_email(p.get("email", "")) == key:
+                removed = True
+                continue
+            kept.append(ln if ln.endswith("\n") else ln + "\n")
+        if removed:
+            tmp = SUBS_FILE + ".tmp"
+            with open(tmp, "w", encoding="utf-8") as f:
+                f.writelines(kept)
+            os.replace(tmp, SUBS_FILE)
+        return removed
 
 
 def _count(path: str, lock: threading.Lock) -> int:

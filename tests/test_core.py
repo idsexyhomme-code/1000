@@ -1911,6 +1911,34 @@ def test_wr_subscriber_dedup(tmp_path=None):
         workradar.SUBS_FILE = orig
 
 
+def test_wr_unsubscribe_and_token():
+    """G7 기능적 수신거부(CAN-SPAM/PIPA): 이메일 제거(멱등) + 1-클릭 토큰 일관성/타인해지 방지."""
+    import tempfile, os as _os
+    orig = workradar.SUBS_FILE
+    fd, p = tempfile.mkstemp(suffix=".jsonl"); _os.close(fd); _os.unlink(p)
+    workradar.SUBS_FILE = p
+    old_salt = _os.environ.get("INTEREST_SALT")
+    _os.environ["INTEREST_SALT"] = "audit-test-salt"
+    try:
+        workradar.append_subscriber({"email": "keep@x.com", "job": "junior-developer"})
+        workradar.append_subscriber({"email": "gone@x.com", "job": "junior-developer"})
+        assert workradar.subscriber_count() == 2
+        assert workradar.unsubscribe("GONE@x.com") is True          # 대소문자 무관 제거
+        assert workradar.unsubscribe("gone@x.com") is False         # 멱등(이미 없음)
+        assert workradar.subscriber_count() == 1                    # keep@만 남음
+        tok = workradar.unsub_token("gone@x.com")
+        assert len(tok) == 16 and tok == workradar.unsub_token("GONE@x.com")  # 일관·정규화
+        assert tok != workradar.unsub_token("other@x.com")          # 이메일별 상이(타인해지 방지)
+    finally:
+        if _os.path.exists(p):
+            _os.unlink(p)
+        workradar.SUBS_FILE = orig
+        if old_salt is None:
+            _os.environ.pop("INTEREST_SALT", None)
+        else:
+            _os.environ["INTEREST_SALT"] = old_salt
+
+
 def test_wr_jobs_from_json_complete():
     # 단일 진실원본 jobs.json에서 100+ 직업 로드, 전부 compute + 상황별 다중 서비스
     assert len(workradar.JOBS) >= 100, len(workradar.JOBS)

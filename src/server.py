@@ -88,6 +88,8 @@ def _ip_hmac(ip: str) -> str:
                      hashlib.sha256).hexdigest()[:12] if INTEREST_SALT else "")
 
 
+
+
 def _valid_micro_itches(job_id: str, raw) -> list[str]:
     """클라이언트가 보낸 micro-itch는 직업군 atlas에 있는 문장만 저장한다."""
     if isinstance(raw, str):
@@ -561,6 +563,21 @@ class Handler(BaseHTTPRequestHandler):
             code = (q.get("code") or [""])[0]
             return self._json_cors(200, {"ok": True, "count": workradar.referral_count(code),
                                          "goal": workradar.REFERRAL_GOAL})
+        if parts.path == "/api/unsubscribe":   # 주간메일 1-클릭 수신거부(CAN-SPAM/PIPA)
+            q = parse_qs(parts.query)
+            email = (q.get("email") or [""])[0].strip()[:254]
+            tok = (q.get("t") or [""])[0].strip()
+            expect = workradar.unsub_token(email)
+            if expect and not hmac.compare_digest(tok, expect):   # 토큰 설정 시 일치 요구(타인 해지 방지)
+                return self._send(403, b"Invalid or expired unsubscribe link.",
+                                  "text/plain; charset=utf-8")
+            workradar.unsubscribe(email)   # 멱등: 구독중 아니어도 OK 응답(이메일 존재여부 비노출)
+            return self._send(200, ("<!doctype html><meta charset=utf-8>"
+                                    "<body style='font-family:-apple-system,sans-serif;background:#0b0b0d;color:#d4d4d8;"
+                                    "text-align:center;padding:60px 20px'><h2 style='color:#fafafa'>You're unsubscribed</h2>"
+                                    "<p>You won't receive the weekly signal anymore. You can re-subscribe anytime from the site.</p>"
+                                    "<p><a href='/' style='color:#a5b4fc'>← WorkRadar</a></p></body>").encode("utf-8"),
+                              "text/html; charset=utf-8")
         if parts.path == "/api/leaderboard":  # 게임 글로벌 랭킹(공개)
             q = parse_qs(parts.query)
             try:
