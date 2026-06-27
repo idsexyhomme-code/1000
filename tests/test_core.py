@@ -546,6 +546,27 @@ def test_render_trust_badge_only_when_anchored_and_honest():
         assert "/detail?job=video-editor" in h                            # 상세로 유도(리텐션)
 
 
+def test_web_aioe_object_in_sync_with_src_anchors():
+    """D4 드리프트 가드: 라이브 web/en의 AIOE 객체가 src 앵커(percentile)와 동기 유지 — 수동복제 드리프트 차단."""
+    import re, glob
+    idx_path = os.path.join(_ROOT, "web", "en", "index.html")
+    if not os.path.exists(idx_path):
+        return
+    m = re.search(r'var AIOE=\{(.*?)\};', open(idx_path, encoding="utf-8").read())
+    assert m, "web/en AIOE 객체를 찾을 수 없음"
+    web = {k: float(p) for k, p in re.findall(r'"([a-z-]+)":\{p:([0-9.]+)', m.group(1))}
+    src = {}
+    for f in glob.glob(os.path.join(_ROOT, "data", "jobs", "*.json")):
+        import json as _j
+        j = _j.load(open(f, encoding="utf-8"))
+        a = j.get("baseline", {}).get("index_anchor")
+        if a:
+            src[j["job_id"]] = round(float(a["percentile"]), 1)
+    assert set(web) == set(src), f"AIOE 키 드리프트: {set(web) ^ set(src)}"
+    for jid, p in src.items():
+        assert abs(web[jid] - p) < 0.05, f"{jid} percentile 드리프트 web={web[jid]} src={p}"
+
+
 def test_pages_allow_pinch_zoom_wcag_resize():
     """접근성 WCAG 1.4.4: 저시력 사용자 핀치 확대 차단 금지. 모바일퍼스트 viewport는 유지하되 user-scalable=no 없어야."""
     job = ScoringEngine(JOBS).score([], now=NOW)["video-editor"]

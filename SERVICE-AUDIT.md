@@ -144,4 +144,9 @@
 - **B9 (Low) goatcounter 트래커** — 쿠키리스·PII無라 저위험. 단 방침 링크 부재와 합쳐 고지 권장(B3 해결 시 함께).
 
 **도메인 상태:** A 대체로 ✅(정합 1건 fixed) · B ⚠️(B3 High 미해결, B5 fixed, 나머지 ✅).
-**다음 배치:** C(점수엔진) + D(캘리브레이션/데이터무결성).
+
+### Batch 2 — 도메인 C(점수엔진) + D(데이터무결성) [2026-06-27]
+**정상(✅) — 엔진 견고, 결함 0:** C1 내부 float 유지·표시만 round·요인 0..max 클램프(부호뒤집힘 방지) · C2 dedup(기술+벤더+태스크+방향 base_key) · C3 TIER_DELTA_CAP(벤더 max+2)+TIER3_JOB_CAP 게이트(PR펌핑 차단) · C4 _propagate_job_ci 보수적 하한(w_avg·0.75)+저신뢰 시 inflate+클램프4~25(과신 금지) · C5 decay 공개half-life(evidence90/employment365/regulation∞) · C6 daily cap up/down 버킷·부분클램프, EPSILON은 드라이버 표시만(누적엔 전 비-0 반영) · C7 직업지수=태스크 가중평균 · C8 기상밴드 src(0-26-51-76-101)↔web band()(≤25/≤50/≤75/else) 경계 일치 검증 · D5 web jobs.json 1345직업 스키마0결함·base분포 정직(min12~max90,median52,극단값0) · D6 src17 태스크weight합 전부1.0 · D7 .gitignore PII/CSV차단 · D8 src job_id↔web key 17/17.
+**🟦 설계상 분리(결함 아님):** C9 web finalScore(task평균+경력/AI보정)는 src 뉴스기반 엔진과 **다른 시스템**(퀴즈 vs 신호) — 의도된 분리, web는 'why this score' 분해로 투명.
+**⚠️→fix(✅):** D4 web AIOE객체(17)↔src앵커 현재 percentile 동기됐으나 **수동 하드코딩 복제=단일소스 없음→드리프트 위험**. 🟥적대: src 재캘리 시 web 안 따라감. → **드리프트 가드 테스트 추가**(web AIOE키·percentile == src앵커 회귀잠금, 100테스트).
+**다음 배치:** E(결과창) + F(공유).
