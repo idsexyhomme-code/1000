@@ -323,7 +323,7 @@ var EXP_ADJ={0:6,1:0,2:-8}, AI_ADJ={0:6,1:-2,2:-8};   // 백엔드와 동일
 var st={job:null,tasks:[],exp:null,ai:null,feel:null,inst:null};
 /* 백엔드 API 주소 — 24h Mac을 Cloudflare Tunnel로 노출한 URL을 여기 넣으면
    결과 로깅 + 이메일 구독이 백엔드로 들어감. 비워두면 퀴즈는 100% 작동하고 구독은 mailto 폴백. */
-var API_BASE="https://unsavory-paralysis-jokingly.ngrok-free.dev";
+var API_BASE="";  // 백엔드 배포 시 실주소 설정. 빈 값=측정/구독은 mailto 폴백(죽은 ngrok URL 호출 제거, 2026-06-27 감사).
 function refCode(){var c=localStorage.getItem('wr_ref');if(!c){c=(Math.random().toString(36).replace(/[^a-z0-9]/g,'')+'00000').slice(0,6);localStorage.setItem('wr_ref',c);}return c;}
 var REFERRED_BY=(new URLSearchParams(location.search).get('ref')||'').replace(/[^a-zA-Z0-9]/g,'').slice(0,12);
 function postRefer(ev){if(API_BASE&&REFERRED_BY){try{fetch(API_BASE+'/api/refer',{method:'POST',headers:{'Content-Type':'application/json','ngrok-skip-browser-warning':'1'},body:JSON.stringify({code:REFERRED_BY,event:ev})}).catch(function(){});}catch(e){}}}

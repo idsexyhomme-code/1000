@@ -150,3 +150,12 @@
 **🟦 설계상 분리(결함 아님):** C9 web finalScore(task평균+경력/AI보정)는 src 뉴스기반 엔진과 **다른 시스템**(퀴즈 vs 신호) — 의도된 분리, web는 'why this score' 분해로 투명.
 **⚠️→fix(✅):** D4 web AIOE객체(17)↔src앵커 현재 percentile 동기됐으나 **수동 하드코딩 복제=단일소스 없음→드리프트 위험**. 🟥적대: src 재캘리 시 web 안 따라감. → **드리프트 가드 테스트 추가**(web AIOE키·percentile == src앵커 회귀잠금, 100테스트).
 **다음 배치:** E(결과창) + F(공유).
+
+### Batch 3 — 도메인 E(결과창) + F(공유) [2026-06-27]
+**정상(✅):** E1 게이지 SVG 밴드·aria · E2 위협/기회 실제top/low(Step3) · E3 신뢰배지 details 출처·SOC·면책(Step2) · E4 "why this score" 분해 투명 · E7 deep-consult CTA(upsight-blue.vercel.app)=**HTTP 200 생존** · E8 모바일퍼스트(≤460) · F1 share breakout(src `<\/` 가드, web _share는 런타임 JS문자열 저위험) · F3 og.png=**HTTP 200**(48KB,1200×630) · F6 루프폐쇄(src 보드CTA)·F7 공유문구 정직.
+**🟥 결함→즉시수정(✅ fixed):**
+- **F4/J/L (High) API_BASE가 죽은 ngrok 터널** — `API_BASE="https://unsavory-paralysis-jokingly.ngrok-free.dev"` = **HTTP 404**(ngrok-free 임시터널 소멸). 🟥적대: (1)**referral 언락 영구 미작동**(checkRefProgress→죽은URL→catch→"0/3"에서 영원, "친구3명 초대 언락" 못 지킬 약속) (2)quiz/hit 측정 죽음 (3)subscribe는 mailto degrade. → **API_BASE="" 수정**(코드가 `if(API_BASE)` 전부 가드 → 죽은URL 호출 0, graceful degrade). web script 파싱 OK.
+**⚠️ 개선필요(미수정):**
+- **F2 (Med) OG 이미지 6페이지 누락** — index.html만 og:image. daily/game/ranked/reels/result-video-editor/result-junior-developer는 og:image=0 → 그 URL 공유 시 미리보기 밋밋. 특히 result-*·ranked는 공유 표면. → 조치: 6페이지에 og:image 메타 추가(다음 패스).
+- **F4 잔여 (Med) referral 언락 = 백엔드 필요** — API_BASE 비웠지만 언락 자체는 backend 없이 불가. 🟥적대: "invite 3 to unlock"이 영영 안 풀리면 약속 위반. → 조치: 백엔드 배포(render.yaml) 또는 언락 문구를 "coming soon/honor"로 정직화 = **사용자 결정**.
+**다음 배치:** G(리텐션) + H(온보딩).
