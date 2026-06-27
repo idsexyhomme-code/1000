@@ -166,3 +166,11 @@
 - **G7 (Med) 기능적 unsubscribe 엔드포인트 부재** — weekly 다이제스트의 "Manage/unsubscribe" 링크가 LANDING(퀴즈)으로만 감(실제 수신거부 처리 0), "Reply STOP"만 수동. 🟥적대: 실제 메일 발송 시작하면 CAN-SPAM/PIPA의 1-클릭 수신거부 의무 위반. 🟦빌더: 현재 weekly는 미배선(발송 안 함)이라 잠복. → **조치: 발송 배포 전 /unsubscribe?token= 엔드포인트 + store opt-out.** B3(방침링크)와 함께 "이메일 발송 전 필수 3종(방침·동의문·수신거부)"으로 묶음 = 사용자 배포 결정.
 **도메인 상태:** G ✅(엔진 견고) · H ✅(보안·매칭 견고). 결함 0, ⚠️1(이메일 배포 전 조건).
 **다음 배치:** I(수익화) + J(보안).
+
+### Batch 5 — 도메인 I(수익화) + J(보안) [2026-06-27]
+**정상(✅) — 보안 견고, 결함 0:** J1 WEBHOOK_TOKEN(?token= 일치) · J2 IP rate limit 윈도우 · J3 _safe_url(http/https only, javascript:/data: 차단)+_e 이스케이프 · **J3 web ?ref= 파라미터 `.replace(/[^a-zA-Z0-9]/g,'')` 영숫자화→fetch body로만(innerHTML 미반영)=반영XSS 안전** · J4 시크릿 코드/커밋 0(매배치 스캔) · J5 구독 honeypot(subHp)+동의 게이트 · J7 결제 비-hex 서명 예외없이 거부+hmac.compare_digest(상수시간) · J8 **정적 파일서빙 핸들러 없음=경로traversal 표면0** · J9 Gemini키 env-only(없으면 raise, 로그/저장 0) · I1 무료티저1+잠금2 · I3 ungrounded=유료잠금 대신 "근거없음" 톤 · I4 waitlist "not charged yet" vs 실결제 정직구분 · I5 결제URL _safe_url→`real = !="#"`(javascript: 실결제 오인 차단, Codex fix) · I6 결제웹훅 HMAC-SHA256 서명검증 · I7 "no guaranteed outcomes"+사람검토 정직.
+**⚠️ 개선필요/플래그(미수정):**
+- **I2 (Low) 오퍼 가격 두 코드베이스 불일치** — web EN "**$29 pilot**" vs src KO "**₩99,000**". 🟥적대: $29≈₩40k≠₩99k. pilot(초기 할인) vs 풀패키지 or 시장차이로 *의도*일 수 있으나, AI-proof·API_BASE처럼 두 코드베이스 드리프트 전력 있음. → **조치: 의도된 가격전략인지 사용자 확인**(코드 결함 아닌 비즈니스 결정).
+- **J6 (Low) CORS `*`** — 쿠키/인증정보 미사용 공개 퀴즈 API라 정당화됨(주석 명시). 백엔드 배포 시 WR_ALLOW_ORIGIN으로 좁히기 권장.
+**도메인 상태:** I ✅(정직·정합, ⚠️가격 플래그) · J ✅(보안 견고, 결함0).
+**다음 배치:** K(접근성·성능) + L(배포·정합) — 마지막.
