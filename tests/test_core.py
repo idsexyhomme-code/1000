@@ -546,6 +546,19 @@ def test_render_trust_badge_only_when_anchored_and_honest():
         assert "/detail?job=video-editor" in h                            # 상세로 유도(리텐션)
 
 
+def test_web_no_dead_tunnel_urls():
+    """재발방지(2026-06-28 game.html 버그): 어떤 web/en 페이지도 임시 ngrok/터널 URL을 하드코딩하지 않는다.
+    배포 백엔드는 API_BASe로만(빈값=오프라인 graceful). 죽은 터널 호출 → 'Could not submit' 류 에러 방지."""
+    import glob
+    bad = []
+    for f in glob.glob(os.path.join(_ROOT, "web", "en", "*.html")):
+        s = open(f, encoding="utf-8").read()
+        for needle in ("ngrok-free.dev", "ngrok.io", "trycloudflare.com", "loca.lt"):
+            if needle in s:
+                bad.append(f"{os.path.basename(f)}:{needle}")
+    assert not bad, f"하드코딩된 임시 터널 URL: {bad}"
+
+
 def test_web_aioe_object_in_sync_with_src_anchors():
     """D4 드리프트 가드: 라이브 web/en의 AIOE 객체가 src 앵커(percentile)와 동기 유지 — 수동복제 드리프트 차단."""
     import re, glob

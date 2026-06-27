@@ -86,7 +86,8 @@ body{background:#000;color:#fafafa;font-family:-apple-system,BlinkMacSystemFont,
 <p class="foot">Directional reference from public AI news — not a prediction. 300+ jobs.</p>
 
 <script>
-var API_BASE="https://unsavory-paralysis-jokingly.ngrok-free.dev";
+var API_BASE="";  // 백엔드 배포 시 실주소. 빈 값=리더보드 오프라인(공유는 작동), 죽은 ngrok 호출 제거(2026-06-28 감사).
+if(!API_BASE){var _sb=document.getElementById('subBox');if(_sb)_sb.style.display='none';}  // 리더보드 오프라인이면 'Claim my rank' UI 숨김(dead-end 방지). 'Share my streak'는 유지.
 var JOBS=[],a=null,b=null,streak=0,best=+(localStorage.getItem('wr_best')||0),lock=false;
 function pick(){return JOBS[Math.floor(Math.random()*JOBS.length)];}
 function diff(x,y){return x.id!==y.id;}

@@ -65,7 +65,7 @@ body{background:#000;color:#fafafa;font-family:-apple-system,BlinkMacSystemFont,
 </div>
 <p class="foot">Same 10 matchups for everyone today · directional reference, not a prediction</p>
 <script>
-var API_BASE="https://unsavory-paralysis-jokingly.ngrok-free.dev";
+var API_BASE="";  // 백엔드 배포 시 실주소. 빈 값=죽은 ngrok 호출 제거(2026-06-28 감사).
 var N=10,JOBS=[],pairs=[],idx=0,results=[],lock=false;
 function today(){return new Date().toISOString().slice(0,10);}
 function seed(str){var h=2166136261;for(var i=0;i<str.length;i++){h^=str.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
