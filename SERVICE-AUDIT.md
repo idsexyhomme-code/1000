@@ -1,0 +1,147 @@
+# 서비스 전체 감사 — 100 체크포인트 (분할 리뷰)
+
+> 목적: 커리어 시그널/WorkRadar **서비스 전체**를 아주 디테일하게 분할 점검.
+> 방식: 각 항목을 **이중 렌즈**로 — 🟦 Claude(빌더: 의도/일관성) + 🟥 적대 리뷰어(Codex식: 깨지는 경로/거짓신뢰/엣지). ⚠️Codex MCP 끊긴 세션에선 Claude가 양쪽 수행(과거 확립 방식); 재연결 시 도메인별로 Codex 재실행 가능.
+> 상태: ⬜미점검 / 🔄진행 / ✅정상 / ⚠️개선필요 / 🟥결함.
+> 그라운딩: src/ 26모듈, web/en 7페이지+jobs.json(1345), 99테스트, data/jobs(17).
+
+## A. 정직성·반(反)가짜신뢰 [핵심 불가침]
+- A1 ⬜ 표시 점수 어디서도 calibrated인 척 안 함(손추정 면책 노출) — src report·web result 양쪽
+- A2 ⬜ AIOE 앵커: 앵커 직업만 배지, medium=proxy 표기, "상대노출≠확률·직접대입 안 함"
+- A3 ⬜ 채용/임금 스텁: 데이터 없을 때 가짜숫자 0(정직 스텁 유지) — deepdive
+- A4 ⬜ 액션플랜: 근거(driver) 없으면 guardrail_ok=False, 가짜 근거 합성 안 함 — actionplan
+- A5 ⬜ 사회증명("상위 5%"·후기) 검증 안 된 것 노출 0
+- A6 ⬜ 공유카드/OG: 점수·top% 표기가 본문과 일치, 과대표기 없음
+- A7 ⬜ "preview/illustrative" 표기가 미검증 수치에 동반(web footer)
+- A8 ⬜ 두 코드베이스(src KO·web EN) 간 점수/문구 정직성 기준 동일
+
+## B. 법무·규제 (한국 실재)
+- B1 ⬜ 명예훼손: "대체된다" 단정 없음 → "관측된 자동화 압력/which tasks"
+- B2 ⬜ AI기본법: 모델카드/방법론 공개·오류정정 경로 존재
+- B3 ⬜ PIPA §15: 이메일 수집 전 동의 체크박스+수집항목·거부권 고지
+- B4 ⬜ PIPA §37-2: 개인 자동결정 사용 금지 명시·human review
+- B5 ⬜ 표시광고법: "AI-proof/보장" 절대표현 없음("no guaranteed outcomes" 유지)
+- B6 ⬜ 전자상거래법: 환불/청약철회권 문구(99k 패키지) 적법
+- B7 ⬜ 특정 회사/학교/개인 겨냥 표현 0
+- B8 ⬜ 가격·결제 표기: "접수/대기"와 "결제완료" 정직 구분(가짜 paid 없음)
+- B9 ⬜ 쿠키/트래커(goatcounter 등) 고지 필요성 점검
+
+## C. 점수 엔진 (scoring.py)
+- C1 ⬜ 5요인 앵커 정의대로 가중·범위, round 정보손실 없음(float 유지)
+- C2 ⬜ 이벤트 dedup(기술+벤더+태스크+주장) — 중복가산 방지
+- C3 ⬜ 출처 티어링: 벤더단독 max +2, Tier3 누적 상한
+- C4 ⬜ 신뢰구간(CI) 전파: 보수적 floor, 인위 축소 없음
+- C5 ⬜ 감쇠/회귀: half-life 공개·고정, 규제이벤트 보존
+- C6 ⬜ 일일 캡(up/down 버킷), EPSILON은 표시 프루닝만
+- C7 ⬜ 태스크→직업 롤업 가중평균 정확
+- C8 ⬜ 기상밴드 경계 연속(빈틈 없음) src·web 동일 기준
+- C9 ⬜ web/en finalScore(exp/ai 보정) 합산·표시 분해 일관
+
+## D. 캘리브레이션·데이터 무결성
+- D1 ⬜ AIOE 앵커 percentile만 저장(raw z-score 미저장, 라이선스)
+- D2 ⬜ job_soc_map confidence high/medium 정확, aioe_soc 빈티지 매핑
+- D3 ⬜ calibrate.py 멱등·medium 경고·skip 로직
+- D4 ⬜ web AIOE 객체(17) ↔ src 앵커 동기화(드리프트 0)
+- D5 ⬜ web jobs.json(1345) 스키마 일관, base 분포 정직
+- D6 ⬜ src data/jobs(17) 태스크 weight 합·CI 타당
+- D7 ⬜ .gitignore: CSV/xlsx/PII 파생물 커밋 차단
+- D8 ⬜ 17 src job_id ↔ web key 슬러그 매칭 정확
+
+## E. 결과창 UX (web/en + src report)
+- E1 ⬜ 게이지 SVG 각도·밴드색 정확, 접근성 aria
+- E2 ⬜ 위협/기회 카드: 실제 top/low 업무 기반
+- E3 ⬜ 신뢰배지 details: 출처·SOC·면책 완비
+- E4 ⬜ "why this score" 분해 투명(블랙박스 아님)
+- E5 ⬜ 태스크 바·색 임계 일관
+- E6 ⬜ 액션플랜/패스: 분기별 상이·개인화
+- E7 ⬜ CTA(deep consult·서비스·로드맵) 링크 유효
+- E8 ⬜ 모바일 폭(≤460) 레이아웃 깨짐 없음
+- E9 ⬜ src detail_html 5섹션 정직 스텁/실데이터 분기
+
+## F. 공유·바이럴 루프
+- F1 ⬜ navigator.share 페이로드·breakout 방어(</)
+- F2 ⬜ OG/twitter 메타: 절대URL·이미지·canonical(전 페이지)
+- F3 ⬜ og.png 실제 서빙(404 아님)·1200×630
+- F4 ⬜ 추천(referral) 코드·unlock·진척바 로직
+- F5 ⬜ downloadCard canvas: 텍스트 잘림·신뢰줄 정확
+- F6 ⬜ 공유→랜딩→내직업 루프 폐쇄(보드 CTA)
+- F7 ⬜ 공유 문구 정직(과장·낙인 없음)
+- F8 ⬜ 친구 도착 시 ref 파라미터 처리
+
+## G. 리텐션·알림
+- G1 ⬜ notify 금칙어 가드·MAX_LEN·CTA 보존(트렁케이션)
+- G2 ⬜ batch 변동감지(MATERIAL_DELTA·weather) 정확
+- G3 ⬜ 쿨다운(3일)·날씨밴드 예외·중복 snap_ts 차단
+- G4 ⬜ 캐시(strategist/actionplan) 갱신 게이팅
+- G5 ⬜ outbox fan-out·set_notified 멱등
+- G6 ⬜ sender throttle·retry·sent-marker
+- G7 ⬜ weekly signal(workradar_weekly) 정직·구독해지
+- G8 ⬜ 푸시 공포프레이밍 금지(§1.6)
+
+## H. 온보딩·활성화
+- H1 ⬜ kakao webhook: 토큰인증·rate limit·malformed 무크래시
+- H2 ⬜ _match_job 구어체·모호회피(오매칭 0)
+- H3 ⬜ 첫진입 온보딩·quick reply 10개 한계
+- H4 ⬜ web 퀴즈 6단계 흐름·진행점·뒤로
+- H5 ⬜ 요약 응답: 라이브 Gemini콜 없음(타임아웃 방지)
+- H6 ⬜ 직업 미선택·없는직업 폴백 친절
+- H7 ⬜ 재방문(등록유저) 상태 표시
+
+## I. 수익화·오퍼
+- I1 ⬜ 무료 티저 1 + 잠금 2(액션플랜) 정합
+- I2 ⬜ $29 pilot / 99k 패키지 오퍼 일관(가격·결과물)
+- I3 ⬜ ungrounded 플랜은 유료잠금 대신 "근거없음" 톤
+- I4 ⬜ waitlist vs 실결제 정직 구분
+- I5 ⬜ _safe_url 결제URL 검증(javascript: 차단)
+- I6 ⬜ 결제 웹훅 서명검증(HMAC)·중복방지
+- I7 ⬜ 환불/사람검토 정직 표기
+- I8 ⬜ 2-티어(디지털 구독 + 패키지) 서사 정합
+
+## J. 보안
+- J1 ⬜ WEBHOOK_TOKEN 인증·미설정 시 동작
+- J2 ⬜ IP rate limit 윈도우·한계
+- J3 ⬜ XSS: _e 이스케이프·_safe_url(http/https only)
+- J4 ⬜ 시크릿: 코드/메모리/커밋 0(스캔 통과)
+- J5 ⬜ 구독 honeypot(subHp)·동의 게이트
+- J6 ⬜ CORS: WR_ALLOW_ORIGIN·쿠키 미사용
+- J7 ⬜ 결제 웹훅 비-hex 서명 거부
+- J8 ⬜ 파일/정적 서빙 경로 traversal 방어
+- J9 ⬜ Gemini 키 env-only·로그 노출 0
+
+## K. 성능·접근성
+- K1 ⬜ 핀치 확대 허용(WCAG 1.4.4) 전 페이지
+- K2 ⬜ 렌더 바이트·gzip 합리(리포트 ~5KB gzip)
+- K3 ⬜ 색 대비(WCAG AA) 텍스트/배경
+- K4 ⬜ aria-label·role(게이지·버튼·이모지)
+- K5 ⬜ 키보드 포커스·details 접근
+- K6 ⬜ 폰트·이미지 로딩(외부 의존 0, 인라인)
+- K7 ⬜ i18n: KO/EN 분리·인코딩
+- K8 ⬜ JS 에러 시 graceful(폴백)
+
+## L. 배포·운영·정합
+- L1 ⬜ GitHub Pages 빌드·서빙 정상(라이브=최신)
+- L2 ⬜ 루트 redirect·canonical 정확
+- L3 ⬜ render.yaml/Procfile 백엔드 배포 가능(측정용)
+- L4 ⬜ 두 코드베이스(src/web) 드리프트·정체성 정렬 계획
+- L5 ⬜ 테스트 99 커버리지·핵심 회귀잠금
+- L6 ⬜ sitemap.xml·robots 색인
+- L7 ⬜ 모니터링/분석(goatcounter·quiz POST) 측정 가능
+- L8 ⬜ 시드 데이터 vs 1345 직업 운영 일관
+- L9 ⬜ 문서(PROJECT/README/DEPLOY) 최신·정확
+
+---
+## 리뷰 로그 (Batch별 findings)
+
+### Batch 1 — 도메인 A(정직성) + B(법무) [2026-06-27, Codex MCP 오프라인→Claude 이중렌즈]
+**정상(✅):** A1 면책 양쪽 노출(web footer "Preview/directional reference" + src 손추정) · A2 AIOE proxy/medium·"상대노출≠확률" 면책(Step2) · A4 액션플랜 guardrail_ok·무근거 미합성 · A7 "Preview: figures illustrate the method" footer · B1 "대체된다" 단정 회피("which tasks AI takes") · B7 특정개인/회사 겨냥 0 · B8 "Waitlist — not charged yet" 정직 구분 · I7/B5 "no guaranteed outcomes".
+
+**🟥 결함→즉시수정(✅ fixed):**
+- **B5/A8 'AI-proof' 절대표현** (index.html:242 서비스템플릿 "the AI-proof part of {job}"). 🟥적대렌즈: 표시광고법상 절대보장 표현, 게다가 src/는 이미 'AI 시대/상대적으로 덜 대체'로 완화했는데 **web/en만 안 됨=두 코드베이스 정직성 정합 깨짐**. → **"the hardest-to-automate part of {job}"로 수정 완료.**
+
+**⚠️ 개선필요(다음 배치 조치, 미수정):**
+- **B3 (High) 개인정보처리방침/약관 링크 부재** — web/en이 이메일을 수집(subscribe)하는데 방침·약관 링크가 **0**("terms"는 'on your terms' 관용구뿐). 동의문("I agree to receive weekly emails…")이 PIPA §15 요구(수집항목·목적·보유기간·거부권+불이익없음) 미충족. 🟦빌더: src/에는 /privacy·/terms 있으나 web/en(정적)엔 미연결. → **조치: web/en에 최소 privacy/terms 정적 페이지 + subscribe 근처 링크.**
+- **A/B (Med) subscribe() 과대표기** — API_BASE 미설정(백엔드 미배포) 시 mailto 폴백 후 `done()`을 **무조건** 호출 → 메일 미발송·클라이언트 없음에도 "✓ You're in. First signal lands within a week" 표시. 🟥적대: (1)가입 미포착인데 성공 표기 (2)EN에 위클리 발송기제 미배포면 "within a week" 못 지킬 약속. → **조치: no-backend 경로 메시지 톤다운("check your email app to confirm") + 발송 배포 전엔 "within a week" 보류.**
+- **B9 (Low) goatcounter 트래커** — 쿠키리스·PII無라 저위험. 단 방침 링크 부재와 합쳐 고지 권장(B3 해결 시 함께).
+
+**도메인 상태:** A 대체로 ✅(정합 1건 fixed) · B ⚠️(B3 High 미해결, B5 fixed, 나머지 ✅).
+**다음 배치:** C(점수엔진) + D(캘리브레이션/데이터무결성).
