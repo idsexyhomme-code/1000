@@ -117,7 +117,7 @@ background:radial-gradient(circle,rgba(245,158,11,.12),transparent 70%);border:1
     <a href="ranked.html" style="color:#a1a1aa;font-size:13px;text-decoration:none">🏆 Leaderboard</a>
     <a href="reels.html" style="color:#a1a1aa;font-size:13px;text-decoration:none">▶ Reels</a>
   </div>
-  <p class="foot" style="text-align:center;margin-top:12px">Free · no signup · directional reference, not a prediction</p>
+  <p class="foot" style="text-align:center;margin-top:12px">Free · no signup · directional reference, not a prediction<br><a href="privacy.html" style="color:#71717a">Privacy</a> · <a href="terms.html" style="color:#71717a">Terms</a></p>
 </div>
 
 <!-- JOB -->
@@ -508,14 +508,15 @@ function renderResult(){
  +'<div id="subBox">'
  +'<input id="subEmail" type="email" inputmode="email" placeholder="you@email.com" autocomplete="email" style="width:100%;background:#0b0b0d;border:1px solid #3f3f46;border-radius:12px;padding:13px 14px;color:#fafafa;font-size:15px;margin-bottom:10px">'
  +'<input type="text" id="subHp" tabindex="-1" autocomplete="off" style="position:absolute;left:-9999px" aria-hidden="true">'
- +'<label style="display:flex;gap:8px;align-items:flex-start;font-size:11.5px;color:#a1a1aa;margin-bottom:12px;text-align:left"><input type="checkbox" id="subConsent" style="margin-top:2px">I agree to receive weekly emails. Directional reference, not advice. Unsubscribe anytime.</label>'
+ +'<label style="display:flex;gap:8px;align-items:flex-start;font-size:11.5px;color:#a1a1aa;margin-bottom:12px;text-align:left"><input type="checkbox" id="subConsent" style="margin-top:2px"><span>I agree to receive weekly emails (your email is used only to send the weekly signal). Directional reference, not advice. Unsubscribe anytime. See our <a href="privacy.html" target="_blank" rel="noopener" style="color:#a5b4fc">Privacy Policy</a>.</span></label>'
  +'<button class="cta" style="border:none;cursor:pointer;width:100%" onclick="subscribe()">Get my weekly signal →</button></div>'
  +'<div id="subDone" style="display:none;text-align:center;font-weight:700;color:#34d399">✓ You\'re in. First signal lands within a week.</div>'
  +'</div>'
  +'<button class="share" onclick="wrShare()">📲 Share my AI Risk Type</button>'
  +'<button class="share" style="background:#27272a;color:#fafafa;margin-top:0" onclick="downloadCard()">🖼️ Download my card (for Stories)</button>'
  +'<a class="retake" onclick="location.reload()">↺ Retake the test</a>'
- +'<p class="foot">※ WorkRadar is a <b>directional reference indicator</b> from public AI news using a fixed method — not a prediction, not a verdict on any person or company. <b>Preview:</b> figures illustrate the method; the full product scores your exact tasks live with linked sources.</p>';
+ +'<p class="foot">※ WorkRadar is a <b>directional reference indicator</b> from public AI news using a fixed method — not a prediction, not a verdict on any person or company. <b>Preview:</b> figures illustrate the method; the full product scores your exact tasks live with linked sources.</p>'
+ +'<p class="foot" style="margin-top:8px"><a href="privacy.html" target="_blank" rel="noopener" style="color:#71717a">Privacy</a> · <a href="terms.html" target="_blank" rel="noopener" style="color:#71717a">Terms</a></p>';
  var r=document.getElementById('s-result');r.innerHTML=html;show('s-result');
  if(API_BASE){try{fetch(API_BASE+'/api/quiz',{method:'POST',headers:{'Content-Type':'application/json','ngrok-skip-browser-warning':'1'},body:JSON.stringify({job:st.job,tasks:st.tasks,exp:st.exp,ai:st.ai,feel:st.feel,inst:st.inst})}).catch(function(){});}catch(e){}}
  postRefer('signup');checkRefProgress();

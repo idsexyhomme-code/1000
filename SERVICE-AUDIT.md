@@ -22,7 +22,7 @@
 - ~~F2: OG 이미지 6페이지 누락~~ → **해결: 6페이지(ranked·daily·game·reels·result×2)에 페이지별 og:title/desc/url + 공유 og.png 삽입. 7/7 페이지 og:image 커버. 구조무결성·JS파싱 검증.**
 
 **③ 이메일 발송 게이트 (메일 보내기 전 필수 3종 묶음)**
-- **B3** 개인정보처리방침/약관 페이지+링크 · **B3** 동의문에 수집항목·목적·거부권 명시 · **G7** 기능적 unsubscribe 엔드포인트(현재 링크가 퀴즈페이지로만 감).
+- ~~B3 개인정보처리방침/약관 페이지+링크~~ → ✅ **완료(2026-06-27)**: web/en/privacy.html·terms.html 생성(수집항목·목적·보유·제3자·권리·연락처·"directional reference, not advice"·"no guaranteed outcomes"), 동의문이 Privacy 링크 + "email은 weekly 발송에만" 명시로 개선, 결과/랜딩 푸터에 Privacy·Terms 링크. *남음: 실제 사업자정보·법률검토(KO 시장은 src/ /privacy 별도)·G7 기능적 unsubscribe 엔드포인트(백엔드 게이트).*
 
 **④ 백엔드 배포 게이트 (render.yaml 띄우면 해결)**
 - ~~subscribe 과대표기~~ → ✅ **정직성 부분해결(2026-06-27)**: mailto 폴백 시 "You're in" 대신 "Almost there — send the email draft to confirm" 표시(거짓 성공 제거). *실제 캡처*는 여전히 백엔드 필요.
