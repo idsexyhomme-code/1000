@@ -159,3 +159,10 @@
 - **F2 (Med) OG 이미지 6페이지 누락** — index.html만 og:image. daily/game/ranked/reels/result-video-editor/result-junior-developer는 og:image=0 → 그 URL 공유 시 미리보기 밋밋. 특히 result-*·ranked는 공유 표면. → 조치: 6페이지에 og:image 메타 추가(다음 패스).
 - **F4 잔여 (Med) referral 언락 = 백엔드 필요** — API_BASE 비웠지만 언락 자체는 backend 없이 불가. 🟥적대: "invite 3 to unlock"이 영영 안 풀리면 약속 위반. → 조치: 백엔드 배포(render.yaml) 또는 언락 문구를 "coming soon/honor"로 정직화 = **사용자 결정**.
 **다음 배치:** G(리텐션) + H(온보딩).
+
+### Batch 4 — 도메인 G(리텐션) + H(온보딩) [2026-06-27]
+**정상(✅):** G1/G8 _BANNED(대체/사라진다/실직/해고/퇴출) 금칙어+_guardrail_ok, 공포프레이밍 금지 · G2/G3 batch 변동감지(MATERIAL_DELTA·weather)+쿨다운3일·날씨밴드예외(기존) · G4 캐시 갱신 게이팅 · G5 outbox fan-out·set_notified · G6 sender flush retry·per-user throttle(과발송 시 queued 유지)·sent-marker · G7 weekly 매메일 면책+"directional reference, not prediction"+calibrated:false · H1 webhook 토큰인증(?token=)+rate limit+IP는 HMAC(평문 미저장) · H1 malformed 무크래시(테스트) · H2 _match_job 구어체/모호회피(기존fix,테스트) · H5 요약 라이브 Gemini콜 없음(기존fix,테스트) · H3 quick reply 10한계.
+**⚠️ 개선필요(미수정, 이메일 배포 게이트):**
+- **G7 (Med) 기능적 unsubscribe 엔드포인트 부재** — weekly 다이제스트의 "Manage/unsubscribe" 링크가 LANDING(퀴즈)으로만 감(실제 수신거부 처리 0), "Reply STOP"만 수동. 🟥적대: 실제 메일 발송 시작하면 CAN-SPAM/PIPA의 1-클릭 수신거부 의무 위반. 🟦빌더: 현재 weekly는 미배선(발송 안 함)이라 잠복. → **조치: 발송 배포 전 /unsubscribe?token= 엔드포인트 + store opt-out.** B3(방침링크)와 함께 "이메일 발송 전 필수 3종(방침·동의문·수신거부)"으로 묶음 = 사용자 배포 결정.
+**도메인 상태:** G ✅(엔진 견고) · H ✅(보안·매칭 견고). 결함 0, ⚠️1(이메일 배포 전 조건).
+**다음 배치:** I(수익화) + J(보안).
