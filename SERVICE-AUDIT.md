@@ -18,8 +18,8 @@
 **① 지금 즉시 (이미 한 작업 라이브화 — 최우선)**
 - **L1: `git push origin main`** (미푸시 5커밋) → 위 AI-proof·API_BASE fix를 **실유저에 반영**. 안 하면 고친 게 라이브에 없음.
 
-**② 즉시 가능한 quick-win (코드, 짧음)**
-- **F2: OG 이미지 6페이지 누락**(ranked·result·game·daily·reels) → og:image 메타 추가하면 그 URL 공유 미리보기 살아남.
+**② 즉시 가능한 quick-win (코드, 짧음)** — ✅ **완료(2026-06-27)**
+- ~~F2: OG 이미지 6페이지 누락~~ → **해결: 6페이지(ranked·daily·game·reels·result×2)에 페이지별 og:title/desc/url + 공유 og.png 삽입. 7/7 페이지 og:image 커버. 구조무결성·JS파싱 검증.**
 
 **③ 이메일 발송 게이트 (메일 보내기 전 필수 3종 묶음)**
 - **B3** 개인정보처리방침/약관 페이지+링크 · **B3** 동의문에 수집항목·목적·거부권 명시 · **G7** 기능적 unsubscribe 엔드포인트(현재 링크가 퀴즈페이지로만 감).
