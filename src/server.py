@@ -202,7 +202,7 @@ def handle_pain_intent(body: dict, ip: str = "") -> tuple[int, dict]:
 _PAY_SUCCESS = {"done", "paid", "completed"}
 _PAY_REFUND = {"canceled", "cancelled", "refunded", "partial_canceled", "aborted", "chargeback"}
 # 서명검증을 통과해도 이 금액과 다르면 paid로 인정하지 않음(무료/테스트/타상품 이벤트 차단).
-PAYMENT_EXPECTED_AMOUNT = int(os.environ.get("PAYMENT_EXPECTED_AMOUNT", "99000") or 0)
+PAYMENT_EXPECTED_AMOUNT = int(os.environ.get("PAYMENT_EXPECTED_AMOUNT", "39000") or 0)  # 파일럿가(EN $29 통일, 2026-06-27)
 PAIN_PAYMENT_EXPECTED_AMOUNT = int(os.environ.get("PAIN_PAYMENT_EXPECTED_AMOUNT", "39000") or 0)
 PAYMENT_ALLOWED_AMOUNTS = os.environ.get("PAYMENT_ALLOWED_AMOUNTS", "")
 
@@ -210,8 +210,8 @@ PAYMENT_ALLOWED_AMOUNTS = os.environ.get("PAYMENT_ALLOWED_AMOUNTS", "")
 def _payment_allowed_amounts() -> set[int]:
     """paid로 인정할 결제 금액 목록.
 
-    기본은 범용 커리어 패키지 99,000원만. pain 파일럿 결제 링크를 켠 경우에만
-    pain 금액을 추가한다. 여러 상품을 동시에 열 때는 PAYMENT_ALLOWED_AMOUNTS="99000,39000"처럼 명시.
+    기본은 범용 커리어 파일럿 패키지 39,000원만(EN $29 통일). pain 파일럿 결제 링크를 켠 경우에만
+    pain 금액을 추가한다. 여러 상품을 동시에 열 때는 PAYMENT_ALLOWED_AMOUNTS="39000,..."처럼 명시.
     """
     if PAYMENT_ALLOWED_AMOUNTS.strip():
         vals = set()

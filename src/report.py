@@ -581,7 +581,7 @@ padding:14px;font-size:15px;color:var(--text-primary);margin-bottom:10px;-webkit
 
 # 가격은 검증 대상 가설(테스트가) — 가짜 할인 금지. 정상가는 운영된 적 없으므로 취소선 표기 안 함.
 OFFER_NAME = "AI 시대 커리어 재설계 패키지"   # '대체 불가/AI-Proof'식 절대보장 표현 회피(표시광고법, Codex fix)
-OFFER_PRICE = "99,000"           # 1회성 패키지(월 구독 아님) · 테스트 가격(시세 10~20만원 대비 진입가)
+OFFER_PRICE = "39,000"           # 1회성 파일럿가(월 구독 아님) — EN $29와 통일(2026-06-27 결정). 유저0 단계 첫결제 증명 우선, 검증 후 인상.
 OFFER_DELIVERY_DAYS = 5          # 영업일 기준 납기
 OFFER_WEEKLY_CAP = 5             # 사람이 직접 검토하므로 주당 실제 처리 가능 인원 = 정직한 수용한계(가짜 카운터 아님)
 PRESALE_PRICE = OFFER_PRICE      # 하위호환(interest price_shown 라벨)
