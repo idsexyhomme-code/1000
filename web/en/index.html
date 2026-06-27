@@ -493,11 +493,13 @@ function renderResult(){
  +'<div class="sec-t">🎁 Unlock all 5 survival paths</div>'
  +'<div class="lock" style="text-align:left">'
  +'<div id="refLocked">'
- +'<p style="text-align:left">You got <b>'+br.name+'</b>. Want to see what <b>all 5 types</b> would do for a '+j.name+'? Invite '+3+' friends with your link 👇</p>'
+ +'<p style="text-align:left">You got <b>'+br.name+'</b>. Want to see what <b>all 5 types</b> would do for a '+j.name+'? '+(API_BASE?('Invite '+3+' friends with your link 👇'):'Share your link, then unlock below 👇')+'</p>'
  +'<input readonly value="'+myLink+'" onclick="this.select()" style="width:100%;background:#0b0b0d;border:1px solid #3f3f46;border-radius:10px;padding:11px 12px;color:#a1a1aa;font-size:12.5px;margin:10px 0 8px">'
  +'<button class="cta" style="border:none;cursor:pointer;width:100%" onclick="copyRef()">📋 Copy my invite link</button>'
- +'<div id="refProg" style="text-align:center;font-size:13px;color:#a1a1aa;margin-top:12px">0/'+3+' friends joined</div>'
- +'<div style="height:8px;background:#27272a;border-radius:4px;margin-top:6px;overflow:hidden"><div id="refBar" style="height:100%;width:0;background:linear-gradient(90deg,#f59e0b,#34d399);transition:width .5s"></div></div>'
+ +(API_BASE
+   ? '<div id="refProg" style="text-align:center;font-size:13px;color:#a1a1aa;margin-top:12px">0/'+3+' friends joined</div>'
+     +'<div style="height:8px;background:#27272a;border-radius:4px;margin-top:6px;overflow:hidden"><div id="refBar" style="height:100%;width:0;background:linear-gradient(90deg,#f59e0b,#34d399);transition:width .5s"></div></div>'
+   : '<button class="cta" style="border:1px solid #3f3f46;background:#18181b;cursor:pointer;width:100%;margin-top:10px" onclick="honorUnlock()">I shared — reveal all 5 paths →</button>')
  +'</div>'
  +'<div id="refUnlocked" style="display:none"><div style="font-weight:800;color:#34d399;margin-bottom:6px">🎉 Unlocked! All 5 paths for your job:</div>'+paths5+'</div>'
  +'</div>'
@@ -567,10 +569,15 @@ function downloadCard(){var c=window._card;if(!c)return;
  x.fillStyle='#71717a';x.font='30px -apple-system,sans-serif';x.fillText('📡 WorkRadar · idsexyhomme-code.github.io/1000/web/en',W/2,1045);
  var a=document.createElement('a');a.download='my-ai-risk-type.png';a.href=cv.toDataURL('image/png');a.click();}
 function copyRef(){var l="https://idsexyhomme-code.github.io/1000/?ref="+refCode();
+ var msg=API_BASE?"Invite link copied! Share with 3 friends to unlock all 5 paths.":"Invite link copied! Share it, then tap “I shared — reveal all 5”.";
  if(navigator.share){navigator.share({title:"WorkRadar",text:"Find your AI Risk Type — which of your tasks is AI coming for? 👇",url:l}).catch(function(){});}
- else if(navigator.clipboard){navigator.clipboard.writeText(l);alert("Invite link copied! Share with 3 friends to unlock all 5 paths.");}
+ else if(navigator.clipboard){navigator.clipboard.writeText(l);alert(msg);}
  else{window.prompt("Your invite link",l);}}
-function checkRefProgress(){if(!API_BASE||!window._ref)return;
+function honorUnlock(){try{localStorage.setItem('wr_unlocked','1');}catch(e){}
+ var lk=document.getElementById('refLocked'),un=document.getElementById('refUnlocked');if(lk)lk.style.display='none';if(un)un.style.display='block';}
+function checkRefProgress(){
+ if(!API_BASE){if(typeof localStorage!=='undefined'&&localStorage.getItem('wr_unlocked')==='1')honorUnlock();return;}  // 백엔드 없으면 honor 언락 상태만 복원
+ if(!window._ref)return;
  fetch(API_BASE+'/api/refer?code='+encodeURIComponent(window._ref.code),{headers:{'ngrok-skip-browser-warning':'1'}}).then(function(r){return r.json();}).then(function(d){
   var c=d.count||0,g=d.goal||3;var p=document.getElementById('refProg'),bar=document.getElementById('refBar');
   if(p)p.textContent=c+'/'+g+' friends joined';if(bar)bar.style.width=Math.min(100,Math.round(100*c/g))+'%';

@@ -26,7 +26,7 @@
 
 **④ 백엔드 배포 게이트 (render.yaml 띄우면 해결)**
 - ~~subscribe 과대표기~~ → ✅ **정직성 부분해결(2026-06-27)**: mailto 폴백 시 "You're in" 대신 "Almost there — send the email draft to confirm" 표시(거짓 성공 제거). *실제 캡처*는 여전히 백엔드 필요.
-- **referral 언락**(백엔드 없이 영영 안 풀림) · **quiz/방문 측정**. → 백엔드 배포 후 API_BASE 실주소 설정 시 살아남.
+- ~~referral 언락(백엔드 없이 영영 안 풀림)~~ → ✅ **정직화 완료(2026-06-27)**: 백엔드 없으면 가짜 "0/3 친구" 추적 대신 **공유 후 "I shared — reveal all 5" honor 언락**(localStorage 지속), 백엔드 있으면 실추적 복원(API_BASE 분기). **quiz/방문 측정**은 백엔드 배포 후 API_BASE 실주소 설정 시 살아남.
 
 **⑤ 비즈니스/전략 결정 (코드 아님, 사용자)**
 - **I2 가격**: web EN "$29 pilot" vs src KO "₩99,000" 통일/의도 확인 · **L4 두 코드베이스 정체성**(KO 카톡봇 vs EN 라이브, 어느 쪽 메인).
