@@ -25,7 +25,8 @@
 - **B3** 개인정보처리방침/약관 페이지+링크 · **B3** 동의문에 수집항목·목적·거부권 명시 · **G7** 기능적 unsubscribe 엔드포인트(현재 링크가 퀴즈페이지로만 감).
 
 **④ 백엔드 배포 게이트 (render.yaml 띄우면 해결)**
-- **subscribe 과대표기**(mailto 미발송에도 "You're in") · **referral 언락**(백엔드 없이 영영 안 풀림) · **quiz/방문 측정**. → 백엔드 배포 후 API_BASE 실주소 설정 시 전부 살아남.
+- ~~subscribe 과대표기~~ → ✅ **정직성 부분해결(2026-06-27)**: mailto 폴백 시 "You're in" 대신 "Almost there — send the email draft to confirm" 표시(거짓 성공 제거). *실제 캡처*는 여전히 백엔드 필요.
+- **referral 언락**(백엔드 없이 영영 안 풀림) · **quiz/방문 측정**. → 백엔드 배포 후 API_BASE 실주소 설정 시 살아남.
 
 **⑤ 비즈니스/전략 결정 (코드 아님, 사용자)**
 - **I2 가격**: web EN "$29 pilot" vs src KO "₩99,000" 통일/의도 확인 · **L4 두 코드베이스 정체성**(KO 카톡봇 vs EN 라이브, 어느 쪽 메인).

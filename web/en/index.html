@@ -539,10 +539,10 @@ function subscribe(){
  if(!document.getElementById('subConsent').checked){alert("Please check the box to continue.");return;}
  var payload={email:em,job:st.job,branch:decideBranch(),consent:true,hp_url:""};
  var fb="mailto:idsexyhomme@gmail.com?subject=WorkRadar%20weekly%20signup&body="+encodeURIComponent(em+" / "+st.job+" / "+decideBranch());
- function done(){document.getElementById('subBox').style.display='none';document.getElementById('subDone').style.display='block';}
+ function done(viaMail){var dn=document.getElementById('subDone');dn.textContent=viaMail?"✓ Almost there — send the email draft we just opened to confirm your signup.":"✓ You're in. First signal lands within a week.";document.getElementById('subBox').style.display='none';dn.style.display='block';}
  if(API_BASE){fetch(API_BASE+'/api/subscribe',{method:'POST',headers:{'Content-Type':'application/json','ngrok-skip-browser-warning':'1'},body:JSON.stringify(payload)})
-   .then(function(r){if(!r.ok)throw 0;done();}).catch(function(){window.location.href=fb;done();});}
- else{window.location.href=fb;done();}
+   .then(function(r){if(!r.ok)throw 0;done(false);}).catch(function(){window.location.href=fb;done(true);});}
+ else{window.location.href=fb;done(true);}
 }
 function downloadCard(){var c=window._card;if(!c)return;
  var W=1080,H=1080,cv=document.createElement('canvas');cv.width=W;cv.height=H;var x=cv.getContext('2d');
