@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://idsexyhomme-code.github.io/1000/web/en/sitemap.xml

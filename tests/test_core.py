@@ -559,6 +559,34 @@ def test_web_no_dead_tunnel_urls():
     assert not bad, f"하드코딩된 임시 터널 URL: {bad}"
 
 
+def test_seo_pages_present_and_wired():
+    """SEO 가드: will-ai-replace-* 페이지 ↔ sitemap ↔ index 링크허브가 서로 동기.
+    - 각 SEO 페이지는 canonical + FAQPage JSON-LD + index로 가는 CTA를 가진다.
+    - sitemap이 참조하는 모든 will-ai-replace-* URL의 파일이 실제로 존재한다.
+    - index 링크허브의 모든 will-ai-replace-* href의 파일이 실제로 존재한다(고아링크/오타 차단)."""
+    import re, glob, json
+    web = os.path.join(_ROOT, "web", "en")
+    pages = glob.glob(os.path.join(web, "will-ai-replace-*.html"))
+    assert len(pages) >= 40, f"SEO 페이지가 너무 적음: {len(pages)}"
+    for f in pages:
+        s = open(f, encoding="utf-8").read()
+        base = os.path.basename(f)
+        assert '<link rel="canonical"' in s, f"{base}: canonical 없음"
+        m = re.search(r'<script type="application/ld\+json">(.*?)</script>', s, re.S)
+        assert m and json.loads(m.group(1)).get("@type") == "FAQPage", f"{base}: FAQPage 스키마 없음/깨짐"
+        assert 'href="index.html"' in s, f"{base}: 메인 테스트로 가는 링크 없음"
+    # sitemap ↔ 파일
+    sm = open(os.path.join(web, "sitemap.xml"), encoding="utf-8").read()
+    for slug in re.findall(r'will-ai-replace-([a-z-]+)\.html', sm):
+        assert os.path.exists(os.path.join(web, f"will-ai-replace-{slug}.html")), f"sitemap 고아: {slug}"
+    # index 허브 ↔ 파일
+    idx = open(os.path.join(web, "index.html"), encoding="utf-8").read()
+    hub = set(re.findall(r'href="(will-ai-replace-[a-z-]+\.html)"', idx))
+    assert len(hub) >= 40, f"index 링크허브가 비었거나 부족: {len(hub)}"
+    for href in hub:
+        assert os.path.exists(os.path.join(web, href)), f"index 허브 고아링크: {href}"
+
+
 def test_web_aioe_object_in_sync_with_src_anchors():
     """D4 드리프트 가드: 라이브 web/en의 AIOE 객체가 src 앵커(percentile)와 동기 유지 — 수동복제 드리프트 차단."""
     import re, glob
