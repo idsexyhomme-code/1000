@@ -9,7 +9,7 @@ references (calibrated:false), never presented as predictions.
 Run: python3 gen_seo_pages.py
 Idempotent — regenerates web/en/will-ai-replace-*.html and rewrites the sitemap block.
 """
-import json, os, html, re
+import json, os, html, re, urllib.parse as up
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 WEB = os.path.join(ROOT, "web", "en")
@@ -104,6 +104,15 @@ def page(key):
                                   "acceptedAnswer": {"@type": "Answer", "text": re.sub("<[^>]+>", "", a)}}
                                  for q, a in faqs]}
 
+    # share bar (X / LinkedIn / copy) — social distribution signal
+    share_text = f"Will AI replace {pl_l}? {name} work scores {score}/100 AI-pressure ({bname}) — task-by-task, with sources."
+    x_url = "https://twitter.com/intent/tweet?text=" + up.quote(share_text) + "&url=" + up.quote(url)
+    li_url = "https://www.linkedin.com/sharing/share-offsite/?url=" + up.quote(url)
+    share_html = (f'<div class="share-bar"><span class="share-lbl">Share:</span>'
+                  f'<a class="sbtn" href="{x_url}" target="_blank" rel="noopener" aria-label="Share on X">𝕏</a>'
+                  f'<a class="sbtn" href="{li_url}" target="_blank" rel="noopener" aria-label="Share on LinkedIn">in</a>'
+                  f'<button class="sbtn" type="button" onclick="wrCopy(this)">Copy link</button></div>')
+
     # related internal links (next 6 in curated order, wrap around)
     idx = CURATED.index(key)
     rel = [k for k in (CURATED[idx+1:] + CURATED[:idx]) if k in JOBS][:6]
@@ -154,6 +163,10 @@ h2{{font-size:20px;font-weight:700;letter-spacing:-.4px;margin:34px 0 16px;}}
 .cta-btn{{display:inline-block;background:var(--text-primary);color:#000;padding:15px 30px;border-radius:30px;font-size:16px;font-weight:800;text-decoration:none;margin-top:6px;}}
 .rel{{display:block;background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:12px;padding:13px 16px;margin-bottom:9px;font-size:14.5px;font-weight:600;color:var(--text-primary);text-decoration:none;letter-spacing:-.2px;}}
 .rel:hover{{border-color:var(--color-cloudy);}}
+.share-bar{{display:flex;align-items:center;gap:8px;margin:8px 0 4px;flex-wrap:wrap;}}
+.share-lbl{{font-size:13px;color:var(--text-tertiary);}}
+.sbtn{{display:inline-flex;align-items:center;justify-content:center;min-width:40px;height:36px;padding:0 14px;background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:10px;color:var(--text-primary);font-size:14px;font-weight:700;text-decoration:none;cursor:pointer;font-family:inherit;}}
+.sbtn:hover{{border-color:var(--color-cloudy);}}
 .foot{{font-size:12px;color:var(--text-tertiary);line-height:1.7;margin-top:36px;border-top:1px solid var(--bg-elevate);padding-top:20px;}}
 .foot b{{color:var(--text-secondary);}}
 .foot a{{color:var(--text-secondary);}}
@@ -168,10 +181,14 @@ h2{{font-size:20px;font-weight:700;letter-spacing:-.4px;margin:34px 0 16px;}}
 <div class="cta"><h2>See the pressure on <em>your</em> exact tasks</h2>
 <p class="lead" style="margin-bottom:8px;">This page shows the role in general. The free 1-minute test scores <b>your</b> specific task mix — with linked sources.</p>
 <a class="cta-btn" href="index.html">Take the free AI Risk test →</a></div>
+{share_html}
 <h2>❓ {esc(name)} &amp; AI — FAQ</h2>
 {faq_html}<h2>Related: will AI replace…</h2>
 {rel_html}<p class="foot">※ <b>WorkRadar AI-pressure</b> is a directional reference indicator built from public AI news and task analysis with a fixed, published method — <b>not a prediction</b>, and not a verdict on any person. Scores are hand-estimated (uncalibrated) and shown to illustrate relative exposure. See the <a href="index.html">method</a>, <a href="privacy.html">privacy</a> &amp; <a href="terms.html">terms</a>.</p>
 </div>
+<script>
+function wrCopy(b){{var u=location.href;if(navigator.clipboard){{navigator.clipboard.writeText(u).then(function(){{b.textContent='Copied!';setTimeout(function(){{b.textContent='Copy link';}},1500);}});}}else{{window.prompt('Copy link',u);}}}}
+</script>
 <script data-goatcounter="https://workradar.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body></html>"""
 

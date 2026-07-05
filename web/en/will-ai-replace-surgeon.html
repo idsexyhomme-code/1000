@@ -41,6 +41,10 @@ h2{font-size:20px;font-weight:700;letter-spacing:-.4px;margin:34px 0 16px;}
 .cta-btn{display:inline-block;background:var(--text-primary);color:#000;padding:15px 30px;border-radius:30px;font-size:16px;font-weight:800;text-decoration:none;margin-top:6px;}
 .rel{display:block;background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:12px;padding:13px 16px;margin-bottom:9px;font-size:14.5px;font-weight:600;color:var(--text-primary);text-decoration:none;letter-spacing:-.2px;}
 .rel:hover{border-color:var(--color-cloudy);}
+.share-bar{display:flex;align-items:center;gap:8px;margin:8px 0 4px;flex-wrap:wrap;}
+.share-lbl{font-size:13px;color:var(--text-tertiary);}
+.sbtn{display:inline-flex;align-items:center;justify-content:center;min-width:40px;height:36px;padding:0 14px;background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:10px;color:var(--text-primary);font-size:14px;font-weight:700;text-decoration:none;cursor:pointer;font-family:inherit;}
+.sbtn:hover{border-color:var(--color-cloudy);}
 .foot{font-size:12px;color:var(--text-tertiary);line-height:1.7;margin-top:36px;border-top:1px solid var(--bg-elevate);padding-top:20px;}
 .foot b{color:var(--text-secondary);}
 .foot a{color:var(--text-secondary);}
@@ -60,6 +64,7 @@ h2{font-size:20px;font-weight:700;letter-spacing:-.4px;margin:34px 0 16px;}
 <div class="cta"><h2>See the pressure on <em>your</em> exact tasks</h2>
 <p class="lead" style="margin-bottom:8px;">This page shows the role in general. The free 1-minute test scores <b>your</b> specific task mix — with linked sources.</p>
 <a class="cta-btn" href="index.html">Take the free AI Risk test →</a></div>
+<div class="share-bar"><span class="share-lbl">Share:</span><a class="sbtn" href="https://twitter.com/intent/tweet?text=Will%20AI%20replace%20surgeons%3F%20Surgeon%20work%20scores%2026/100%20AI-pressure%20%28Partly%20cloudy%29%20%E2%80%94%20task-by-task%2C%20with%20sources.&url=https%3A//idsexyhomme-code.github.io/1000/web/en/will-ai-replace-surgeon.html" target="_blank" rel="noopener" aria-label="Share on X">𝕏</a><a class="sbtn" href="https://www.linkedin.com/sharing/share-offsite/?url=https%3A//idsexyhomme-code.github.io/1000/web/en/will-ai-replace-surgeon.html" target="_blank" rel="noopener" aria-label="Share on LinkedIn">in</a><button class="sbtn" type="button" onclick="wrCopy(this)">Copy link</button></div>
 <h2>❓ Surgeon &amp; AI — FAQ</h2>
 <details class="faq"><summary>Will AI replace surgeons?</summary><p>Based on WorkRadar's task-level estimate, surgeon work sits at 26/100 AI-pressure (partly cloudy). That points to parts of the role being automated or accelerated rather than the whole job disappearing soon. The most exposed tasks are op notes, coding, lit review.</p></details>
 <details class="faq"><summary>Which surgeon tasks are most at risk from AI?</summary><p>The highest-exposure tasks in our breakdown are op notes, coding, lit review. These are the repeatable, well-specified parts where current AI tools are strongest.</p></details>
@@ -67,5 +72,8 @@ h2{font-size:20px;font-weight:700;letter-spacing:-.4px;margin:34px 0 16px;}
 <h2>Related: will AI replace…</h2>
 <a class="rel" href="will-ai-replace-senior-developer.html">Will AI replace senior developers?</a><a class="rel" href="will-ai-replace-frontend-developer.html">Will AI replace frontend developers?</a><a class="rel" href="will-ai-replace-content-writer.html">Will AI replace content writers?</a><a class="rel" href="will-ai-replace-teacher.html">Will AI replace teachers?</a><a class="rel" href="will-ai-replace-nurse.html">Will AI replace nurses?</a><a class="rel" href="will-ai-replace-doctor.html">Will AI replace doctors?</a><p class="foot">※ <b>WorkRadar AI-pressure</b> is a directional reference indicator built from public AI news and task analysis with a fixed, published method — <b>not a prediction</b>, and not a verdict on any person. Scores are hand-estimated (uncalibrated) and shown to illustrate relative exposure. See the <a href="index.html">method</a>, <a href="privacy.html">privacy</a> &amp; <a href="terms.html">terms</a>.</p>
 </div>
+<script>
+function wrCopy(b){var u=location.href;if(navigator.clipboard){navigator.clipboard.writeText(u).then(function(){b.textContent='Copied!';setTimeout(function(){b.textContent='Copy link';},1500);});}else{window.prompt('Copy link',u);}}
+</script>
 <script data-goatcounter="https://workradar.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body></html>
