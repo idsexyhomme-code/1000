@@ -213,6 +213,7 @@ LISTICLES = {
         "title": "Jobs Most at Risk From AI (2026): 25 Careers, Ranked by Task Exposure",
         "desc": "Which jobs are most at risk from AI in 2026? 25 common careers ranked by task-level AI exposure — data entry, transcription, customer service and more. Honest method, free 1-min test.",
         "intro": "These are the common jobs where the most of the day-to-day work is exposed to current AI tools. Ranking is by <b>task-level AI-pressure</b> — how much of the role is repeatable, well-specified work that today's AI does well. It's a directional reference, not a prediction: high exposure means tasks get reshuffled and automated, not that the job vanishes overnight.",
+        "og": "og-most-at-risk.png",
         "other": ("safest-jobs-from-ai", "🛡️ See the safest jobs from AI →"),
     },
     "safest-jobs-from-ai": {
@@ -221,6 +222,7 @@ LISTICLES = {
         "title": "Safest Jobs From AI (2026): 25 Most AI-Resilient Careers, Ranked",
         "desc": "What are the safest jobs from AI in 2026? 25 of the most AI-resilient common careers ranked by how little of the work AI can do — trades, care, hands-on and judgment roles. Honest method, free test.",
         "intro": "These are the common jobs where the <b>least</b> of the day-to-day work is exposed to current AI — hands-on trades, physical care, live human judgment, and high-stakes accountability. Often called “AI-proof,” but no job is fully immune; think <b>most resilient</b>. Ranking is by task-level AI-pressure (lower = more resilient), a directional reference, not a prediction.",
+        "og": "og-safest.png",
         "other": ("most-at-risk-jobs-from-ai", "🌪️ See the jobs most at risk from AI →"),
     },
 }
@@ -259,10 +261,10 @@ def listicle(slug):
 <meta property="og:title" content="{esc(cfg['title'])}">
 <meta property="og:description" content="{esc(cfg['desc'])}">
 <meta property="og:url" content="{url}">
-<meta property="og:image" content="{BASE_URL}/og.png">
+<meta property="og:image" content="{BASE_URL}/{cfg['og']}">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="{esc(cfg['title'])}"><meta name="twitter:image" content="{BASE_URL}/og.png">
+<meta name="twitter:title" content="{esc(cfg['title'])}"><meta name="twitter:image" content="{BASE_URL}/{cfg['og']}">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='88'%3E%F0%9F%93%A1%3C/text%3E%3C/svg%3E">
 <script type="application/ld+json">{json.dumps(schema, ensure_ascii=False)}</script>
 <style>
