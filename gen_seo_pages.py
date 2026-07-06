@@ -16,20 +16,31 @@ WEB = os.path.join(ROOT, "web", "en")
 BASE_URL = "https://idsexyhomme-code.github.io/1000/web/en"
 JOBS = json.load(open(os.path.join(WEB, "jobs.json")))
 
-# Curated high-search-volume jobs (canonical keys in jobs.json). One page each.
+# Recognizable, high-search-volume occupations (canonical keys in jobs.json).
+# One landing page each. All verified to carry unique per-job task data (not thin).
 CURATED = [
-    "teacher", "nurse", "doctor", "lawyer", "accountant", "graphic-designer",
-    "truck-driver", "cashier", "radiologist", "translator",
-    "customer-service-representative", "data-analyst", "financial-analyst",
-    "marketer", "sales-rep", "recruiter", "project-manager", "architect",
-    "pharmacist", "therapist", "journalist", "photographer", "chef",
-    "electrician", "plumber", "real-estate-agent", "insurance-agent",
-    "receptionist", "paralegal", "actuary", "auditor", "bookkeeper",
-    "copywriter", "ux-designer", "product-manager", "consultant", "professor",
-    "pilot", "flight-attendant", "police-officer", "firefighter",
-    "social-worker", "psychologist", "editor", "data-scientist",
-    "investment-banker", "veterinarian", "optometrist", "surgeon",
-    "senior-developer", "frontend-developer", "content-writer",
+    "data-entry-clerk", "cashier", "bookkeeper", "receptionist", "proofreader",
+    "paralegal", "translator", "transcriptionist", "customer-service-representative",
+    "call-center-agent", "accountant", "tax-preparer", "travel-agent", "loan-officer",
+    "claims-adjuster", "copywriter", "content-writer", "junior-developer",
+    "senior-developer", "frontend-developer", "web-developer", "data-analyst",
+    "financial-analyst", "graphic-designer", "ui-designer", "ux-designer",
+    "video-editor", "photographer", "journalist", "editor", "marketer",
+    "digital-marketer", "social-media-manager", "seo-specialist", "recruiter",
+    "hr-manager", "project-manager", "product-manager", "business-analyst",
+    "consultant", "sales-rep", "real-estate-agent", "insurance-agent", "stockbroker",
+    "financial-advisor", "actuary", "auditor", "lawyer", "teacher", "professor",
+    "tutor", "librarian", "nurse", "doctor", "surgeon", "pharmacist", "radiologist",
+    "veterinarian", "physical-therapist", "psychologist", "therapist", "social-worker",
+    "chef", "bartender", "barista", "baker", "truck-driver", "delivery-driver",
+    "pilot", "flight-attendant", "police-officer", "firefighter", "security-guard",
+    "electrician", "plumber", "carpenter", "welder", "mechanic", "architect",
+    "civil-engineer", "mechanical-engineer", "electrical-engineer", "data-scientist",
+    "ml-engineer", "devops-engineer", "cybersecurity-analyst", "it-support",
+    "optometrist", "dietitian", "makeup-artist", "interior-designer",
+    "fashion-designer", "musician", "actor", "animator", "game-designer",
+    "ux-researcher", "investment-banker", "management-consultant", "office-manager",
+    "executive-assistant", "administrative-assistant",
 ]
 
 def band(score):
@@ -192,6 +203,128 @@ function wrCopy(b){{var u=location.href;if(navigator.clipboard){{navigator.clipb
 <script data-goatcounter="https://workradar.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body></html>"""
 
+LISTICLES = {
+    "most-at-risk-jobs-from-ai": {
+        "mode": "risk", "n": 25, "emoji": "🌪️",
+        "h1": "Jobs Most at Risk From AI (2026)",
+        "title": "Jobs Most at Risk From AI (2026): 25 Careers, Ranked by Task Exposure",
+        "desc": "Which jobs are most at risk from AI in 2026? 25 common careers ranked by task-level AI exposure — data entry, transcription, customer service and more. Honest method, free 1-min test.",
+        "intro": "These are the common jobs where the most of the day-to-day work is exposed to current AI tools. Ranking is by <b>task-level AI-pressure</b> — how much of the role is repeatable, well-specified work that today's AI does well. It's a directional reference, not a prediction: high exposure means tasks get reshuffled and automated, not that the job vanishes overnight.",
+        "other": ("safest-jobs-from-ai", "🛡️ See the safest jobs from AI →"),
+    },
+    "safest-jobs-from-ai": {
+        "mode": "safe", "n": 25, "emoji": "🛡️",
+        "h1": "Safest Jobs From AI (2026)",
+        "title": "Safest Jobs From AI (2026): 25 Most AI-Resilient Careers, Ranked",
+        "desc": "What are the safest jobs from AI in 2026? 25 of the most AI-resilient common careers ranked by how little of the work AI can do — trades, care, hands-on and judgment roles. Honest method, free test.",
+        "intro": "These are the common jobs where the <b>least</b> of the day-to-day work is exposed to current AI — hands-on trades, physical care, live human judgment, and high-stakes accountability. Often called “AI-proof,” but no job is fully immune; think <b>most resilient</b>. Ranking is by task-level AI-pressure (lower = more resilient), a directional reference, not a prediction.",
+        "other": ("most-at-risk-jobs-from-ai", "🌪️ See the jobs most at risk from AI →"),
+    },
+}
+
+def listicle(slug):
+    cfg = LISTICLES[slug]
+    ranked = sorted(((k, JOBS[k]["name"], JOBS[k]["base"]) for k in CURATED if k in JOBS),
+                    key=lambda x: -x[2] if cfg["mode"] == "risk" else x[2])[:cfg["n"]]
+    url = f"{BASE_URL}/{slug}.html"
+    rows = ""
+    items = []
+    for i, (k, name, score) in enumerate(ranked, 1):
+        bname, blevel, bvar, bhex = band(score)
+        rows += (f'<a class="lrow" href="will-ai-replace-{k}.html">'
+                 f'<span class="lrk">{i}</span>'
+                 f'<span class="lem">{JOBS[k].get("emoji","🧭")}</span>'
+                 f'<span class="lnm">{esc(name)}</span>'
+                 f'<span class="lbar"><span class="lbf" style="width:{score}%;background:{bhex}"></span></span>'
+                 f'<span class="lv" style="color:{bhex}">{score}</span></a>\n')
+        items.append({"@type": "ListItem", "position": i, "name": name, "url": f"{BASE_URL}/will-ai-replace-{k}.html"})
+    schema = {"@context": "https://schema.org", "@type": "ItemList",
+              "name": cfg["h1"], "itemListOrder": "https://schema.org/ItemListOrderDescending"
+              if cfg["mode"] == "risk" else "https://schema.org/ItemListOrderAscending",
+              "numberOfItems": len(items), "itemListElement": items}
+    other_slug, other_label = cfg["other"]
+    share_text = f"{cfg['h1']} — {ranked[0][1]} tops the list. See where your job lands on WorkRadar."
+    x_url = "https://twitter.com/intent/tweet?text=" + up.quote(share_text) + "&url=" + up.quote(url)
+    li_url = "https://www.linkedin.com/sharing/share-offsite/?url=" + up.quote(url)
+    return f"""<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{esc(cfg['title'])} — WorkRadar</title>
+<meta name="description" content="{esc(cfg['desc'])}">
+<link rel="canonical" href="{url}">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<meta property="og:type" content="article"><meta property="og:site_name" content="WorkRadar">
+<meta property="og:title" content="{esc(cfg['title'])}">
+<meta property="og:description" content="{esc(cfg['desc'])}">
+<meta property="og:url" content="{url}">
+<meta property="og:image" content="{BASE_URL}/og.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{esc(cfg['title'])}"><meta name="twitter:image" content="{BASE_URL}/og.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='88'%3E%F0%9F%93%A1%3C/text%3E%3C/svg%3E">
+<script type="application/ld+json">{json.dumps(schema, ensure_ascii=False)}</script>
+<style>
+:root{{--bg-base:#09090b;--bg-surface:#18181b;--bg-elevate:#27272a;--text-primary:#fafafa;--text-secondary:#a1a1aa;--text-tertiary:#8b8b94;--color-clear:#3b82f6;--color-pcloudy:#8b5cf6;--color-cloudy:#f59e0b;--color-typhoon:#e11d48;}}
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:#000;color:var(--text-primary);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Roboto,Helvetica,Arial,sans-serif;display:flex;justify-content:center;line-height:1.6;}}
+.wrap{{width:100%;max-width:640px;background:var(--bg-base);min-height:100vh;padding:28px 20px 56px;}}
+.crumb{{font-size:12px;color:var(--text-tertiary);margin-bottom:18px;}}
+.crumb a{{color:var(--text-secondary);text-decoration:none;}}
+h1{{font-size:29px;font-weight:800;letter-spacing:-.7px;line-height:1.18;margin-bottom:14px;}}
+.lead{{font-size:16px;color:var(--text-secondary);margin-bottom:24px;}}
+.lrow{{display:flex;align-items:center;gap:11px;padding:11px 13px;border-radius:12px;background:#131316;border:1px solid #1f1f23;margin-bottom:7px;text-decoration:none;color:var(--text-primary);}}
+.lrow:hover{{border-color:var(--color-cloudy);}}
+.lrk{{width:26px;font-size:13px;font-weight:800;color:var(--text-tertiary);text-align:center;flex-shrink:0;}}
+.lem{{font-size:21px;flex-shrink:0;}}
+.lnm{{flex:1;font-size:14.5px;font-weight:600;letter-spacing:-.2px;}}
+.lbar{{width:72px;height:7px;background:var(--bg-elevate);border-radius:4px;overflow:hidden;flex-shrink:0;}}
+.lbf{{display:block;height:100%;border-radius:4px;}}
+.lv{{width:26px;text-align:right;font-size:13px;font-weight:800;flex-shrink:0;}}
+h2{{font-size:20px;font-weight:700;letter-spacing:-.4px;margin:34px 0 16px;}}
+.cta{{background:linear-gradient(145deg,rgba(245,158,11,.08),rgba(225,29,72,.03));border:1px solid rgba(245,158,11,.2);border-radius:20px;padding:26px 22px;text-align:center;margin:32px 0;}}
+.cta-btn{{display:inline-block;background:var(--text-primary);color:#000;padding:15px 30px;border-radius:30px;font-size:16px;font-weight:800;text-decoration:none;margin-top:6px;}}
+.other{{display:block;background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:14px;padding:16px;text-align:center;font-size:15px;font-weight:700;color:var(--text-primary);text-decoration:none;margin-bottom:10px;}}
+.other:hover{{border-color:var(--color-cloudy);}}
+.share-bar{{display:flex;align-items:center;gap:8px;margin:20px 0 4px;flex-wrap:wrap;}}
+.share-lbl{{font-size:13px;color:var(--text-tertiary);}}
+.sbtn{{display:inline-flex;align-items:center;justify-content:center;min-width:40px;height:36px;padding:0 14px;background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:10px;color:var(--text-primary);font-size:14px;font-weight:700;text-decoration:none;cursor:pointer;font-family:inherit;}}
+.sbtn:hover{{border-color:var(--color-cloudy);}}
+.foot{{font-size:12px;color:var(--text-tertiary);line-height:1.7;margin-top:34px;border-top:1px solid var(--bg-elevate);padding-top:20px;}}
+.foot b{{color:var(--text-secondary);}}
+.foot a{{color:var(--text-secondary);}}
+</style></head><body><div class="wrap">
+<nav class="crumb"><a href="index.html">WorkRadar</a> › {esc(cfg['h1'])}</nav>
+<h1>{cfg['emoji']} {esc(cfg['h1'])}</h1>
+<p class="lead">{cfg['intro']}</p>
+<div class=" list">{rows}</div>
+<p style="font-size:12.5px;color:var(--text-tertiary);margin-top:10px;">Score = task-level AI-pressure (0–100). Ranked among {len(CURATED)} common occupations we track. Directional estimates, not measured probabilities. Tap any job for its task breakdown.</p>
+<div class="cta"><h2 style="margin-top:0">Where does <em>your</em> job land?</h2>
+<p class="lead" style="margin-bottom:8px;">This list ranks roles in general. The free 1-minute test scores <b>your</b> exact task mix — with sources.</p>
+<a class="cta-btn" href="index.html">Take the free AI Risk test →</a></div>
+<a class="other" href="{other_slug}.html">{esc(other_label)}</a>
+<div class="share-bar"><span class="share-lbl">Share:</span>
+<a class="sbtn" href="{x_url}" target="_blank" rel="noopener" aria-label="Share on X">𝕏</a>
+<a class="sbtn" href="{li_url}" target="_blank" rel="noopener" aria-label="Share on LinkedIn">in</a>
+<button class="sbtn" type="button" onclick="wrCopy(this)">Copy link</button></div>
+<p class="foot">※ <b>WorkRadar AI-pressure</b> is a directional reference indicator built from public AI news and task analysis with a fixed, published method — <b>not a prediction</b>, and not a verdict on any person. Scores are hand-estimated (uncalibrated). See the <a href="index.html">method</a>, <a href="privacy.html">privacy</a> &amp; <a href="terms.html">terms</a>.</p>
+</div>
+<script>
+function wrCopy(b){{var u=location.href;if(navigator.clipboard){{navigator.clipboard.writeText(u).then(function(){{b.textContent='Copied!';setTimeout(function(){{b.textContent='Copy link';}},1500);}});}}else{{window.prompt('Copy link',u);}}}}
+</script>
+<script data-goatcounter="https://workradar.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body></html>"""
+
+def build_hub_footer():
+    links = "".join(
+        f'<a href="will-ai-replace-{k}.html">Will AI replace {esc(plural(JOBS[k]["name"]).lower())}?</a>'
+        for k in CURATED if k in JOBS)
+    return ('<footer class="seo-hub"><h2>Will AI replace your job? Browse by role</h2>'
+            '<p class="seo-top"><a href="most-at-risk-jobs-from-ai.html">🌪️ Jobs most at risk from AI</a>'
+            '<a href="safest-jobs-from-ai.html">🛡️ Safest jobs from AI</a></p>'
+            f'<nav class="seo-links">{links}</nav>'
+            '<p class="seo-fine">Directional AI-exposure references built from public AI news with a fixed, '
+            'published method — <b>not predictions</b>. <a href="privacy.html">Privacy</a> · '
+            '<a href="terms.html">Terms</a></p></footer>')
+
 def main():
     made = []
     for key in CURATED:
@@ -202,6 +335,11 @@ def main():
         made.append(key)
     print(f"Generated {len(made)} pages.")
 
+    # data-driven listicles (high-volume "most at risk / safest jobs from AI" queries)
+    for slug in LISTICLES:
+        open(os.path.join(WEB, f"{slug}.html"), "w").write(listicle(slug))
+    print(f"Generated {len(LISTICLES)} listicles.")
+
     # rewrite sitemap.xml
     core = [
         ("", "1.0", "weekly"), ("ranked.html", "0.8", "weekly"),
@@ -209,21 +347,32 @@ def main():
         ("reels.html", "0.5", "weekly"), ("privacy.html", "0.3", "yearly"),
         ("terms.html", "0.3", "yearly"),
     ]
-    lastmod = "2026-07-05"
+    listicle_urls = [(f"{s}.html", "0.9", "weekly") for s in LISTICLES]
+    lastmod = "2026-07-07"
     lines = ['<?xml version="1.0" encoding="UTF-8"?>',
              '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
-    for path, pri, freq in core:
+    for path, pri, freq in core + listicle_urls:
         lines.append(f'  <url><loc>{BASE_URL}/{path}</loc><lastmod>{lastmod}</lastmod><changefreq>{freq}</changefreq><priority>{pri}</priority></url>')
     for key in made:
         lines.append(f'  <url><loc>{BASE_URL}/will-ai-replace-{key}.html</loc><lastmod>{lastmod}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>')
     lines.append('</urlset>')
     open(os.path.join(WEB, "sitemap.xml"), "w").write("\n".join(lines) + "\n")
-    print("Sitemap rewritten with", len(core) + len(made), "urls.")
+    print("Sitemap rewritten with", len(core) + len(listicle_urls) + len(made), "urls.")
 
     # robots.txt (best-effort; subpath sites: also submit sitemap in Search Console)
     open(os.path.join(WEB, "robots.txt"), "w").write(
         "User-agent: *\nAllow: /\n\nSitemap: " + BASE_URL + "/sitemap.xml\n")
     print("robots.txt written.")
+
+    # regenerate index.html internal-link hub in place (drift-free)
+    idx_path = os.path.join(WEB, "index.html")
+    idx = open(idx_path, encoding="utf-8").read()
+    new_idx, n = re.subn(r'<footer class="seo-hub">.*?</footer>', build_hub_footer(), idx, flags=re.S)
+    if n == 1:
+        open(idx_path, "w").write(new_idx)
+        print("index.html hub footer regenerated.")
+    else:
+        print(f"WARN: hub footer not updated (matched {n}) — check index.html")
 
 if __name__ == "__main__":
     main()

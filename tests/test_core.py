@@ -587,6 +587,35 @@ def test_seo_pages_present_and_wired():
         assert os.path.exists(os.path.join(web, href)), f"index 허브 고아링크: {href}"
 
 
+def test_seo_listicles_data_driven_and_wired():
+    """데이터 기반 리스티클('most at risk'/'safest') 가드:
+    - 두 페이지 존재 + ItemList JSON-LD(항목 있음) + 캐노니컬.
+    - 리스티클이 링크하는 will-ai-replace-* 파일이 실제 존재(고아 차단).
+    - 서로 교차링크 + 메인 테스트 링크 + sitemap 등록.
+    - index 허브가 두 리스티클을 링크."""
+    import re, json
+    web = os.path.join(_ROOT, "web", "en")
+    slugs = ["most-at-risk-jobs-from-ai", "safest-jobs-from-ai"]
+    for slug in slugs:
+        p = os.path.join(web, f"{slug}.html")
+        assert os.path.exists(p), f"리스티클 없음: {slug}"
+        s = open(p, encoding="utf-8").read()
+        assert '<link rel="canonical"' in s, f"{slug}: canonical 없음"
+        m = re.search(r'<script type="application/ld\+json">(.*?)</script>', s, re.S)
+        d = json.loads(m.group(1))
+        assert d.get("@type") == "ItemList" and d.get("numberOfItems", 0) >= 10, f"{slug}: ItemList 스키마 부실"
+        for href in set(re.findall(r'href="(will-ai-replace-[a-z-]+\.html)"', s)):
+            assert os.path.exists(os.path.join(web, href)), f"{slug} 고아링크: {href}"
+        assert 'href="index.html"' in s, f"{slug}: 메인 테스트 링크 없음"
+        other = [x for x in slugs if x != slug][0]
+        assert f'{other}.html' in s, f"{slug}: 교차링크 없음"
+    sm = open(os.path.join(web, "sitemap.xml"), encoding="utf-8").read()
+    idx = open(os.path.join(web, "index.html"), encoding="utf-8").read()
+    for slug in slugs:
+        assert f"{slug}.html" in sm, f"sitemap에 리스티클 없음: {slug}"
+        assert f"{slug}.html" in idx, f"index 허브에 리스티클 링크 없음: {slug}"
+
+
 def test_web_aioe_object_in_sync_with_src_anchors():
     """D4 드리프트 가드: 라이브 web/en의 AIOE 객체가 src 앵커(percentile)와 동기 유지 — 수동복제 드리프트 차단."""
     import re, glob
