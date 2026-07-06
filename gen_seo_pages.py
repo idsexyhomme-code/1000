@@ -174,6 +174,8 @@ h2{{font-size:20px;font-weight:700;letter-spacing:-.4px;margin:34px 0 16px;}}
 .cta-btn{{display:inline-block;background:var(--text-primary);color:#000;padding:15px 30px;border-radius:30px;font-size:16px;font-weight:800;text-decoration:none;margin-top:6px;}}
 .rel{{display:block;background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:12px;padding:13px 16px;margin-bottom:9px;font-size:14.5px;font-weight:600;color:var(--text-primary);text-decoration:none;letter-spacing:-.2px;}}
 .rel:hover{{border-color:var(--color-cloudy);}}
+.rankline{{font-size:13px;color:var(--text-tertiary);margin:18px 0 4px;line-height:1.7;}}
+.rankline a{{color:var(--text-secondary);}}
 .share-bar{{display:flex;align-items:center;gap:8px;margin:8px 0 4px;flex-wrap:wrap;}}
 .share-lbl{{font-size:13px;color:var(--text-tertiary);}}
 .sbtn{{display:inline-flex;align-items:center;justify-content:center;min-width:40px;height:36px;padding:0 14px;background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:10px;color:var(--text-primary);font-size:14px;font-weight:700;text-decoration:none;cursor:pointer;font-family:inherit;}}
@@ -192,6 +194,7 @@ h2{{font-size:20px;font-weight:700;letter-spacing:-.4px;margin:34px 0 16px;}}
 <div class="cta"><h2>See the pressure on <em>your</em> exact tasks</h2>
 <p class="lead" style="margin-bottom:8px;">This page shows the role in general. The free 1-minute test scores <b>your</b> specific task mix — with linked sources.</p>
 <a class="cta-btn" href="index.html">Take the free AI Risk test →</a></div>
+<p class="rankline">📊 Full ranking: <a href="most-at-risk-jobs-from-ai.html">jobs most at risk from AI</a> · <a href="safest-jobs-from-ai.html">safest jobs from AI</a> · <a href="methodology.html">how we score</a></p>
 {share_html}
 <h2>❓ {esc(name)} &amp; AI — FAQ</h2>
 {faq_html}<h2>Related: will AI replace…</h2>
@@ -322,8 +325,8 @@ def build_hub_footer():
             '<a href="safest-jobs-from-ai.html">🛡️ Safest jobs from AI</a></p>'
             f'<nav class="seo-links">{links}</nav>'
             '<p class="seo-fine">Directional AI-exposure references built from public AI news with a fixed, '
-            'published method — <b>not predictions</b>. <a href="privacy.html">Privacy</a> · '
-            '<a href="terms.html">Terms</a></p></footer>')
+            'published method — <b>not predictions</b>. <a href="methodology.html">Method</a> · '
+            '<a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></p></footer>')
 
 def main():
     made = []
@@ -342,7 +345,8 @@ def main():
 
     # rewrite sitemap.xml
     core = [
-        ("", "1.0", "weekly"), ("ranked.html", "0.8", "weekly"),
+        ("", "1.0", "weekly"), ("methodology.html", "0.7", "monthly"),
+        ("ranked.html", "0.8", "weekly"),
         ("daily.html", "0.7", "daily"), ("game.html", "0.6", "weekly"),
         ("reels.html", "0.5", "weekly"), ("privacy.html", "0.3", "yearly"),
         ("terms.html", "0.3", "yearly"),
