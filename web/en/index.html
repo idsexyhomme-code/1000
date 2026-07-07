@@ -343,7 +343,9 @@ function buildJobGrid(filter){var g=document.getElementById('jobGrid');if(!g)ret
 (function(){
  function fill(id,arr,key){var c=document.getElementById(id),o='';for(var i=0;i<arr.length;i++){o+='<button class="opt" onclick="pick(\''+key+'\','+arr[i][3]+')"><span class="em">'+arr[i][0]+'</span><span><span class="ot">'+arr[i][1]+'</span><span class="od">'+arr[i][2]+'</span></span></button>';}c.innerHTML=o;}
  fill('feelOpts',FEEL,'feel');fill('instOpts',INST,'inst');fill('expOpts',EXP,'exp');fill('aiOpts',AITOOL,'ai');
- loadJobs(function(){buildJobGrid('');});
+ loadJobs(function(){buildJobGrid('');
+  var jp=(new URLSearchParams(location.search).get('job')||'').replace(/[^a-z0-9-]/g,'');
+  if(jp&&JOBS[jp]){pickJob(jp);}}); // SEO 직업페이지 딥링크: 직업 선택된 채 Q2부터 시작
  if(API_BASE){try{fetch(API_BASE+'/api/hit',{method:'POST',headers:{'Content-Type':'application/json','ngrok-skip-browser-warning':'1'},body:JSON.stringify({path:location.pathname,ref:document.referrer})}).catch(function(){});}catch(e){}}
  postRefer('visit');
 })();
