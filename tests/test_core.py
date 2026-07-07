@@ -559,6 +559,23 @@ def test_web_no_dead_tunnel_urls():
     assert not bad, f"하드코딩된 임시 터널 URL: {bad}"
 
 
+def test_web_invite_link_points_to_live_app():
+    """재발방지(2026-07-08 QA): 초대/추천 링크가 앱 경로(/1000/web/en/)를 가리켜야 한다.
+    /1000/?ref= (레포 루트)로 가면 리다이렉트가 ?ref= 쿼리를 버려서 추천 추적이 깨진다."""
+    s = open(os.path.join(_ROOT, "web", "en", "index.html"), encoding="utf-8").read()
+    assert "github.io/1000/?ref=" not in s, "초대링크가 루트(/1000/?ref=)를 가리킴 — /1000/web/en/?ref= 여야 함"
+    assert "github.io/1000/web/en/?ref=" in s, "초대링크(/1000/web/en/?ref=)가 없음"
+
+
+def test_jobs_emojis_are_not_text():
+    """재발방지(2026-07-08 QA): jobs.json emoji 필드에 텍스트/빈값이 들어가면 퀴즈 그리드에 tofu(□)로 뜬다."""
+    import json
+    d = json.load(open(os.path.join(_ROOT, "web", "en", "jobs.json"), encoding="utf-8"))
+    bad = [k for k, v in d.items()
+           if not v.get("emoji") or any("a" <= c.lower() <= "z" for c in v["emoji"])]
+    assert not bad, f"emoji 필드가 비었거나 텍스트를 포함: {bad[:10]}"
+
+
 def test_seo_pages_present_and_wired():
     """SEO 가드: will-ai-replace-* 페이지 ↔ sitemap ↔ index 링크허브가 서로 동기.
     - 각 SEO 페이지는 canonical + FAQPage JSON-LD + index로 가는 CTA를 가진다.

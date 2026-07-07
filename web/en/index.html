@@ -427,7 +427,7 @@ function renderResult(){
  var ev=FAMSIG[famOf(st.job)]||FAMSIG.general;
  var pct=pctExposed(score);
  var myRef=refCode();
- var myLink="https://idsexyhomme-code.github.io/1000/?ref="+myRef;
+ var myLink="https://idsexyhomme-code.github.io/1000/web/en/?ref="+myRef;
  var border5=['defend','pivot','reskill','independent','founder'],paths5='';
  for(var pi=0;pi<border5.length;pi++){var pb=BRANCHES[border5[pi]];var pm=MOVE_TMPL[border5[pi]].split('{top}').join(top).split('{low}').join(low);
   paths5+='<div class="move" style="margin-top:8px"><div style="font-size:13.5px;font-weight:700">'+pb.em+' '+pb.name+'</div><div style="font-size:12px;color:#a1a1aa;margin-top:3px;line-height:1.5">'+pm+'</div></div>';}
@@ -570,7 +570,7 @@ function downloadCard(){var c=window._card;if(!c)return;
  if(c.aio){x.fillStyle='#a5b4fc';x.font='600 27px -apple-system,sans-serif';x.fillText('🔗 AIOE-cross-referenced · top '+Math.round(100-c.aio.p)+'% AI exposure'+(c.aio.c!=='high'?' (proxy)':''),W/2,1009);}
  x.fillStyle='#71717a';x.font='30px -apple-system,sans-serif';x.fillText('📡 WorkRadar · idsexyhomme-code.github.io/1000/web/en',W/2,1045);
  var a=document.createElement('a');a.download='my-ai-risk-type.png';a.href=cv.toDataURL('image/png');a.click();}
-function copyRef(){var l="https://idsexyhomme-code.github.io/1000/?ref="+refCode();
+function copyRef(){var l="https://idsexyhomme-code.github.io/1000/web/en/?ref="+refCode();
  var msg=API_BASE?"Invite link copied! Share with 3 friends to unlock all 5 paths.":"Invite link copied! Share it, then tap “I shared — reveal all 5”.";
  if(navigator.share){navigator.share({title:"WorkRadar",text:"Find your AI Risk Type — which of your tasks is AI coming for? 👇",url:l}).catch(function(){});}
  else if(navigator.clipboard){navigator.clipboard.writeText(l);alert(msg);}
