@@ -616,6 +616,30 @@ def test_seo_listicles_data_driven_and_wired():
         assert f"{slug}.html" in idx, f"index 허브에 리스티클 링크 없음: {slug}"
 
 
+def test_seo_industry_clusters_wired():
+    """산업 클러스터 허브 가드: ai-*-jobs.html 페이지들이
+    - 존재 + ItemList/BreadcrumbList JSON-LD + canonical,
+    - 링크하는 will-ai-replace-* 파일이 실제 존재(고아 차단),
+    - sitemap 등록 + index 허브 링크 + 메인테스트 링크."""
+    import re, json, glob
+    web = os.path.join(_ROOT, "web", "en")
+    pages = glob.glob(os.path.join(web, "ai-*-jobs.html"))
+    assert len(pages) >= 8, f"클러스터 허브가 부족: {len(pages)}"
+    sm = open(os.path.join(web, "sitemap.xml"), encoding="utf-8").read()
+    idx = open(os.path.join(web, "index.html"), encoding="utf-8").read()
+    for p in pages:
+        base = os.path.basename(p)
+        s = open(p, encoding="utf-8").read()
+        assert '<link rel="canonical"' in s, f"{base}: canonical 없음"
+        types = [json.loads(m).get("@type") for m in re.findall(r'<script type="application/ld\+json">(.*?)</script>', s, re.S)]
+        assert "ItemList" in types and "BreadcrumbList" in types, f"{base}: 스키마 누락 {types}"
+        for href in set(re.findall(r'href="(will-ai-replace-[a-z-]+\.html)"', s)):
+            assert os.path.exists(os.path.join(web, href)), f"{base} 고아링크: {href}"
+        assert 'href="index.html"' in s, f"{base}: 메인 링크 없음"
+        assert base in sm, f"sitemap에 없음: {base}"
+        assert base in idx, f"index 허브에 없음: {base}"
+
+
 def test_web_aioe_object_in_sync_with_src_anchors():
     """D4 드리프트 가드: 라이브 web/en의 AIOE 객체가 src 앵커(percentile)와 동기 유지 — 수동복제 드리프트 차단."""
     import re, glob

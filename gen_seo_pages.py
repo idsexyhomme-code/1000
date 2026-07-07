@@ -147,6 +147,7 @@ def page(key):
 <meta name="twitter:title" content="{esc(title)}"><meta name="twitter:image" content="{BASE_URL}/og.png">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='88'%3E%F0%9F%93%A1%3C/text%3E%3C/svg%3E">
 <script type="application/ld+json">{json.dumps(faq_schema, ensure_ascii=False)}</script>
+<script type="application/ld+json">{breadcrumb_ld("Will AI replace " + pl_l + "?", url)}</script>
 <style>
 :root{{--bg-base:#09090b;--bg-surface:#18181b;--bg-elevate:#27272a;--text-primary:#fafafa;--text-secondary:#a1a1aa;--text-tertiary:#8b8b94;--color-clear:#3b82f6;--color-pcloudy:#8b5cf6;--color-cloudy:#f59e0b;--color-typhoon:#e11d48;}}
 *{{box-sizing:border-box;margin:0;padding:0;}}
@@ -267,6 +268,7 @@ def listicle(slug):
 <meta name="twitter:title" content="{esc(cfg['title'])}"><meta name="twitter:image" content="{BASE_URL}/{cfg['og']}">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='88'%3E%F0%9F%93%A1%3C/text%3E%3C/svg%3E">
 <script type="application/ld+json">{json.dumps(schema, ensure_ascii=False)}</script>
+<script type="application/ld+json">{breadcrumb_ld(cfg['h1'], url)}</script>
 <style>
 :root{{--bg-base:#09090b;--bg-surface:#18181b;--bg-elevate:#27272a;--text-primary:#fafafa;--text-secondary:#a1a1aa;--text-tertiary:#8b8b94;--color-clear:#3b82f6;--color-pcloudy:#8b5cf6;--color-cloudy:#f59e0b;--color-typhoon:#e11d48;}}
 *{{box-sizing:border-box;margin:0;padding:0;}}
@@ -318,13 +320,152 @@ function wrCopy(b){{var u=location.href;if(navigator.clipboard){{navigator.clipb
 <script data-goatcounter="https://workradar.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body></html>"""
 
+def breadcrumb_ld(leaf_name, leaf_url):
+    return json.dumps({"@context": "https://schema.org", "@type": "BreadcrumbList",
+        "itemListElement": [
+            {"@type": "ListItem", "position": 1, "name": "WorkRadar", "item": f"{BASE_URL}/"},
+            {"@type": "ListItem", "position": 2, "name": leaf_name, "item": leaf_url}]},
+        ensure_ascii=False)
+
+CLUSTERS = {
+    "healthcare": {"emoji": "🩺", "label": "healthcare jobs",
+        "jobs": ["nurse","doctor","surgeon","pharmacist","radiologist","veterinarian","physical-therapist","psychologist","therapist","dietitian","optometrist","social-worker"],
+        "intro": "Healthcare splits sharply. Documentation, coding, scheduling and image triage face real AI pressure — but hands-on care, physical exams and live clinical judgment are among the hardest work for AI to touch. Here's how common healthcare roles rank by task exposure."},
+    "tech-and-software": {"emoji": "💻", "label": "tech & software jobs",
+        "jobs": ["junior-developer","senior-developer","frontend-developer","web-developer","data-scientist","ml-engineer","devops-engineer","cybersecurity-analyst","it-support","data-analyst","ux-designer","ui-designer","ux-researcher","product-manager","game-designer"],
+        "intro": "Software is being reshaped from the inside. Boilerplate, tests and simple fixes are increasingly AI-assisted, while architecture, debugging gnarly systems and product judgment hold their value. Here's how tech roles rank by task exposure."},
+    "finance-and-accounting": {"emoji": "💰", "label": "finance & accounting jobs",
+        "jobs": ["accountant","bookkeeper","tax-preparer","financial-analyst","financial-advisor","actuary","auditor","investment-banker","stockbroker","loan-officer","claims-adjuster","insurance-agent"],
+        "intro": "Finance runs on structured, rule-based work — exactly what AI does well. Data entry, reconciliation, tax prep and first-pass analysis are highly exposed; relationship, fiduciary and edge-case judgment less so. Here's the ranking."},
+    "creative-and-media": {"emoji": "🎨", "label": "creative & media jobs",
+        "jobs": ["graphic-designer","video-editor","photographer","copywriter","content-writer","journalist","editor","animator","musician","actor","makeup-artist","interior-designer","fashion-designer","social-media-manager","digital-marketer","marketer","seo-specialist"],
+        "intro": "Creative work is being unbundled. Production tasks — first drafts, cutdowns, stock-style output — face heavy AI pressure, while taste, original concept and client trust stay human. Here's how media roles rank."},
+    "business-and-admin": {"emoji": "📊", "label": "business & admin jobs",
+        "jobs": ["project-manager","business-analyst","consultant","management-consultant","hr-manager","recruiter","office-manager","executive-assistant","administrative-assistant","sales-rep","real-estate-agent","lawyer","paralegal"],
+        "intro": "Business, admin and professional-services roles carry a lot of coordinable, document-heavy work that AI accelerates — scheduling, reporting, first-pass drafting and analysis — while stakeholder judgment and accountability stay human. Here's the ranking."},
+    "office-and-support": {"emoji": "🗂️", "label": "office & support jobs",
+        "jobs": ["data-entry-clerk","cashier","receptionist","customer-service-representative","call-center-agent","proofreader","transcriptionist","translator","travel-agent"],
+        "intro": "Office and support roles sit at the sharp end of AI exposure: much of the work is repeatable, well-specified and text-based — exactly what current AI does best. Here's how these roles rank, most exposed first."},
+    "skilled-trades": {"emoji": "🔧", "label": "skilled trade jobs",
+        "jobs": ["electrician","plumber","carpenter","welder","mechanic"],
+        "intro": "Skilled trades are among the most AI-resilient work there is. Physical, on-site, judgment-in-the-moment tasks resist automation — though estimating and scheduling see some pressure. Here's how the trades rank."},
+    "education": {"emoji": "📚", "label": "education jobs",
+        "jobs": ["teacher","professor","tutor","librarian"],
+        "intro": "Teaching's routine layers — lesson drafts, grading, content — are increasingly AI-assisted, but the human core (motivation, classroom management, mentoring) is hard to automate. Here's how education roles rank."},
+    "transportation-and-safety": {"emoji": "🚚", "label": "transportation & safety jobs",
+        "jobs": ["truck-driver","delivery-driver","pilot","flight-attendant","police-officer","firefighter","security-guard"],
+        "intro": "Transportation and safety work is largely physical and situational — hard for today's AI, though routing and monitoring see some pressure. Here's how these roles rank by task exposure."},
+    "engineering": {"emoji": "📐", "label": "engineering jobs",
+        "jobs": ["architect","civil-engineer","mechanical-engineer","electrical-engineer"],
+        "intro": "Engineering blends automatable analysis with irreducible judgment. Drafting, calculations and first-pass design see AI pressure; accountability, site reality and novel problems don't. Here's the ranking."},
+    "food-and-hospitality": {"emoji": "🍳", "label": "food & hospitality jobs",
+        "jobs": ["chef","bartender","barista","baker"],
+        "intro": "Food and hospitality is hands-on, physical and social — among the most AI-resilient work. Here's how these roles rank by task exposure."},
+}
+
+def cluster_page(slug):
+    cfg = CLUSTERS[slug]
+    label = cfg["label"]; label_t = label[0].upper() + label[1:]
+    ranked = sorted(((k, JOBS[k]["name"], JOBS[k]["base"]) for k in cfg["jobs"] if k in JOBS),
+                    key=lambda x: -x[2])
+    url = f"{BASE_URL}/ai-{slug}-jobs.html"
+    title = f"Will AI Replace {label.title()}? (2026) — {len(ranked)} Roles Ranked"
+    desc = f"Will AI replace {label}? {len(ranked)} common {label} ranked by task-level AI exposure, most exposed first. Honest method, free 1-minute test."
+    rows, items = "", []
+    for i, (k, name, score) in enumerate(ranked, 1):
+        _, _, _, bhex = band(score)
+        rows += (f'<a class="lrow" href="will-ai-replace-{k}.html"><span class="lrk">{i}</span>'
+                 f'<span class="lem">{JOBS[k].get("emoji","🧭")}</span><span class="lnm">{esc(name)}</span>'
+                 f'<span class="lbar"><span class="lbf" style="width:{score}%;background:{bhex}"></span></span>'
+                 f'<span class="lv" style="color:{bhex}">{score}</span></a>\n')
+        items.append({"@type": "ListItem", "position": i, "name": name, "url": f"{BASE_URL}/will-ai-replace-{k}.html"})
+    schema = {"@context": "https://schema.org", "@type": "ItemList", "name": title,
+              "numberOfItems": len(items), "itemListElement": items}
+    share_text = f"Will AI replace {label}? {len(ranked)} roles ranked by task exposure on WorkRadar."
+    x_url = "https://twitter.com/intent/tweet?text=" + up.quote(share_text) + "&url=" + up.quote(url)
+    li_url = "https://www.linkedin.com/sharing/share-offsite/?url=" + up.quote(url)
+    other = "".join(f'<a class="chip" href="ai-{s}-jobs.html">{CLUSTERS[s]["emoji"]} {esc(CLUSTERS[s]["label"])}</a>'
+                    for s in CLUSTERS if s != slug)
+    return f"""<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{esc(title)} — WorkRadar</title>
+<meta name="description" content="{esc(desc)}">
+<link rel="canonical" href="{url}">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<meta property="og:type" content="article"><meta property="og:site_name" content="WorkRadar">
+<meta property="og:title" content="{esc(title)}"><meta property="og:description" content="{esc(desc)}">
+<meta property="og:url" content="{url}"><meta property="og:image" content="{BASE_URL}/og.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="{esc(title)}"><meta name="twitter:image" content="{BASE_URL}/og.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='88'%3E%F0%9F%93%A1%3C/text%3E%3C/svg%3E">
+<script type="application/ld+json">{json.dumps(schema, ensure_ascii=False)}</script>
+<script type="application/ld+json">{breadcrumb_ld("Will AI replace " + label + "?", url)}</script>
+<style>
+:root{{--bg-base:#09090b;--bg-surface:#18181b;--bg-elevate:#27272a;--text-primary:#fafafa;--text-secondary:#a1a1aa;--text-tertiary:#8b8b94;--color-clear:#3b82f6;--color-pcloudy:#8b5cf6;--color-cloudy:#f59e0b;--color-typhoon:#e11d48;}}
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:#000;color:var(--text-primary);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Roboto,Helvetica,Arial,sans-serif;display:flex;justify-content:center;line-height:1.6;}}
+.wrap{{width:100%;max-width:640px;background:var(--bg-base);min-height:100vh;padding:28px 20px 56px;}}
+.crumb{{font-size:12px;color:var(--text-tertiary);margin-bottom:18px;}}
+.crumb a{{color:var(--text-secondary);text-decoration:none;}}
+h1{{font-size:28px;font-weight:800;letter-spacing:-.6px;line-height:1.2;margin-bottom:14px;}}
+.lead{{font-size:16px;color:var(--text-secondary);margin-bottom:24px;}}
+.lrow{{display:flex;align-items:center;gap:11px;padding:11px 13px;border-radius:12px;background:#131316;border:1px solid #1f1f23;margin-bottom:7px;text-decoration:none;color:var(--text-primary);}}
+.lrow:hover{{border-color:var(--color-cloudy);}}
+.lrk{{width:26px;font-size:13px;font-weight:800;color:var(--text-tertiary);text-align:center;flex-shrink:0;}}
+.lem{{font-size:21px;flex-shrink:0;}}
+.lnm{{flex:1;font-size:14.5px;font-weight:600;letter-spacing:-.2px;}}
+.lbar{{width:72px;height:7px;background:var(--bg-elevate);border-radius:4px;overflow:hidden;flex-shrink:0;}}
+.lbf{{display:block;height:100%;border-radius:4px;}}
+.lv{{width:26px;text-align:right;font-size:13px;font-weight:800;flex-shrink:0;}}
+h2{{font-size:19px;font-weight:700;letter-spacing:-.4px;margin:32px 0 14px;}}
+.cta{{background:linear-gradient(145deg,rgba(245,158,11,.08),rgba(225,29,72,.03));border:1px solid rgba(245,158,11,.2);border-radius:20px;padding:26px 22px;text-align:center;margin:30px 0;}}
+.cta-btn{{display:inline-block;background:var(--text-primary);color:#000;padding:15px 30px;border-radius:30px;font-size:16px;font-weight:800;text-decoration:none;margin-top:6px;}}
+.chips{{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px;}}
+.chip{{font-size:13px;font-weight:600;color:var(--text-secondary);background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:20px;padding:7px 13px;text-decoration:none;letter-spacing:-.2px;}}
+.chip:hover{{border-color:var(--color-cloudy);color:var(--text-primary);}}
+.share-bar{{display:flex;align-items:center;gap:8px;margin:22px 0 4px;flex-wrap:wrap;}}
+.share-lbl{{font-size:13px;color:var(--text-tertiary);}}
+.sbtn{{display:inline-flex;align-items:center;justify-content:center;min-width:40px;height:36px;padding:0 14px;background:var(--bg-surface);border:1px solid var(--bg-elevate);border-radius:10px;color:var(--text-primary);font-size:14px;font-weight:700;text-decoration:none;cursor:pointer;font-family:inherit;}}
+.sbtn:hover{{border-color:var(--color-cloudy);}}
+.foot{{font-size:12px;color:var(--text-tertiary);line-height:1.7;margin-top:32px;border-top:1px solid var(--bg-elevate);padding-top:18px;}}
+.foot b{{color:var(--text-secondary);}} .foot a{{color:var(--text-secondary);}}
+</style></head><body><div class="wrap">
+<nav class="crumb"><a href="index.html">WorkRadar</a> › Will AI replace {esc(label)}?</nav>
+<h1>{cfg['emoji']} Will AI replace {esc(label)}?</h1>
+<p class="lead">{cfg['intro']}</p>
+<div class="list">{rows}</div>
+<p style="font-size:12.5px;color:var(--text-tertiary);margin-top:10px;">Score = task-level AI-pressure (0–100), most exposed first. Directional estimates, not measured probabilities. Tap any role for its task breakdown.</p>
+<div class="cta"><h2 style="margin-top:0">Where does <em>your</em> job land?</h2>
+<p class="lead" style="margin-bottom:8px;">The free 1-minute test scores <b>your</b> exact task mix — with sources.</p>
+<a class="cta-btn" href="index.html">Take the free AI Risk test →</a></div>
+<h2>Compare across all jobs</h2>
+<div class="chips"><a class="chip" href="most-at-risk-jobs-from-ai.html">🌪️ Most at risk</a><a class="chip" href="safest-jobs-from-ai.html">🛡️ Safest</a><a class="chip" href="methodology.html">📋 Method</a></div>
+<h2>Other industries</h2>
+<div class="chips">{other}</div>
+<div class="share-bar"><span class="share-lbl">Share:</span>
+<a class="sbtn" href="{x_url}" target="_blank" rel="noopener" aria-label="Share on X">𝕏</a>
+<a class="sbtn" href="{li_url}" target="_blank" rel="noopener" aria-label="Share on LinkedIn">in</a>
+<button class="sbtn" type="button" onclick="wrCopy(this)">Copy link</button></div>
+<p class="foot">※ <b>WorkRadar AI-pressure</b> is a directional reference indicator built from public AI news and task analysis with a fixed, published method — <b>not a prediction</b>, and not a verdict on any person. Scores are hand-estimated (uncalibrated). See the <a href="methodology.html">method</a>, <a href="privacy.html">privacy</a> &amp; <a href="terms.html">terms</a>.</p>
+</div>
+<script>
+function wrCopy(b){{var u=location.href;if(navigator.clipboard){{navigator.clipboard.writeText(u).then(function(){{b.textContent='Copied!';setTimeout(function(){{b.textContent='Copy link';}},1500);}});}}else{{window.prompt('Copy link',u);}}}}
+</script>
+<script data-goatcounter="https://workradar.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body></html>"""
+
 def build_hub_footer():
     links = "".join(
         f'<a href="will-ai-replace-{k}.html">Will AI replace {esc(plural(JOBS[k]["name"]).lower())}?</a>'
         for k in CURATED if k in JOBS)
+    clusters = "".join(
+        f'<a href="ai-{s}-jobs.html">{CLUSTERS[s]["emoji"]} {esc(CLUSTERS[s]["label"][0].upper() + CLUSTERS[s]["label"][1:])}</a>'
+        for s in CLUSTERS)
     return ('<footer class="seo-hub"><h2>Will AI replace your job? Browse by role</h2>'
             '<p class="seo-top"><a href="most-at-risk-jobs-from-ai.html">🌪️ Jobs most at risk from AI</a>'
             '<a href="safest-jobs-from-ai.html">🛡️ Safest jobs from AI</a></p>'
+            f'<nav class="seo-top">{clusters}</nav>'
             f'<nav class="seo-links">{links}</nav>'
             '<p class="seo-fine">Directional AI-exposure references built from public AI news with a fixed, '
             'published method — <b>not predictions</b>. <a href="methodology.html">Method</a> · '
@@ -345,6 +486,11 @@ def main():
         open(os.path.join(WEB, f"{slug}.html"), "w").write(listicle(slug))
     print(f"Generated {len(LISTICLES)} listicles.")
 
+    # industry cluster hubs ("will AI replace <industry> jobs?" + internal-link pillars)
+    for slug in CLUSTERS:
+        open(os.path.join(WEB, f"ai-{slug}-jobs.html"), "w").write(cluster_page(slug))
+    print(f"Generated {len(CLUSTERS)} industry cluster hubs.")
+
     # rewrite sitemap.xml
     core = [
         ("", "1.0", "weekly"), ("methodology.html", "0.7", "monthly"),
@@ -354,16 +500,17 @@ def main():
         ("terms.html", "0.3", "yearly"),
     ]
     listicle_urls = [(f"{s}.html", "0.9", "weekly") for s in LISTICLES]
+    cluster_urls = [(f"ai-{s}-jobs.html", "0.8", "weekly") for s in CLUSTERS]
     lastmod = "2026-07-07"
     lines = ['<?xml version="1.0" encoding="UTF-8"?>',
              '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">']
-    for path, pri, freq in core + listicle_urls:
+    for path, pri, freq in core + listicle_urls + cluster_urls:
         lines.append(f'  <url><loc>{BASE_URL}/{path}</loc><lastmod>{lastmod}</lastmod><changefreq>{freq}</changefreq><priority>{pri}</priority></url>')
     for key in made:
         lines.append(f'  <url><loc>{BASE_URL}/will-ai-replace-{key}.html</loc><lastmod>{lastmod}</lastmod><changefreq>monthly</changefreq><priority>0.7</priority></url>')
     lines.append('</urlset>')
     open(os.path.join(WEB, "sitemap.xml"), "w").write("\n".join(lines) + "\n")
-    print("Sitemap rewritten with", len(core) + len(listicle_urls) + len(made), "urls.")
+    print("Sitemap rewritten with", len(core) + len(listicle_urls) + len(cluster_urls) + len(made), "urls.")
 
     # robots.txt (best-effort; subpath sites: also submit sitemap in Search Console)
     open(os.path.join(WEB, "robots.txt"), "w").write(
