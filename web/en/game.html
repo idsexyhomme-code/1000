@@ -122,7 +122,7 @@ function gameOver(){
  else if(streak>=8){t.textContent='Sharp eye!';e.textContent='🎯';}
  else if(streak>=3){t.textContent='Not bad!';e.textContent='🔥';}
  else{t.textContent='Ouch.';e.textContent='💀';}
- document.getElementById('subBox').style.display='block';
+ document.getElementById('subBox').style.display=API_BASE?'block':'none';  // 오프라인이면 'Claim my rank' 막다른UI 숨김(공유·재시도는 유지)
  document.getElementById('rankBox').style.display='none';
  document.getElementById('lbName').value=localStorage.getItem('wr_name')||'';
  document.getElementById('over').classList.add('show');

@@ -567,6 +567,17 @@ def test_web_invite_link_points_to_live_app():
     assert "github.io/1000/web/en/?ref=" in s, "초대링크(/1000/web/en/?ref=)가 없음"
 
 
+def test_game_no_offline_claim_rank_deadend():
+    """재발방지(2026-07-08 QA): game.html 게임오버 시 'Claim my rank'(subBox)를
+    무조건 보이면 백엔드 오프라인(API_BASE='')일 때 막다른 UI가 된다.
+    게임오버의 subBox 노출은 API_BASE 조건부여야 한다."""
+    s = open(os.path.join(_ROOT, "web", "en", "game.html"), encoding="utf-8").read()
+    assert "getElementById('subBox').style.display='block'" not in s, \
+        "게임오버가 subBox를 무조건 표시 — API_BASE 조건부여야 함(오프라인 막다른길)"
+    assert "getElementById('subBox').style.display=API_BASE?" in s, \
+        "subBox 표시가 API_BASE 조건부가 아님"
+
+
 def test_jobs_emojis_are_not_text():
     """재발방지(2026-07-08 QA): jobs.json emoji 필드에 텍스트/빈값이 들어가면 퀴즈 그리드에 tofu(□)로 뜬다."""
     import json
