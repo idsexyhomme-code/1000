@@ -567,6 +567,34 @@ def test_web_invite_link_points_to_live_app():
     assert "github.io/1000/web/en/?ref=" in s, "초대링크(/1000/web/en/?ref=)가 없음"
 
 
+def test_mcp_core_engine():
+    """WorkRadar MCP 코어 엔진(AI가 호출하는 진단 로직) 가드:
+    - 알려진 직업 점수가 jobs.json base와 일치(웹과 동일 소스).
+    - alias/필러 매칭, 비교, 정직성(disclaimer 'not a prediction') 유지.
+    - 미지 직업은 matched=False로 안전 처리."""
+    import sys, importlib
+    mcp_dir = os.path.join(_ROOT, "mcp-server")
+    if not os.path.exists(os.path.join(mcp_dir, "workradar_core.py")):
+        return
+    sys.path.insert(0, mcp_dir)
+    wr = importlib.import_module("workradar_core")
+    try:
+        r = wr.assess("nurse")
+        assert r["matched"] and r["job"] == "Nurse", "nurse 매칭 실패"
+        assert r["ai_pressure"] == wr.JOBS["nurse"]["base"], "점수가 jobs.json base와 불일치"
+        assert "not a prediction" in r["disclaimer"], "정직성 disclaimer 누락"
+        assert r["full_report_url"].endswith("?job=nurse"), "딥링크 URL 형식 오류"
+        assert wr.match_job("i am a software developer") in wr.JOBS, "필러/alias 매칭 실패"
+        assert wr.match_job("cpa") == "accountant", "alias(cpa->accountant) 실패"
+        rp = wr.assess("nurse", tasks=["charting", "documentation", "bedside care"])
+        assert rp.get("scored_from") == "your selected tasks", "task 개인화 미작동"
+        cmp = wr.compare("data entry clerk", "surgeon")
+        assert cmp["more_exposed"] == "Data Entry Clerk", "비교 로직 오류"
+        assert wr.assess("wizard-that-does-not-exist")["matched"] is False, "미지 직업 안전처리 실패"
+    finally:
+        sys.path.remove(mcp_dir)
+
+
 def test_game_no_offline_claim_rank_deadend():
     """재발방지(2026-07-08 QA): game.html 게임오버 시 'Claim my rank'(subBox)를
     무조건 보이면 백엔드 오프라인(API_BASE='')일 때 막다른 UI가 된다.
