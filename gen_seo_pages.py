@@ -464,7 +464,8 @@ def build_hub_footer():
         for s in CLUSTERS)
     return ('<footer class="seo-hub"><h2>Will AI replace your job? Browse by role</h2>'
             '<p class="seo-top"><a href="most-at-risk-jobs-from-ai.html">🌪️ Jobs most at risk from AI</a>'
-            '<a href="safest-jobs-from-ai.html">🛡️ Safest jobs from AI</a></p>'
+            '<a href="safest-jobs-from-ai.html">🛡️ Safest jobs from AI</a>'
+            '<a href="compare.html">⚖️ Compare two jobs</a></p>'
             f'<nav class="seo-top">{clusters}</nav>'
             f'<nav class="seo-links">{links}</nav>'
             '<p class="seo-fine">Directional AI-exposure references built from public AI news with a fixed, '
@@ -496,6 +497,7 @@ def main():
     core = [
         ("", "1.0", "weekly"), ("intro.html", "0.9", "monthly"),
         ("for-ai.html", "0.6", "monthly"),
+        ("compare.html", "0.8", "weekly"),
         ("methodology.html", "0.7", "monthly"),
         ("ranked.html", "0.8", "weekly"),
         ("daily.html", "0.7", "daily"), ("game.html", "0.6", "weekly"),
