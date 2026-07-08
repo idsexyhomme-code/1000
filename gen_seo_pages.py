@@ -493,7 +493,8 @@ def main():
 
     # rewrite sitemap.xml
     core = [
-        ("", "1.0", "weekly"), ("methodology.html", "0.7", "monthly"),
+        ("", "1.0", "weekly"), ("intro.html", "0.9", "monthly"),
+        ("methodology.html", "0.7", "monthly"),
         ("ranked.html", "0.8", "weekly"),
         ("daily.html", "0.7", "daily"), ("game.html", "0.6", "weekly"),
         ("reels.html", "0.5", "weekly"), ("privacy.html", "0.3", "yearly"),
