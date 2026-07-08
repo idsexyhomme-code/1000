@@ -213,11 +213,14 @@ def compare(job_a, job_b):
         return {"matched": False, "message": "Could not match both jobs.",
                 "job_a": a and JOBS[a]["name"], "job_b": b and JOBS[b]["name"]}
     sa, sb = JOBS[a]["base"], JOBS[b]["base"]
-    more = JOBS[a]["name"] if sa >= sb else JOBS[b]["name"]
+    diff = abs(sa - sb)
+    more = None if (a == b or sa == sb) else (JOBS[a]["name"] if sa > sb else JOBS[b]["name"])
     return {"matched": True,
             "job_a": {"job": JOBS[a]["name"], "ai_pressure": sa},
             "job_b": {"job": JOBS[b]["name"], "ai_pressure": sb},
-            "more_exposed": more, "difference": abs(sa - sb),
+            "more_exposed": more, "difference": diff,
+            "verdict": ("About equal — same estimated AI-pressure." if more is None
+                        else "%s is more AI-exposed (by %d)." % (more, diff)),
             "disclaimer": DISCLAIMER}
 
 
