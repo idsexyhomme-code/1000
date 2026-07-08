@@ -469,6 +469,7 @@ def build_hub_footer():
             f'<nav class="seo-links">{links}</nav>'
             '<p class="seo-fine">Directional AI-exposure references built from public AI news with a fixed, '
             'published method — <b>not predictions</b>. <a href="methodology.html">Method</a> · '
+            '<a href="for-ai.html">For AI &amp; devs</a> · '
             '<a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></p></footer>')
 
 def main():
@@ -494,6 +495,7 @@ def main():
     # rewrite sitemap.xml
     core = [
         ("", "1.0", "weekly"), ("intro.html", "0.9", "monthly"),
+        ("for-ai.html", "0.6", "monthly"),
         ("methodology.html", "0.7", "monthly"),
         ("ranked.html", "0.8", "weekly"),
         ("daily.html", "0.7", "daily"), ("game.html", "0.6", "weekly"),
