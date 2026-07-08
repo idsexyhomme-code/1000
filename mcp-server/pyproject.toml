@@ -1,0 +1,41 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "workradar-mcp"
+version = "0.1.0"
+description = "MCP server that lets an AI assistant diagnose AI job-replacement risk — task by task, with sources, honestly."
+readme = "README.md"
+license = { file = "LICENSE" }
+requires-python = ">=3.8"
+authors = [{ name = "WorkRadar", email = "idsexyhomme@gmail.com" }]
+keywords = ["mcp", "model-context-protocol", "ai", "career", "job-automation",
+            "future-of-work", "ai-risk", "workradar"]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: End Users/Desktop",
+  "License :: OSI Approved :: MIT License",
+  "Programming Language :: Python :: 3",
+  "Topic :: Scientific/Engineering :: Artificial Intelligence",
+]
+dependencies = []  # zero required deps — built-in stdlib MCP transport
+
+[project.optional-dependencies]
+sdk = ["mcp>=1.2.0"]  # optional richer FastMCP path (needs Python 3.10+)
+
+[project.scripts]
+workradar-mcp = "workradar_mcp:main"
+
+[project.urls]
+Homepage = "https://idsexyhomme-code.github.io/1000/web/en/"
+Repository = "https://github.com/idsexyhomme-code/1000"
+
+[tool.hatch.build.targets.wheel]
+include = ["workradar_mcp.py", "workradar_core.py"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"jobs.json" = "jobs.json"
+
+[tool.hatch.build.targets.sdist]
+include = ["workradar_mcp.py", "workradar_core.py", "jobs.json", "README.md", "LICENSE"]

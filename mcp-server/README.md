@@ -39,13 +39,19 @@ Add to your MCP config (`claude_desktop_config.json` or `.mcp.json`):
 {
   "mcpServers": {
     "workradar": {
-      "command": "python",
+      "command": "python3",
       "args": ["/absolute/path/to/mcp-server/workradar_mcp.py"]
     }
   }
 }
 ```
 Then ask: *"Am I at risk from AI? I'm a nurse."* → the assistant calls `assess_ai_job_risk`.
+
+### Once published (see [PUBLISH.md](PUBLISH.md))
+```bash
+uvx workradar-mcp          # or: pipx run workradar-mcp
+```
+Config becomes `{"command": "uvx", "args": ["workradar-mcp"]}`.
 
 ## Example
 ```

@@ -1,0 +1,13 @@
+# Smithery deployment config — https://smithery.ai/docs
+# Local stdio server, zero config, no dependencies.
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties: {}
+    required: []
+  commandFunction: |
+    (config) => ({ command: 'python3', args: ['workradar_mcp.py'] })
+
+build:
+  dockerfile: Dockerfile
