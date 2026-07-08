@@ -70,8 +70,14 @@ ALIASES = {
     "data scientist": "data-scientist", "product designer": "ux-designer", "designer": "graphic-designer",
     "physician": "doctor", "md": "doctor", "attorney": "lawyer", "cpa": "accountant",
     "customer service": "customer-service-representative", "customer support": "customer-service-representative",
+    "customer support rep": "customer-service-representative", "customer service rep": "customer-service-representative",
+    "customer support representative": "customer-service-representative",
     "sales": "sales-rep", "salesperson": "sales-rep", "marketing": "marketer", "hr": "hr-manager",
     "teacher": "teacher", "professor": "professor", "driver": "truck-driver", "writer": "content-writer",
+    "front end engineer": "frontend-developer", "frontend engineer": "frontend-developer",
+    "front end developer": "frontend-developer", "graphic artist": "graphic-designer",
+    "copy writer": "copywriter", "construction worker": "carpenter", "construction laborer": "carpenter",
+    "ml engineer": "ml-engineer", "ai engineer": "ml-engineer", "devops": "devops-engineer",
 }
 
 
@@ -95,6 +101,11 @@ def match_job(query):
     for k, n in names.items():                       # exact name
         if n == q:
             return k
+    qd = q.replace(" ", "")                           # despaced (copy writer->copywriter, front end dev->frontenddeveloper)
+    if len(qd) >= 5:
+        for k, n in names.items():
+            if n.replace(" ", "") == qd:
+                return k
     cand = [(k, n) for k, n in names.items() if q in n or n in q]  # substring
     if cand:
         return min(cand, key=lambda kn: abs(len(kn[1]) - len(q)))[0]

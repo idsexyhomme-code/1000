@@ -586,6 +586,11 @@ def test_mcp_core_engine():
         assert r["full_report_url"].endswith("?job=nurse"), "딥링크 URL 형식 오류"
         assert wr.match_job("i am a software developer") in wr.JOBS, "필러/alias 매칭 실패"
         assert wr.match_job("cpa") == "accountant", "alias(cpa->accountant) 실패"
+        # 2026-07-08 매칭품질 개선분(재발방지): 실제 AI가 넘길 표현들
+        assert wr.match_job("front-end engineer") == "frontend-developer", "front-end engineer 오매칭"
+        assert wr.match_job("copy writer") == "copywriter", "copy writer despaced 매칭 실패"
+        assert wr.match_job("customer support rep") == "customer-service-representative", "customer support rep 오매칭"
+        assert wr.match_job("graphic artist") == "graphic-designer", "graphic artist 오매칭"
         rp = wr.assess("nurse", tasks=["charting", "documentation", "bedside care"])
         assert rp.get("scored_from") == "your selected tasks", "task 개인화 미작동"
         assert isinstance(r["next_move"].get("resources"), list), "next_move.resources(제휴 슬롯) 누락"
