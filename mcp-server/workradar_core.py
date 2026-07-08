@@ -5,7 +5,7 @@ honest AI-exposure diagnosis plus a "next move" route. Same data + honesty rules
 as the WorkRadar web app: scores are hand-estimated directional references
 (calibrated:false), never predictions.
 """
-import json, os, re
+import json, os, re, difflib
 
 _DIR = os.path.dirname(os.path.abspath(__file__))
 JOBS = json.load(open(os.path.join(_DIR, "jobs.json"), encoding="utf-8"))
@@ -224,10 +224,36 @@ def compare(job_a, job_b):
             "disclaimer": DISCLAIMER}
 
 
+# word -> job keys index (for fuzzy/typo-tolerant search fallback)
+_WORDS = {}
+for _k, _v in JOBS.items():
+    for _w in _norm(_v["name"]).split():
+        _WORDS.setdefault(_w, set()).add(_k)
+_WORDLIST = list(_WORDS)
+_POPULAR = ["nurse", "teacher", "accountant", "senior-developer", "graphic-designer",
+            "truck-driver", "lawyer", "data-analyst"]
+
+
+def _fmt(k):
+    return {"job": JOBS[k]["name"], "job_key": k, "ai_pressure": JOBS[k]["base"]}
+
+
 def search(query, limit=8):
     q = _norm(query)
-    hits = [(k, v["name"], v["base"]) for k, v in JOBS.items() if q in _norm(v["name"])]
-    if not q:
-        hits = [(k, v["name"], v["base"]) for k, v in JOBS.items()]
-    hits.sort(key=lambda x: len(x[1]))
-    return [{"job": n, "job_key": k, "ai_pressure": b} for k, n, b in hits[:limit]]
+    if not q:                                        # empty → short/common names
+        return [_fmt(k) for k in sorted(JOBS, key=lambda k: len(JOBS[k]["name"]))[:limit]]
+    subs = [k for k, v in JOBS.items() if q in _norm(v["name"])]  # 1. substring
+    if subs:
+        subs.sort(key=lambda k: len(JOBS[k]["name"]))
+        return [_fmt(k) for k in subs[:limit]]
+    score = {}                                       # 2. token + typo-tolerant (difflib) fallback
+    for qw in q.split():
+        cands = set(_WORDS.get(qw, ()))
+        for cw in difflib.get_close_matches(qw, _WORDLIST, n=6, cutoff=0.8):
+            cands |= _WORDS[cw]
+        for k in cands:
+            score[k] = score.get(k, 0) + 1
+    if score:
+        ranked = sorted(score, key=lambda k: (-score[k], len(JOBS[k]["name"])))
+        return [_fmt(k) for k in ranked[:limit]]
+    return [_fmt(k) for k in _POPULAR if k in JOBS][:limit]  # 3. popular fallback

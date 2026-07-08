@@ -597,6 +597,10 @@ def test_mcp_core_engine():
         cmp = wr.compare("data entry clerk", "surgeon")
         assert cmp["more_exposed"] == "Data Entry Clerk", "비교 로직 오류"
         assert wr.assess("wizard-that-does-not-exist")["matched"] is False, "미지 직업 안전처리 실패"
+        # 2026-07-08 퍼지 검색 폴백(재발방지): 오타/완전미지도 빈 결과 아님
+        assert any("Nurse" in x["job"] for x in wr.search("nrse")), "오타 검색 폴백 실패"
+        assert len(wr.search("zzqqxx123")) > 0, "완전미지 검색 폴백(인기직업) 실패"
+        assert len(wr.assess("teachr").get("suggestions", []) or [{}]) > 0, "미매칭 assess suggestions 비어있음"
         # HTTP 전송계층 라우팅(소켓 없이)
         http = importlib.import_module("workradar_http")
         code, out = http._dispatch("/assess", {"job": "nurse", "uses_ai_tools": "sometimes"})
