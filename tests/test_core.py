@@ -682,6 +682,23 @@ def test_seo_pages_present_and_wired():
         assert os.path.exists(os.path.join(web, href)), f"index 허브 고아링크: {href}"
 
 
+def test_pwa_installable():
+    """PWA 설치가능성 가드: manifest·service worker·아이콘·index 배선이 유효.
+    (앱으로 던지는 것 = 설치가능 웹앱)"""
+    import json
+    web = os.path.join(_ROOT, "web", "en")
+    m = json.load(open(os.path.join(web, "manifest.webmanifest"), encoding="utf-8"))
+    assert m.get("name") and m.get("start_url") and m.get("display") == "standalone", "manifest 필수필드 누락"
+    assert len(m.get("icons", [])) >= 2, "아이콘 부족"
+    for ic in m["icons"]:
+        assert os.path.exists(os.path.join(web, ic["src"])), f"아이콘 파일 없음: {ic['src']}"
+    assert any(i.get("purpose") == "maskable" for i in m["icons"]), "maskable 아이콘 없음"
+    assert os.path.exists(os.path.join(web, "sw.js")), "service worker 없음"
+    idx = open(os.path.join(web, "index.html"), encoding="utf-8").read()
+    assert 'rel="manifest"' in idx and "serviceWorker.register" in idx, "index PWA 배선 누락"
+    assert 'name="theme-color"' in idx and "apple-touch-icon" in idx, "theme-color/apple 아이콘 누락"
+
+
 def test_seo_listicles_data_driven_and_wired():
     """데이터 기반 리스티클('most at risk'/'safest') 가드:
     - 두 페이지 존재 + ItemList JSON-LD(항목 있음) + 캐노니컬.
