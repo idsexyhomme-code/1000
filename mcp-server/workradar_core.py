@@ -11,6 +11,20 @@ _DIR = os.path.dirname(os.path.abspath(__file__))
 JOBS = json.load(open(os.path.join(_DIR, "jobs.json"), encoding="utf-8"))
 FULL_TEST = "https://idsexyhomme-code.github.io/1000/web/en/"
 
+# Monetization/routing slots (the A-pipe). Edit resources.json to activate.
+try:
+    RESOURCES = json.load(open(os.path.join(_DIR, "resources.json"), encoding="utf-8"))
+except Exception:
+    RESOURCES = {"disclosure": "", "branches": {}}
+
+
+def _resources_for(branch):
+    """Active resource slots (enabled AND filled) for a branch — the routed next steps."""
+    active = [{"label": r["label"], "type": r.get("type"), "url": r["url"]}
+              for r in RESOURCES.get("branches", {}).get(branch, [])
+              if r.get("enabled") and r.get("url")]
+    return active, RESOURCES.get("disclosure", "")
+
 # AIOE anchors (Felten, Raj & Seamans 2021) — percentile only, mirrored from web.
 AIOE = {
     "accountant": (99.0, "high"), "bookkeeper": (76.6, "high"), "call-center-agent": (73.2, "medium"),
@@ -145,7 +159,11 @@ def assess(job, tasks=None, experience_years=None, uses_ai_tools=None):
 
     bname, blevel = band(score)
     branch = _suggest_branch(score)
-    nm = NEXT_MOVE[branch]
+    nm = dict(NEXT_MOVE[branch])
+    _res, _disc = _resources_for(branch)
+    nm["resources"] = _res                 # active affiliate/routed resources (empty until filled)
+    if _res and _disc:
+        nm["disclosure"] = _disc
 
     out = {
         "matched": True,

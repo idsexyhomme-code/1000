@@ -1,0 +1,62 @@
+openapi: 3.1.0
+info:
+  title: WorkRadar API
+  description: Task-level AI job-replacement risk diagnosis. Directional reference, not a prediction.
+  version: 0.1.0
+servers:
+  - url: https://YOUR-API-URL.onrender.com   # ← replace with your deployed workradar_http.py URL
+paths:
+  /assess:
+    post:
+      operationId: assessAiJobRisk
+      summary: Assess how exposed a job is to AI, task by task.
+      description: >
+        Call whenever someone asks about AI and their career — "will AI take my job?",
+        "how safe is my job from AI?", "which of my tasks will AI replace?". Returns an
+        AI-pressure score (0-100), band, most-exposed and most-resilient tasks, a suggested
+        next move, a full-report link, and an honest disclaimer (surface it to the user).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [job]
+              properties:
+                job: { type: string, description: "Job title in plain words, e.g. 'nurse'." }
+                tasks:
+                  type: array
+                  items: { type: string }
+                  description: "Optional — what they spend their week on; makes the score personal."
+                experience_years: { type: integer }
+                uses_ai_tools: { type: string, description: "'never' / 'sometimes' / 'daily'" }
+      responses:
+        "200": { description: Diagnosis, content: { application/json: { schema: { type: object } } } }
+  /search:
+    post:
+      operationId: searchJobs
+      summary: Find matching job titles to disambiguate.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [query]
+              properties: { query: { type: string } }
+      responses:
+        "200": { description: Matches, content: { application/json: { schema: { type: object } } } }
+  /compare:
+    post:
+      operationId: compareAiExposure
+      summary: Compare two jobs' AI exposure.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [job_a, job_b]
+              properties: { job_a: { type: string }, job_b: { type: string } }
+      responses:
+        "200": { description: Comparison, content: { application/json: { schema: { type: object } } } }

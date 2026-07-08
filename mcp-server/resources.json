@@ -1,0 +1,25 @@
+{
+  "_readme": "Monetization/routing config for the A-pipe. Fill 'url' and set 'enabled': true to activate a slot. Only enabled slots WITH a url are returned. Fit first — never recommend junk for commission; that kills WorkRadar's only moat (trust).",
+  "disclosure": "Some resource links may be affiliate links — WorkRadar may earn a commission at no cost to you. Recommendations are made on fit first.",
+  "branches": {
+    "defend": [
+      {"label": "AI tool for your most-exposed task", "type": "ai_tool", "url": "", "note": "affiliate/referral link to a relevant AI tool", "enabled": false},
+      {"label": "Short AI-augmented workflow course", "type": "course", "url": "", "note": "course affiliate link", "enabled": false}
+    ],
+    "pivot": [
+      {"label": "Reskill toward your field's resilient core", "type": "course", "url": "", "note": "course/path affiliate link", "enabled": false}
+    ],
+    "reskill": [
+      {"label": "Structured reskilling / bootcamp", "type": "bootcamp", "url": "", "note": "bootcamp affiliate link", "enabled": false},
+      {"label": "Free foundation resource", "type": "free_resource", "url": "", "note": "a reputable free resource (e.g. freeCodeCamp)", "enabled": false}
+    ],
+    "independent": [
+      {"label": "Freelance platform", "type": "platform", "url": "", "note": "referral link", "enabled": false},
+      {"label": "Personal-brand / portfolio tool", "type": "tool", "url": "", "note": "affiliate link", "enabled": false}
+    ],
+    "founder": [
+      {"label": "No-code / build tool", "type": "tool", "url": "", "note": "affiliate link", "enabled": false},
+      {"label": "Founder community", "type": "community", "url": "", "note": "link", "enabled": false}
+    ]
+  }
+}

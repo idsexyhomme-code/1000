@@ -588,9 +588,16 @@ def test_mcp_core_engine():
         assert wr.match_job("cpa") == "accountant", "alias(cpa->accountant) 실패"
         rp = wr.assess("nurse", tasks=["charting", "documentation", "bedside care"])
         assert rp.get("scored_from") == "your selected tasks", "task 개인화 미작동"
+        assert isinstance(r["next_move"].get("resources"), list), "next_move.resources(제휴 슬롯) 누락"
         cmp = wr.compare("data entry clerk", "surgeon")
         assert cmp["more_exposed"] == "Data Entry Clerk", "비교 로직 오류"
         assert wr.assess("wizard-that-does-not-exist")["matched"] is False, "미지 직업 안전처리 실패"
+        # HTTP 전송계층 라우팅(소켓 없이)
+        http = importlib.import_module("workradar_http")
+        code, out = http._dispatch("/assess", {"job": "nurse", "uses_ai_tools": "sometimes"})
+        assert code == 200 and out["job"] == "Nurse", "HTTP /assess 오류"
+        assert http._dispatch("/assess", {})[0] == 400, "HTTP 필수값 검증 실패"
+        assert http._dispatch("/compare", {"job_a": "cashier", "job_b": "surgeon"})[1]["more_exposed"] == "Cashier", "HTTP /compare 오류"
     finally:
         sys.path.remove(mcp_dir)
 
