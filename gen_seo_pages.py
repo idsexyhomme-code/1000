@@ -195,7 +195,7 @@ h2{{font-size:20px;font-weight:700;letter-spacing:-.4px;margin:34px 0 16px;}}
 <div class="cta"><h2>See the pressure on <em>your</em> exact tasks</h2>
 <p class="lead" style="margin-bottom:8px;">This page shows the role in general. The free 1-minute test scores <b>your</b> specific task mix — with linked sources.</p>
 <a class="cta-btn" href="index.html?job={key}">Take the free AI Risk test →</a></div>
-<p class="rankline">📊 Full ranking: <a href="most-at-risk-jobs-from-ai.html">jobs most at risk from AI</a> · <a href="safest-jobs-from-ai.html">safest jobs from AI</a> · <a href="methodology.html">how we score</a></p>
+<p class="rankline">📊 <a href="most-at-risk-jobs-from-ai.html">Jobs most at risk from AI</a> · <a href="safest-jobs-from-ai.html">safest jobs</a> · <a href="compare.html">compare two jobs</a> · <a href="methodology.html">how we score</a></p>
 {share_html}
 <h2>❓ {esc(name)} &amp; AI — FAQ</h2>
 {faq_html}<h2>Related: will AI replace…</h2>
