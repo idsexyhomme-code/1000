@@ -595,6 +595,29 @@ def test_mcp_core_engine():
         sys.path.remove(mcp_dir)
 
 
+def test_mcp_stdlib_server_protocol():
+    """무의존성 stdlib MCP 서버가 실제 JSON-RPC(stdio)로 응답하는지(회귀 가드):
+    initialize → tools/list → tools/call 이 올바른 JSON-RPC 결과를 낸다."""
+    import subprocess, json
+    srv = os.path.join(_ROOT, "mcp-server", "workradar_mcp.py")
+    if not os.path.exists(srv):
+        return
+    msgs = "\n".join([
+        json.dumps({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}),
+        json.dumps({"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}),
+        json.dumps({"jsonrpc": "2.0", "id": 3, "method": "tools/call",
+                    "params": {"name": "assess_ai_job_risk", "arguments": {"job": "nurse"}}}),
+    ]) + "\n"
+    out = subprocess.run([sys.executable, srv], input=msgs, capture_output=True,
+                         text=True, timeout=30).stdout
+    resp = {json.loads(ln)["id"]: json.loads(ln) for ln in out.splitlines() if ln.strip()}
+    assert resp[1]["result"]["serverInfo"]["name"] == "workradar", "initialize 실패"
+    assert {t["name"] for t in resp[2]["result"]["tools"]} == {
+        "assess_ai_job_risk", "search_jobs", "compare_ai_exposure"}, "tools/list 불일치"
+    payload = json.loads(resp[3]["result"]["content"][0]["text"])
+    assert payload["job"] == "Nurse" and "not a prediction" in payload["disclaimer"], "tools/call 결과 오류"
+
+
 def test_game_no_offline_claim_rank_deadend():
     """재발방지(2026-07-08 QA): game.html 게임오버 시 'Claim my rank'(subBox)를
     무조건 보이면 백엔드 오프라인(API_BASE='')일 때 막다른 UI가 된다.

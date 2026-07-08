@@ -18,13 +18,20 @@ and anchored to public AI-exposure research (AIOE, Felten/Raj/Seamans 2021) wher
 | `compare_ai_exposure(job_a, job_b)` | Which of two jobs is more AI-exposed |
 
 ## Install (local)
-Requires **Python 3.10+** (the `mcp` SDK needs it).
+**Zero dependencies.** Runs on any Python 3.8+ with no pip install:
 ```bash
-pip install -r requirements.txt
-python workradar_mcp.py    # runs over stdio
+python3 workradar_mcp.py    # runs over stdio (built-in minimal MCP server)
 ```
-The diagnosis engine (`workradar_core.py`) is pure stdlib and runs on 3.9+ — you can
-test it without the SDK: `python -c "import workradar_core as w; print(w.assess('nurse'))"`.
+If the official `mcp` SDK happens to be installed (Python 3.10+), it's used automatically;
+otherwise a built-in JSON-RPC-over-stdio server handles the protocol. Either way, same tools.
+
+Quick manual check (no client needed):
+```bash
+printf '%s\n' \
+ '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{}}' \
+ '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"assess_ai_job_risk","arguments":{"job":"nurse"}}}' \
+ | python3 workradar_mcp.py
+```
 
 ### Claude Desktop / Claude Code
 Add to your MCP config (`claude_desktop_config.json` or `.mcp.json`):
