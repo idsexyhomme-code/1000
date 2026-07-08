@@ -468,8 +468,8 @@ def build_hub_footer():
             f'<nav class="seo-top">{clusters}</nav>'
             f'<nav class="seo-links">{links}</nav>'
             '<p class="seo-fine">Directional AI-exposure references built from public AI news with a fixed, '
-            'published method — <b>not predictions</b>. <a href="methodology.html">Method</a> · '
-            '<a href="for-ai.html">For AI &amp; devs</a> · '
+            'published method — <b>not predictions</b>. <a href="intro.html">About</a> · '
+            '<a href="methodology.html">Method</a> · <a href="for-ai.html">For AI &amp; devs</a> · '
             '<a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></p></footer>')
 
 def main():
