@@ -452,6 +452,20 @@ function renderResult(){
  fhtml+='<div style="display:flex;justify-content:space-between;font-size:13px;padding:7px 0 0;margin-top:5px;border-top:1px solid #27272a"><b>Your AI pressure</b><b style="color:'+bd[1]+'">'+score+'</b></div>';
  var trh='';for(var i=0;i<tasks.length;i++){var v=tasks[i][1];var on=st.tasks.indexOf(i)>=0;var col=v>75?'linear-gradient(90deg,#9f1239,#fb7185)':v>50?'linear-gradient(90deg,#b45309,#f59e0b)':v>35?'linear-gradient(90deg,#5b21b6,#8b5cf6)':'linear-gradient(90deg,#1d4ed8,#3b82f6)';
    trh+='<div class="trow" style="'+(on?'':'opacity:.45')+'"><div class="tlbl">'+(on?'<b style=\"color:#fafafa\">▸ '+tasks[i][0]+'</b>':tasks[i][0])+'</div><div class="ttrack"><div class="tbar" data-w="'+v+'" style="background:'+col+'"></div></div><div class="tval">'+v+'</div></div>';}
+ /* 개인 맞춤 플랜 프롬프트 — 진단(직업+실제 task점수+방향)을 네 AI에 넣어 구체 플랜 생성 = 커넥터 */
+ var _tl='';for(var qi=0;qi<sel.length;qi++){_tl+='\n- '+sel[qi][0]+': '+sel[qi][1]+'/100';}
+ var _expL=(st.exp!==null)?['0-2 years','3-7 years','8+ years'][st.exp]:'unspecified';
+ var _aiL=(st.ai!==null)?['rarely/never','sometimes','daily'][st.ai]:'unspecified';
+ window._plan={prompt:
+   "I just took an AI job-risk assessment (WorkRadar). Turn it into a concrete, personalized plan.\n\n"
+  +"Job: "+j.name+"\nAI-exposure score: "+score+"/100 ("+bd[0]+") — a directional reference, not a prediction.\n"
+  +"My weekly tasks and their AI-exposure (0-100):"+_tl+"\n"
+  +"Most exposed: "+top+". My moat (most resilient): "+low+".\n"
+  +"Experience: "+_expL+". Current AI-tool use: "+_aiL+". Suggested path: "+br.name+".\n\n"
+  +"Give me:\n1) A blunt, honest 2-line reality check — no fear-mongering, no false comfort.\n"
+  +"2) A concrete 30-day plan (week by week) to become the person who DIRECTS AI in this job instead of being replaced, focused on my most-exposed task ("+top+").\n"
+  +"3) The exact AI tools or skills to learn THIS week for "+top+", and a 20-minute way to start today.\n"
+  +"4) How to double down on my moat ("+low+").\nBe specific to a "+j.name+", practical and doable. No generic advice."};
  var html=''
  +'<div class="hero">'
  +'<span class="badge-type">'+j.name+' · AI Risk Type</span>'
@@ -489,10 +503,12 @@ function renderResult(){
  +'<div class="move"><span class="ml">DO THIS WEEK · FREE</span><p>'+move+'</p></div>'
  +'<div class="move" style="margin-top:10px"><span class="ml">YOUR 3-STEP PLAN</span><div style="margin-top:8px">'+planhtml+'</div></div></div>'
  +'<div class="sec-t">What to do about each task</div>'+tact
- +'<a href="https://upsight-blue.vercel.app/?job='+encodeURIComponent(j.name)+'&tasks='+encodeURIComponent(sel.map(function(s){return s[0];}).join(','))+(st.exp!==null?'&exp='+encodeURIComponent(['0-2 yrs','3-7 yrs','8+ yrs'][st.exp]):'')+(st.ai!==null?'&ai='+encodeURIComponent(['never','sometimes','daily'][st.ai]):'')+'" target="_blank" rel="noopener" style="display:block;margin-top:16px;background:linear-gradient(135deg,#6366f1,#a855f7);border-radius:14px;padding:16px;text-decoration:none;text-align:center">'
- +'<div style="font-size:15px;font-weight:800;color:#fff">🔬 Go deeper — real AI analysis of YOUR job</div>'
- +'<div style="font-size:12px;color:rgba(255,255,255,.85);margin-top:5px;line-height:1.5">AI reads recent news about '+j.name+' and writes a grounded, personal read — what stays yours, what AI takes, your skills to build. Free.</div>'
- +'<div style="font-size:12px;color:#fff;font-weight:700;margin-top:8px">Open the deep consult →</div></a>'
+ +'<div class="sec-t">🚀 Your personal plan — free, in 10 seconds</div>'
+ +'<div style="background:linear-gradient(135deg,rgba(99,102,241,.12),rgba(168,85,247,.06));border:1px solid rgba(139,92,246,.3);border-radius:16px;padding:18px 16px;margin-top:2px">'
+ +'<p style="font-size:13.5px;color:#d4d4d8;line-height:1.55;margin-bottom:12px;text-align:left">Your exact results, packaged into a prompt. Drop it into your AI → a concrete, week-by-week plan to make yourself the one who <b>directs</b> AI in this job — personal to your '+j.name+' tasks. No signup.</p>'
+ +'<button class="cta" style="border:none;cursor:pointer;width:100%;background:linear-gradient(135deg,#6366f1,#a855f7);color:#fff" onclick="openPlan()">✨ Get my plan in ChatGPT →</button>'
+ +'<button class="cta" style="border:1px solid #3f3f46;background:#18181b;color:#fafafa;cursor:pointer;width:100%;margin-top:8px" onclick="copyPlanPrompt(this)">📋 Copy prompt (Claude / any AI)</button>'
+ +'</div>'
  +'<div class="sec-t">Services for your situation</div>'
  +'<p style="font-size:12px;color:#8b8b94;margin:-6px 4px 6px">Not one-size — these 3 match your '+br.name.replace("The ","")+' path. The free move above is yours now; these are the pilot.</p>'
  +svchtml
@@ -593,6 +609,10 @@ function checkRefProgress(){
   if(p)p.textContent=c+'/'+g+' friends joined';if(bar)bar.style.width=Math.min(100,Math.round(100*c/g))+'%';
   if(c>=g){var lk=document.getElementById('refLocked'),un=document.getElementById('refUnlocked');if(lk)lk.style.display='none';if(un)un.style.display='block';}
  }).catch(function(){});}
+function openPlan(){if(!window._plan)return;window.open('https://chatgpt.com/?q='+encodeURIComponent(window._plan.prompt),'_blank');}
+function copyPlanPrompt(b){if(!window._plan)return;var t=window._plan.prompt;
+ if(navigator.clipboard){navigator.clipboard.writeText(t).then(function(){var o=b.textContent;b.textContent='✓ Copied — paste into any AI';setTimeout(function(){b.textContent=o;},2000);});}
+ else{window.prompt('Copy this prompt into your AI',t);}}
 function wrShare(){var d={title:"WorkRadar",text:window._share.t,url:"https://idsexyhomme-code.github.io/1000/web/en/"};
  if(navigator.share){navigator.share(d).catch(function(){});}
  else if(navigator.clipboard){navigator.clipboard.writeText(d.text+" "+d.url);alert("Copied your share link!");}
