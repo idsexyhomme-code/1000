@@ -674,12 +674,14 @@ def test_seo_pages_present_and_wired():
     sm = open(os.path.join(web, "sitemap.xml"), encoding="utf-8").read()
     for slug in re.findall(r'will-ai-replace-([a-z-]+)\.html', sm):
         assert os.path.exists(os.path.join(web, f"will-ai-replace-{slug}.html")), f"sitemap 고아: {slug}"
-    # index 허브 ↔ 파일
+    # all-jobs 디렉토리 ↔ 파일 (홈은 깔끔하게, 100+ 링크는 여기로 이전 2026-07-09)
     idx = open(os.path.join(web, "index.html"), encoding="utf-8").read()
-    hub = set(re.findall(r'href="(will-ai-replace-[a-z-]+\.html)"', idx))
-    assert len(hub) >= 40, f"index 링크허브가 비었거나 부족: {len(hub)}"
+    assert 'href="all-jobs.html"' in idx, "홈에 all-jobs 링크 없음"
+    alljobs = open(os.path.join(web, "all-jobs.html"), encoding="utf-8").read()
+    hub = set(re.findall(r'href="(will-ai-replace-[a-z-]+\.html)"', alljobs))
+    assert len(hub) >= 40, f"all-jobs 디렉토리 링크 부족: {len(hub)}"
     for href in hub:
-        assert os.path.exists(os.path.join(web, href)), f"index 허브 고아링크: {href}"
+        assert os.path.exists(os.path.join(web, href)), f"all-jobs 고아링크: {href}"
 
 
 def test_pwa_installable():

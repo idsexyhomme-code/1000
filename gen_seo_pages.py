@@ -455,23 +455,83 @@ function wrCopy(b){{var u=location.href;if(navigator.clipboard){{navigator.clipb
 <script data-goatcounter="https://workradar.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body></html>"""
 
-def build_hub_footer():
-    links = "".join(
-        f'<a href="will-ai-replace-{k}.html">Will AI replace {esc(plural(JOBS[k]["name"]).lower())}?</a>'
-        for k in CURATED if k in JOBS)
-    clusters = "".join(
+def _cluster_links():
+    return "".join(
         f'<a href="ai-{s}-jobs.html">{CLUSTERS[s]["emoji"]} {esc(CLUSTERS[s]["label"][0].upper() + CLUSTERS[s]["label"][1:])}</a>'
         for s in CLUSTERS)
-    return ('<footer class="seo-hub"><h2>Will AI replace your job? Browse by role</h2>'
-            '<p class="seo-top"><a href="most-at-risk-jobs-from-ai.html">🌪️ Jobs most at risk from AI</a>'
-            '<a href="safest-jobs-from-ai.html">🛡️ Safest jobs from AI</a>'
+
+
+def build_hub_footer():
+    """Clean homepage footer — high-value links only; the full 100+ list lives on all-jobs.html
+    (crawlers still discover every job via sitemap.xml + all-jobs.html)."""
+    return ('<footer class="seo-hub"><h2>Will AI replace your job?</h2>'
+            '<p class="seo-top"><a href="most-at-risk-jobs-from-ai.html">🌪️ Most at risk</a>'
+            '<a href="safest-jobs-from-ai.html">🛡️ Safest jobs</a>'
             '<a href="compare.html">⚖️ Compare two jobs</a></p>'
-            f'<nav class="seo-top">{clusters}</nav>'
-            f'<nav class="seo-links">{links}</nav>'
+            f'<nav class="seo-top">{_cluster_links()}</nav>'
+            '<p class="seo-browse"><a href="all-jobs.html">Browse all 100+ roles →</a></p>'
             '<p class="seo-fine">Directional AI-exposure references built from public AI news with a fixed, '
             'published method — <b>not predictions</b>. <a href="intro.html">About</a> · '
             '<a href="methodology.html">Method</a> · <a href="for-ai.html">For AI &amp; devs</a> · '
             '<a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></p></footer>')
+
+
+def build_all_jobs_page():
+    """Dedicated directory page — the full 100+ role list (moved off the homepage)."""
+    url = f"{BASE_URL}/all-jobs.html"
+    jobs = "".join(
+        f'<a href="will-ai-replace-{k}.html">{esc(JOBS[k]["name"])}</a>'
+        for k in sorted(CURATED, key=lambda k: JOBS[k]["name"]) if k in JOBS)
+    bc = json.dumps({"@context": "https://schema.org", "@type": "BreadcrumbList", "itemListElement": [
+        {"@type": "ListItem", "position": 1, "name": "WorkRadar", "item": f"{BASE_URL}/"},
+        {"@type": "ListItem", "position": 2, "name": "All jobs", "item": url}]}, ensure_ascii=False)
+    return f"""<!doctype html><html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Will AI Replace Your Job? All 100+ Roles — WorkRadar</title>
+<meta name="description" content="Browse task-level AI job-risk for 100+ roles. Pick your job for a breakdown of which tasks AI is coming for — with sources, not hype.">
+<link rel="canonical" href="{url}">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<meta property="og:type" content="website"><meta property="og:site_name" content="WorkRadar">
+<meta property="og:title" content="Will AI replace your job? All 100+ roles">
+<meta property="og:description" content="Browse task-level AI job-risk for 100+ roles.">
+<meta property="og:url" content="{url}"><meta property="og:image" content="{BASE_URL}/og.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Will AI replace your job? All 100+ roles"><meta name="twitter:image" content="{BASE_URL}/og.png">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='88'%3E%F0%9F%93%A1%3C/text%3E%3C/svg%3E">
+<script type="application/ld+json">{bc}</script>
+<style>
+:root{{--bg:#09090b;--surf:#18181b;--elev:#27272a;--tx:#fafafa;--tx2:#a1a1aa;--tx3:#8b8b94;--amber:#f59e0b;}}
+*{{box-sizing:border-box;margin:0;padding:0;}}
+body{{background:#000;color:var(--tx);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",system-ui,Roboto,Helvetica,Arial,sans-serif;display:flex;justify-content:center;line-height:1.6;}}
+.wrap{{width:100%;max-width:680px;background:var(--bg);min-height:100vh;padding:30px 20px 56px;}}
+.crumb{{font-size:12px;color:var(--tx3);margin-bottom:16px;}}.crumb a{{color:var(--tx2);text-decoration:none;}}
+h1{{font-size:28px;font-weight:800;letter-spacing:-.6px;margin-bottom:12px;}}
+.lead{{font-size:16px;color:var(--tx2);margin-bottom:22px;}}
+h2{{font-size:16px;font-weight:700;color:var(--tx2);margin:26px 0 12px;letter-spacing:-.2px;}}
+.chips{{display:flex;flex-wrap:wrap;gap:8px;}}
+.chips a{{font-size:13.5px;font-weight:600;color:var(--tx);background:var(--surf);border:1px solid var(--elev);border-radius:12px;padding:9px 13px;text-decoration:none;letter-spacing:-.2px;}}
+.chips a:hover{{border-color:var(--amber);}}
+.jobs{{display:flex;flex-wrap:wrap;gap:8px;}}
+.jobs a{{font-size:13px;color:var(--tx2);background:var(--surf);border:1px solid var(--elev);border-radius:18px;padding:7px 13px;text-decoration:none;letter-spacing:-.2px;}}
+.jobs a:hover{{color:var(--tx);border-color:var(--amber);}}
+.cta{{display:block;text-align:center;background:linear-gradient(135deg,#f59e0b,#e11d48);color:#fff;padding:15px;border-radius:14px;font-size:16px;font-weight:800;text-decoration:none;margin:26px 0 8px;}}
+.foot{{font-size:12px;color:var(--tx3);line-height:1.7;margin-top:32px;border-top:1px solid var(--elev);padding-top:18px;}}.foot a{{color:var(--tx2);}}
+</style></head><body><div class="wrap">
+<nav class="crumb"><a href="index.html">WorkRadar</a> › All jobs</nav>
+<h1>Will AI replace your job?</h1>
+<p class="lead">Pick your role for a task-by-task AI-exposure breakdown — with sources, not hype. Or take the <a href="index.html" style="color:var(--amber)">free 1-minute test</a> for your exact task mix.</p>
+<h2>Rankings &amp; tools</h2>
+<div class="chips"><a href="most-at-risk-jobs-from-ai.html">🌪️ Most at risk</a><a href="safest-jobs-from-ai.html">🛡️ Safest jobs</a><a href="compare.html">⚖️ Compare two jobs</a><a href="methodology.html">📋 How we score</a></div>
+<h2>By industry</h2>
+<div class="chips">{_cluster_links()}</div>
+<h2>All roles (A–Z)</h2>
+<nav class="jobs">{jobs}</nav>
+<a class="cta" href="index.html">🎯 Take the free AI Risk test →</a>
+<p class="foot">※ WorkRadar is a directional reference indicator, not a prediction or a verdict on any person. See the <a href="methodology.html">method</a>, <a href="intro.html">about</a>, <a href="privacy.html">privacy</a> &amp; <a href="terms.html">terms</a>.</p>
+</div>
+<script data-goatcounter="https://workradar.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body></html>"""
 
 def main():
     made = []
@@ -493,10 +553,15 @@ def main():
         open(os.path.join(WEB, f"ai-{slug}-jobs.html"), "w").write(cluster_page(slug))
     print(f"Generated {len(CLUSTERS)} industry cluster hubs.")
 
+    # all-jobs directory (the full 100+ list, moved off the homepage for a clean footer)
+    open(os.path.join(WEB, "all-jobs.html"), "w").write(build_all_jobs_page())
+    print("Generated all-jobs.html directory.")
+
     # rewrite sitemap.xml
     core = [
         ("", "1.0", "weekly"), ("intro.html", "0.9", "monthly"),
         ("for-ai.html", "0.6", "monthly"),
+        ("all-jobs.html", "0.8", "weekly"),
         ("compare.html", "0.8", "weekly"),
         ("methodology.html", "0.7", "monthly"),
         ("ranked.html", "0.8", "weekly"),
