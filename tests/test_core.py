@@ -731,6 +731,8 @@ def test_redteam_core_engine():
             res = rn.run(rn.MockAdapter(), probes[:5])
             assert all("model_response" in r and "auto_prehint" in r and r["reviews"] == [] for r in res), \
                 "러너 출력 형식 오류(사람검수 대기 상태)"
+    finally:
+        sys.path.remove(rt_dir)
 
 
 def test_pwa_installable():
