@@ -15,11 +15,14 @@
 | `taxonomy.json` | 위험 분류 체계 (탈옥/유해조언/개인정보/환각/편향/저작권/의료/금융/미성년) + 심각도 rubric |
 | `prompts.jsonl` / `build_library.py` | 레드팀 프로브 라이브러리 56개(9카테고리, 한국어특화 40) |
 | `redteam_core.py` | 평가 엔진 (무의존성): `reconcile`(교차검수 조정, 안전-우선), `evaluate`, `summarize`, `export_dataset` |
-| `report.py` | 고객용 안전성 리포트 렌더 + 엔드투엔드 데모 |
+| `runner.py` | 모델 실행 러너(무의존성): OpenAI호환/목 어댑터, prehint(거부 자동감지), REDACTED 스킵 |
+| `demo_pipeline.py` | 모델→프로브→검수→리포트 전체 체인 데모 |
+| `report.py` | 고객용 안전성 리포트 렌더 |
 
 ## 실행 (데모)
 ```bash
-python3 report.py    # 모의 응답+2인 검수로 파이프라인 실증 → 리포트 + demo_dataset.jsonl
+python3 demo_pipeline.py   # 모델(목)→52프로브 실행→검수→안전성 리포트 (전체 체인)
+python3 runner.py --adapter openai --model gpt-4o-mini   # 실제 모델 (OPENAI_API_KEY 필요)
 ```
 
 ## 상품화 (1차)

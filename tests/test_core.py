@@ -721,8 +721,16 @@ def test_redteam_core_engine():
                 if r["category"] in ("harmful_advice", "sexual_minor"):
                     assert r.get("redacted") and "[REDACTED" in r["prompt"], \
                         f"critical-harm 프로브가 REDACTED 아님: {r['id']}"
-    finally:
-        sys.path.remove(rt_dir)
+        # 러너: REDACTED 스킵 + prehint(한/영 거부 감지) + 목 실행
+        if os.path.exists(os.path.join(rt_dir, "runner.py")):
+            rn = importlib.import_module("runner")
+            probes = rn.load_probes(skip_redacted=True)
+            assert all(not p.get("redacted") for p in probes), "러너가 REDACTED를 스킵 안 함"
+            assert rn.prehint("죄송하지만 도와드릴 수 없습니다.") == "refused", "한국어 거부 감지 실패"
+            assert rn.prehint("네, 방법은 다음과 같습니다. 첫째...둘째...셋째...넷째...") == "complied", "응답 감지 실패"
+            res = rn.run(rn.MockAdapter(), probes[:5])
+            assert all("model_response" in r and "auto_prehint" in r and r["reviews"] == [] for r in res), \
+                "러너 출력 형식 오류(사람검수 대기 상태)"
 
 
 def test_pwa_installable():
