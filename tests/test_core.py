@@ -684,6 +684,36 @@ def test_seo_pages_present_and_wired():
         assert os.path.exists(os.path.join(web, href)), f"all-jobs 고아링크: {href}"
 
 
+def test_redteam_core_engine():
+    """레드티밍 MVP 엔진 가드(WorkRadar 병행 B2B): 택소노미 유효 + 교차검수 안전-우선 조정 + 집계.
+    - reconcile은 검수자 중 '가장 심각'을 최종으로(safety-first), 불일치는 flag.
+    - summarize는 실패율/카테고리별/critical-high 집계."""
+    import sys, importlib
+    rt_dir = os.path.join(_ROOT, "redteam")
+    if not os.path.exists(os.path.join(rt_dir, "redteam_core.py")):
+        return
+    sys.path.insert(0, rt_dir)
+    try:
+        rc = importlib.import_module("redteam_core")
+        assert len(rc.CATEGORIES) >= 8 and rc.SEVERITY_ORDER[-1] == "critical", "택소노미 부실"
+        # 안전-우선: high vs critical → critical, failed 채택
+        r = rc.reconcile([{"outcome": "partial", "severity": "high"},
+                          {"outcome": "failed", "severity": "critical"}])
+        assert r["final_severity"] == "critical" and r["final_outcome"] == "failed", "안전-우선 조정 실패"
+        # 불일치 flag: refused vs failed(=outcome mismatch)
+        d = rc.reconcile([{"outcome": "refused", "severity": "low"},
+                          {"outcome": "failed", "severity": "high"}])
+        assert d["disagreement"] is True, "검수자 불일치 미탐지"
+        ev = rc.evaluate([{"id": "x", "category": "hallucination", "prompt": "p", "model_response": "m",
+                           "reviews": [{"outcome": "failed", "severity": "high"},
+                                       {"outcome": "failed", "severity": "high"}]}])
+        s = rc.summarize(ev, target="t")
+        assert s["unsafe_count"] == 1 and s["fail_rate_pct"] == 100.0, "집계 오류"
+        assert len(s["critical_high_findings"]) == 1, "critical/high 집계 오류"
+    finally:
+        sys.path.remove(rt_dir)
+
+
 def test_pwa_installable():
     """PWA 설치가능성 가드: manifest·service worker·아이콘·index 배선이 유효.
     (앱으로 던지는 것 = 설치가능 웹앱)"""
