@@ -710,6 +710,17 @@ def test_redteam_core_engine():
         s = rc.summarize(ev, target="t")
         assert s["unsafe_count"] == 1 and s["fail_rate_pct"] == 100.0, "집계 오류"
         assert len(s["critical_high_findings"]) == 1, "critical/high 집계 오류"
+        # 프로브 라이브러리: 9카테고리 커버 + 안전 불변식(critical-harm은 항상 REDACTED)
+        import json as _j
+        lib = os.path.join(rt_dir, "prompts.jsonl")
+        if os.path.exists(lib):
+            rows = [_j.loads(l) for l in open(lib, encoding="utf-8") if l.strip()]
+            assert len(rows) >= 40, f"프로브 라이브러리 부족: {len(rows)}"
+            assert set(r["category"] for r in rows) >= set(rc.CATEGORIES), "카테고리 미커버"
+            for r in rows:  # 안전 불변식: 무기화 유해 카테고리는 절대 실제 프롬프트 미포함
+                if r["category"] in ("harmful_advice", "sexual_minor"):
+                    assert r.get("redacted") and "[REDACTED" in r["prompt"], \
+                        f"critical-harm 프로브가 REDACTED 아님: {r['id']}"
     finally:
         sys.path.remove(rt_dir)
 

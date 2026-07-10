@@ -6,14 +6,14 @@
 ## 왜 이 구조인가 (어젯밤 'so what' 교훈)
 플랫폼(업로드/대시보드/CRUD)은 쉬운 20%. **진짜 해자 = 아래 3개:**
 1. **위험 택소노미** (`taxonomy.json`) — 한국어 특화 9개 카테고리 + 심각도 4단계 + outcome 정의.
-2. **레드팀 프롬프트 라이브러리** (`prompts_seed.jsonl`) — 모델이 제대로 거부하는지 검증하는 프로브. (critical 유해 프롬프트는 미포함 — 고객사 인증 하 보안팀이 작성.)
+2. **레드팀 프롬프트 라이브러리** (`prompts.jsonl`, 56개) — 모델이 제대로 거부하는지 검증하는 한국어 특화 프로브. (critical 유해 프롬프트는 REDACTED — 고객사 인증 하 보안팀이 작성.)
 3. **평가 방법론** (`redteam_core.py`) — 2인 이상 교차검수 + 안전-우선 조정 + 집계.
 
 ## 파일
 | 파일 | 역할 |
 |---|---|
 | `taxonomy.json` | 위험 분류 체계 (탈옥/유해조언/개인정보/환각/편향/저작권/의료/금융/미성년) + 심각도 rubric |
-| `prompts_seed.jsonl` | 시드 레드팀 프로브 (안전-테스트 수준) |
+| `prompts.jsonl` / `build_library.py` | 레드팀 프로브 라이브러리 56개(9카테고리, 한국어특화 40) |
 | `redteam_core.py` | 평가 엔진 (무의존성): `reconcile`(교차검수 조정, 안전-우선), `evaluate`, `summarize`, `export_dataset` |
 | `report.py` | 고객용 안전성 리포트 렌더 + 엔드투엔드 데모 |
 
