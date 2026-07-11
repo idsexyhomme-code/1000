@@ -335,11 +335,13 @@ var API_BASE="";  // 백엔드 배포 시 실주소 설정. 빈 값=측정/구�
 function refCode(){var c=localStorage.getItem('wr_ref');if(!c){c=(Math.random().toString(36).replace(/[^a-z0-9]/g,'')+'00000').slice(0,6);localStorage.setItem('wr_ref',c);}return c;}
 var REFERRED_BY=(new URLSearchParams(location.search).get('ref')||'').replace(/[^a-zA-Z0-9]/g,'').slice(0,12);
 function postRefer(ev){if(API_BASE&&REFERRED_BY){try{fetch(API_BASE+'/api/refer',{method:'POST',headers:{'Content-Type':'application/json','ngrok-skip-browser-warning':'1'},body:JSON.stringify({code:REFERRED_BY,event:ev})}).catch(function(){});}catch(e){}}}
+/* 퍼널 측정 — GoatCounter 이벤트(백엔드 불필요). test-complete = 실사용자 카운트. */
+function wrEv(n){try{if(window.goatcounter&&window.goatcounter.count){window.goatcounter.count({path:n,title:n,event:true});}}catch(e){}}
 
 /* ---------- NAV ---------- */
 function show(id){document.querySelectorAll('.screen').forEach(function(s){s.classList.remove('active');});
  var el=document.getElementById(id);el.classList.add('active');window.scrollTo(0,0);}
-function start(){show('s-job');}
+function start(){wrEv('test-start');show('s-job');}
 
 /* build job grid (jobs.json 로드 후, 검색 필터 지원) */
 function buildJobGrid(filter){var g=document.getElementById('jobGrid');if(!g)return;var h='',f=(filter||'').toLowerCase();
@@ -546,6 +548,7 @@ function renderResult(){
  +'<p class="foot">※ WorkRadar is a <b>directional reference indicator</b> from public AI news using a fixed method — not a prediction, not a verdict on any person or company. <b>Preview:</b> figures illustrate the method; the full product scores your exact tasks live with linked sources.</p>'
  +'<p class="foot" style="margin-top:8px"><a href="privacy.html" target="_blank" rel="noopener" style="color:#71717a">Privacy</a> · <a href="terms.html" target="_blank" rel="noopener" style="color:#71717a">Terms</a></p>';
  var r=document.getElementById('s-result');r.innerHTML=html;show('s-result');
+ wrEv('test-complete');  // ← 실사용자 카운트(퍼널 핵심 지표)
  if(API_BASE){try{fetch(API_BASE+'/api/quiz',{method:'POST',headers:{'Content-Type':'application/json','ngrok-skip-browser-warning':'1'},body:JSON.stringify({job:st.job,tasks:st.tasks,exp:st.exp,ai:st.ai,feel:st.feel,inst:st.inst})}).catch(function(){});}catch(e){}}
  postRefer('signup');checkRefProgress();
  window._share={t:"[The "+br.name.replace("The ","")+" "+br.em+"] "+br.line+"\nI'm a "+j.name+" — AI pressure "+score+" ("+bd[0]+"), more exposed than "+pct+"% of jobs. What's your AI Risk Type?"};
@@ -568,7 +571,7 @@ function subscribe(){
  if(!document.getElementById('subConsent').checked){alert("Please check the box to continue.");return;}
  var payload={email:em,job:st.job,branch:decideBranch(),consent:true,hp_url:""};
  var fb="mailto:idsexyhomme@gmail.com?subject=WorkRadar%20weekly%20signup&body="+encodeURIComponent(em+" / "+st.job+" / "+decideBranch());
- function done(viaMail){var dn=document.getElementById('subDone');dn.textContent=viaMail?"✓ Almost there — send the email draft we just opened to confirm your signup.":"✓ You're in. First signal lands within a week.";document.getElementById('subBox').style.display='none';dn.style.display='block';}
+ function done(viaMail){wrEv('email-signup');var dn=document.getElementById('subDone');dn.textContent=viaMail?"✓ Almost there — send the email draft we just opened to confirm your signup.":"✓ You're in. First signal lands within a week.";document.getElementById('subBox').style.display='none';dn.style.display='block';}
  if(API_BASE){fetch(API_BASE+'/api/subscribe',{method:'POST',headers:{'Content-Type':'application/json','ngrok-skip-browser-warning':'1'},body:JSON.stringify(payload)})
    .then(function(r){if(!r.ok)throw 0;done(false);}).catch(function(){window.location.href=fb;done(true);});}
  else{window.location.href=fb;done(true);}
@@ -613,7 +616,7 @@ function openPlan(){if(!window._plan)return;window.open('https://chatgpt.com/?q=
 function copyPlanPrompt(b){if(!window._plan)return;var t=window._plan.prompt;
  if(navigator.clipboard){navigator.clipboard.writeText(t).then(function(){var o=b.textContent;b.textContent='✓ Copied — paste into any AI';setTimeout(function(){b.textContent=o;},2000);});}
  else{window.prompt('Copy this prompt into your AI',t);}}
-function wrShare(){var d={title:"WorkRadar",text:window._share.t,url:"https://idsexyhomme-code.github.io/1000/web/en/"};
+function wrShare(){wrEv('result-share');var d={title:"WorkRadar",text:window._share.t,url:"https://idsexyhomme-code.github.io/1000/web/en/"};
  if(navigator.share){navigator.share(d).catch(function(){});}
  else if(navigator.clipboard){navigator.clipboard.writeText(d.text+" "+d.url);alert("Copied your share link!");}
  else{window.prompt("Share link",d.url);}}
@@ -649,6 +652,7 @@ function wrShare(){var d={title:"WorkRadar",text:window._share.t,url:"https://id
 <details><summary>Is WorkRadar a prediction?</summary><p>No. Scores are hand-estimated, uncalibrated directional references built from public AI signals with a fixed method — not probabilities, and not a verdict on any person or company. See the <a href="methodology.html">methodology</a>.</p></details>
 </section>
 <footer class="seo-hub"><h2>Will AI replace your job?</h2><p class="seo-top"><a href="most-at-risk-jobs-from-ai.html">🌪️ Most at risk</a><a href="safest-jobs-from-ai.html">🛡️ Safest jobs</a><a href="compare.html">⚖️ Compare two jobs</a></p><nav class="seo-top"><a href="ai-healthcare-jobs.html">🩺 Healthcare jobs</a><a href="ai-tech-and-software-jobs.html">💻 Tech &amp; software jobs</a><a href="ai-finance-and-accounting-jobs.html">💰 Finance &amp; accounting jobs</a><a href="ai-creative-and-media-jobs.html">🎨 Creative &amp; media jobs</a><a href="ai-business-and-admin-jobs.html">📊 Business &amp; admin jobs</a><a href="ai-office-and-support-jobs.html">🗂️ Office &amp; support jobs</a><a href="ai-skilled-trades-jobs.html">🔧 Skilled trade jobs</a><a href="ai-education-jobs.html">📚 Education jobs</a><a href="ai-transportation-and-safety-jobs.html">🚚 Transportation &amp; safety jobs</a><a href="ai-engineering-jobs.html">📐 Engineering jobs</a><a href="ai-food-and-hospitality-jobs.html">🍳 Food &amp; hospitality jobs</a></nav><p class="seo-browse"><a href="all-jobs.html">Browse all 100+ roles →</a></p><p class="seo-fine">Directional AI-exposure references built from public AI news with a fixed, published method — <b>not predictions</b>. <a href="intro.html">About</a> · <a href="methodology.html">Method</a> · <a href="for-ai.html">For AI &amp; devs</a> · <a href="privacy.html">Privacy</a> · <a href="terms.html">Terms</a></p></footer>
-<script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}</script>
+<script>if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){});});}
+window.addEventListener('appinstalled',function(){try{if(window.wrEv)wrEv('pwa-install');}catch(e){}});</script>
 <script data-goatcounter="https://workradar.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 </body></html>
