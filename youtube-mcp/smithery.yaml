@@ -1,0 +1,21 @@
+# Smithery deployment config — https://smithery.ai/docs
+# Local stdio server, zero dependencies. Needs a YouTube Data API key.
+startCommand:
+  type: stdio
+  configSchema:
+    type: object
+    properties:
+      youtubeApiKey:
+        type: string
+        title: YouTube Data API v3 key
+        description: Free key from Google Cloud Console (enable "YouTube Data API v3").
+    required: ["youtubeApiKey"]
+  commandFunction: |
+    (config) => ({
+      command: 'python3',
+      args: ['youtube_mcp.py'],
+      env: { YOUTUBE_API_KEY: config.youtubeApiKey }
+    })
+
+build:
+  dockerfile: Dockerfile

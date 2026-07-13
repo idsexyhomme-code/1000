@@ -1,0 +1,18 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-07-09/server.schema.json",
+  "name": "io.github.idsexyhomme-code/youtube",
+  "description": "Research & monitor YouTube from an AI agent — search, video/channel stats, comments, uploads, trending — via the official YouTube Data API v3.",
+  "version": "0.1.0",
+  "repository": {
+    "url": "https://github.com/idsexyhomme-code/1000",
+    "source": "github"
+  },
+  "packages": [
+    {
+      "registryType": "pypi",
+      "identifier": "youtube-research-mcp",
+      "version": "0.1.0",
+      "transport": { "type": "stdio" }
+    }
+  ]
+}

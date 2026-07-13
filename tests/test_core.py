@@ -2329,6 +2329,78 @@ def test_wr_services_personalized_by_branch():
     assert "Copywriter" in leave["services"][0]["d"] or "{job}" not in leave["services"][0]["d"]
 
 
+def test_youtube_core_parsing():
+    """youtube_core가 YouTube API 응답을 깔끔한 dict로 매핑하는지(오프라인, _api 목킹)."""
+    yt_dir = os.path.join(_ROOT, "youtube-mcp")
+    if not os.path.exists(os.path.join(yt_dir, "youtube_core.py")):
+        return
+    sys.path.insert(0, yt_dir)
+    try:
+        import youtube_core as yt
+        calls = {}
+
+        def fake_api(endpoint, params):
+            calls["last"] = (endpoint, params)
+            if endpoint == "search":
+                return {"items": [{"id": {"videoId": "abc"}, "snippet": {
+                    "title": "AI jobs", "channelTitle": "Chan", "channelId": "UC1",
+                    "publishedAt": "2026-01-01T00:00:00Z", "description": "d"}}]}
+            if endpoint == "videos":
+                return {"items": [{"id": "abc", "snippet": {
+                    "title": "AI jobs", "channelTitle": "Chan", "channelId": "UC1",
+                    "publishedAt": "2026-01-01T00:00:00Z", "tags": ["ai"]},
+                    "statistics": {"viewCount": "1000", "likeCount": "50", "commentCount": "7"},
+                    "contentDetails": {"duration": "PT5M"}}]}
+            return {"items": []}
+        yt._api = fake_api
+
+        s = yt.search("ai jobs", max_results=99, order="viewCount")
+        assert s["count"] == 1 and s["results"][0]["video_id"] == "abc"
+        assert s["results"][0]["url"] == "https://www.youtube.com/watch?v=abc"
+        assert calls["last"][1]["maxResults"] == 50, "max_results가 50으로 클램프 안 됨"
+        assert calls["last"][1]["order"] == "viewCount"
+
+        v = yt.video_stats("abc, def")   # 콤마 문자열도 허용
+        assert v["videos"][0]["views"] == 1000 and v["videos"][0]["likes"] == 50
+        assert v["videos"][0]["tags"] == ["ai"] and v["videos"][0]["duration"] == "PT5M"
+
+        try:
+            yt.search("")   # 필수값 검증은 _api 호출 전에 막아야
+            assert False, "빈 query는 예외여야 함"
+        except yt.YouTubeError:
+            pass
+    finally:
+        sys.path.remove(yt_dir)
+        sys.modules.pop("youtube_core", None)
+
+
+def test_youtube_mcp_stdlib_protocol():
+    """무의존성 stdlib YouTube MCP 서버가 JSON-RPC로 응답하고, 키 없을 때 tools/call이
+    깔끔한 에러를 내는지(오프라인 회귀 가드): initialize → tools/list → tools/call."""
+    import subprocess, json
+    srv = os.path.join(_ROOT, "youtube-mcp", "youtube_mcp.py")
+    if not os.path.exists(srv):
+        return
+    msgs = "\n".join([
+        json.dumps({"jsonrpc": "2.0", "id": 1, "method": "initialize", "params": {}}),
+        json.dumps({"jsonrpc": "2.0", "id": 2, "method": "tools/list", "params": {}}),
+        json.dumps({"jsonrpc": "2.0", "id": 3, "method": "tools/call",
+                    "params": {"name": "youtube_trending", "arguments": {}}}),
+    ]) + "\n"
+    env = dict(os.environ)
+    env.pop("YOUTUBE_API_KEY", None)   # 오프라인 에러 경로 강제
+    out = subprocess.run([sys.executable, srv], input=msgs, capture_output=True,
+                         text=True, timeout=30, env=env).stdout
+    resp = {json.loads(ln)["id"]: json.loads(ln) for ln in out.splitlines() if ln.strip()}
+    assert resp[1]["result"]["serverInfo"]["name"] == "youtube", "initialize 실패"
+    assert {t["name"] for t in resp[2]["result"]["tools"]} == {
+        "youtube_search", "youtube_video_stats", "youtube_channel_stats",
+        "youtube_channel_videos", "youtube_comments", "youtube_trending"}, "tools/list 불일치"
+    r3 = resp[3]["result"]
+    assert r3.get("isError") and "YOUTUBE_API_KEY" in r3["content"][0]["text"], \
+        "키 없을 때 명확한 에러 안내가 없음"
+
+
 # ── runner ────────────────────────────────────────────────────────────
 def run():
     tests = sorted((v for k, v in globals().items()
