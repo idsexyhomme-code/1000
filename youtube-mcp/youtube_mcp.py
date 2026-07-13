@@ -40,13 +40,12 @@ TOOLS = {
         "fn": yt.video_stats,
         "description": (
             "Get stats for one or more videos: views, likes, comment count, duration, tags, channel. "
-            "Use to compare performance or enrich search results. Quota cost: 1 unit. "
-            "video_ids may be a list or a comma-separated string (up to 50)."),
+            "Use to compare performance or enrich search results. Quota cost: 1 unit. Up to 50 IDs."),
         "schema": {
             "type": "object",
             "properties": {
                 "video_ids": {"type": "array", "items": {"type": "string"},
-                              "description": "Video IDs (up to 50). A comma-separated string is also accepted."},
+                              "description": "Video IDs, up to 50."},
             },
             "required": ["video_ids"],
         },
