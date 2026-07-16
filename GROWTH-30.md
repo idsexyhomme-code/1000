@@ -61,7 +61,12 @@ GoatCounter 대시보드 → 이벤트에서:
 - Referrer = 어느 채널이 실사용자를 데려오는지 → 잘 되는 채널에 더블다운
 
 ## 6. 오늘밤 빌드 (배포 X, 로컬 준비)
-- [ ] 퍼널 측정 이벤트(§3) — 30명 카운트 가능하게
-- [ ] (검토) 첫 방문→테스트 시작 전환 마찰 점검
-- [ ] 이 플랜
-→ 아침에 님이 검토 → 배포 → Day 1 개인 네트워크 시작.
+- [x] 퍼널 측정 이벤트(§3) — test-start/complete/result-share/email-signup/pwa-install 전부 배선·검증 완료(index.html, `wrEv`). test-complete=결과 리빌 시점 발화 확인.
+- [x] 첫 방문→테스트 시작 전환 마찰 제거 — 홈 CTA를 **테스트=주 CTA(밝게, 첫째)** / 게임=보조(둘째)로 교정. 목표지표(test-complete)에 정렬. (§6.5 반영)
+- [x] 이 플랜
+→ 아침에 님이 검토 → **배포(GitHub Pages push)** → Day 1 개인 네트워크 시작.
+
+**⚠️ 배포 전 님이 확인할 것 (계정 필요, 내가 못 함):**
+1. **GoatCounter `workradar` 등록됐는지** — 이벤트가 `https://workradar.goatcounter.com/count`로 감. 미등록이면 이벤트가 404로 사라져 30 카운트 안 됨. (goatcounter.com에서 `workradar` 코드 확보)
+2. **push** — `git push origin main` 하면 GitHub Pages 재배포로 라이브 반영.
+3. Day 1: §5 문구로 지인 DM 시작.
