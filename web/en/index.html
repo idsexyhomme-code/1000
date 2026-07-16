@@ -353,7 +353,7 @@ function buildJobGrid(filter){var g=document.getElementById('jobGrid');if(!g)ret
  fill('feelOpts',FEEL,'feel');fill('instOpts',INST,'inst');fill('expOpts',EXP,'exp');fill('aiOpts',AITOOL,'ai');
  loadJobs(function(){buildJobGrid('');
   var jp=(new URLSearchParams(location.search).get('job')||'').replace(/[^a-z0-9-]/g,'');
-  if(jp&&JOBS[jp]){pickJob(jp);}}); // SEO 직업페이지 딥링크: 직업 선택된 채 Q2부터 시작
+  if(jp&&JOBS[jp]){wrEv('test-start');pickJob(jp);}}); // SEO 직업페이지 딥링크: 직업 선택된 채 Q2부터 시작(딥링크도 test-start 발화 → 완료율 정합)
  if(API_BASE){try{fetch(API_BASE+'/api/hit',{method:'POST',headers:{'Content-Type':'application/json','ngrok-skip-browser-warning':'1'},body:JSON.stringify({path:location.pathname,ref:document.referrer})}).catch(function(){});}catch(e){}}
  postRefer('visit');
 })();
